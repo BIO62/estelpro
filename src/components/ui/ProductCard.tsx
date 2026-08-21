@@ -53,7 +53,7 @@ export default function ProductCard({
   return (
     <article className={`ga-card ${className}`}>
       <div className="ga-card__body">
-        <Link href={`/products/${id}`} className="ga-card__link">
+        <Link href={`/products/${encodeURIComponent(id)}`} className="ga-card__link">
           <div className="ga-card__ratio">
             <div className="ga-card__gallery">
               <div className="ga-card__gallery-item is-visible">

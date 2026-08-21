@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { assetUrl } from '@/lib/constants';
+import { DRESSER_COOKIE } from '@/lib/catalog-audience';
 
 const PROMO_MESSAGES = [
   'Хот дотор 80,000₮ дээш худалдан авалтанд хүргэлт үнэгүй',
@@ -10,10 +12,13 @@ const PROMO_MESSAGES = [
 ];
 
 export default function PromoBar() {
+  const router = useRouter();
   const [index, setIndex] = useState(0);
   const [fading, setFading] = useState(false);
+  const [dresser, setDresser] = useState(false);
 
   useEffect(() => {
+    setDresser(document.cookie.split('; ').some((part) => part.startsWith(`${DRESSER_COOKIE}=1`)));
     const timer = window.setInterval(() => {
       setFading(true);
       window.setTimeout(() => {
@@ -37,14 +42,37 @@ export default function PromoBar() {
               {PROMO_MESSAGES[index]}
             </span>
           </div>
-          <Link
-            href="/login/dresser"
-            className="btn px-2 py-1 d-flex align-items-center justify-content-center gap-1 border-0 rounded-0 ms-auto"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={assetUrl('images/icons/loginWhite.svg')} alt="" />
-            <span className="fc-white fs-12 text-nowrap">Салон нэвтрэх</span>
-          </Link>
+          {dresser ? (
+            <>
+              <Link
+                href="/dresser/list"
+                className="btn px-2 py-1 d-flex align-items-center justify-content-center gap-1 border-0 rounded-0 ms-auto"
+              >
+                <span className="fc-white fs-12 text-nowrap">Үсчдийн каталог</span>
+              </Link>
+              <button
+                type="button"
+                className="btn px-2 py-1 d-flex align-items-center justify-content-center gap-1 border-0 rounded-0"
+                onClick={() => {
+                  document.cookie = `${DRESSER_COOKIE}=; path=/; max-age=0; samesite=lax`;
+                  setDresser(false);
+                  router.push('/');
+                  router.refresh();
+                }}
+              >
+                <span className="fc-white fs-12 text-nowrap">Гарах</span>
+              </button>
+            </>
+          ) : (
+            <Link
+              href="/login/dresser"
+              className="btn px-2 py-1 d-flex align-items-center justify-content-center gap-1 border-0 rounded-0 ms-auto"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={assetUrl('images/icons/loginWhite.svg')} alt="" />
+              <span className="fc-white fs-12 text-nowrap">Салон нэвтрэх</span>
+            </Link>
+          )}
         </div>
       </div>
     </section>

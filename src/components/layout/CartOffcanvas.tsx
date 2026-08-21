@@ -8,7 +8,7 @@ import { catalog } from '@/lib/products';
 import { useCart } from '@/components/providers/CartProvider';
 
 export default function CartOffcanvas() {
-  const { items, count, total, subtotal, discount, setQty, removeItem, clearCart } = useCart();
+  const { items, count, total, subtotal, discount, setQty, updateItemSelection, removeItem, clearCart } = useCart();
   const recs = catalog.filter((product) => !items.some((item) => item.productId === product.id)).slice(0, 8);
   const recsRef = useRef<HTMLDivElement>(null);
   const scrollRecs = (dir: number) => {
@@ -60,9 +60,44 @@ export default function CartOffcanvas() {
                       <Link href={`/products/${item.productId}`} className="cart-line-name" data-bs-dismiss="offcanvas">
                         {item.name}
                       </Link>
-                      {(item.size || item.shade) && (
+                      {item.sizes && item.sizes.length > 1 && (
+                        <div className="cart-opts">
+                          <span className="cart-opt-label">Хэмжээ</span>
+                          <div className="product-sizes">
+                            {item.sizes.map((size) => (
+                              <button
+                                key={size.label}
+                                type="button"
+                                className={`product-size${item.size === size.label ? ' is-active' : ''}`}
+                                onClick={() => updateItemSelection(item.key, { size: size.label, shade: item.shade })}
+                              >
+                                {size.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {item.shades && item.shades.length > 0 && (
+                        <div className="cart-opts">
+                          <span className="cart-opt-label">Өнгө</span>
+                          <div className="product-shades">
+                            {item.shades.map((shade) => (
+                              <button
+                                key={shade.id}
+                                type="button"
+                                title={shade.name}
+                                className={`product-shade${item.shade === shade.name ? ' is-active' : ''}`}
+                                style={{ background: shade.hex }}
+                                onClick={() => updateItemSelection(item.key, { size: item.size, shade: shade.name })}
+                              />
+                            ))}
+                          </div>
+                          {item.shade && <span className="cart-line-meta">{item.shade}</span>}
+                        </div>
+                      )}
+                      {!item.sizes?.length && !item.shades?.length && (item.size || item.shade) && (
                         <span className="cart-line-meta">
-                          {[item.size ? `${item.size} мл` : null, item.shade].filter(Boolean).join(' · ')}
+                          {[item.size, item.shade].filter(Boolean).join(' · ')}
                         </span>
                       )}
                       <div className="cart-line-row">

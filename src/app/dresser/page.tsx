@@ -37,7 +37,7 @@ export default function DresserPage() {
                 <h1 className="fw-bold fc-white lh-sm mb-3" style={{fontSize:"clamp(28px,4vw,52px)"}}>ESTEL Professional<br /><span style={{color:"#FFC20F"}}>Мэргэжлийн каталог</span></h1>
                 <p className="mb-4 fs-15" style={{color:"rgba(255,255,255,.72)"}}>Дэлхийн тэргүүлэгч ESTEL брэндийн бүтээгдэхүүнийг мэргэжлийн үнэ, нөхцөлтэйгөөр салондоо авна уу.</p>
                 <div className="d-flex gap-3 flex-wrap mb-5">
-                  <Link href="/products" className="btn btn-main px-4 py-3 fw-semibold rounded-3">Бүх барааг харах</Link>
+                  <Link href="/dresser/list" className="btn btn-main px-4 py-3 fw-semibold rounded-3">Бүх барааг харах</Link>
                   <a href="#brands" className="btn px-4 py-3 fw-semibold rounded-3" style={{background:"rgba(255,255,255,.12)",color:"#fff",border:"1.5px solid rgba(255,255,255,.25)"}}>Брэнд сонгох</a>
                 </div>
                 <div className="d-flex gap-4 align-items-center">
@@ -74,7 +74,7 @@ export default function DresserPage() {
             
             <div className="row g-3 mb-3">
               <div className="col-lg-8">
-                <Link href="/products" className="d-block cat-card rounded-4" style={{height:"340px"}}>
+                <Link href="/dresser/list" className="d-block cat-card rounded-4" style={{height:"340px"}}>
                   <img src={assetUrl('images/demo/category1.avif')} alt="De Luxe" />
                   <div className="cat-overlay"></div>
                   <div className="cat-label">
@@ -85,7 +85,7 @@ export default function DresserPage() {
                 </Link>
               </div>
               <div className="col-lg-4">
-                <Link href="/products" className="d-block cat-card rounded-4" style={{height:"340px"}}>
+                <Link href="/dresser/list" className="d-block cat-card rounded-4" style={{height:"340px"}}>
                   <img src={assetUrl('images/demo/category5.avif')} alt="Haute Couture" />
                   <div className="cat-overlay"></div>
                   <div className="cat-label">
@@ -100,7 +100,7 @@ export default function DresserPage() {
             
             <div className="row g-3 mb-3">
               <div className="col-4">
-                <Link href="/products" className="d-block cat-card rounded-4" style={{height:"210px"}}>
+                <Link href="/dresser/list" className="d-block cat-card rounded-4" style={{height:"210px"}}>
                   <img src={assetUrl('images/demo/category2.avif')} alt="Sensation" />
                   <div className="cat-overlay"></div>
                   <div className="cat-label">
@@ -110,7 +110,7 @@ export default function DresserPage() {
                 </Link>
               </div>
               <div className="col-4">
-                <Link href="/products" className="d-block cat-card rounded-4" style={{height:"210px"}}>
+                <Link href="/dresser/list" className="d-block cat-card rounded-4" style={{height:"210px"}}>
                   <img src={assetUrl('images/demo/category4.avif')} alt="Curex" />
                   <div className="cat-overlay"></div>
                   <div className="cat-label">
@@ -120,7 +120,7 @@ export default function DresserPage() {
                 </Link>
               </div>
               <div className="col-4">
-                <Link href="/products" className="d-block cat-card rounded-4" style={{height:"210px"}}>
+                <Link href="/dresser/list" className="d-block cat-card rounded-4" style={{height:"210px"}}>
                   <img src={assetUrl('images/demo/category6.avif')} alt="Alpha Homme" />
                   <div className="cat-overlay"></div>
                   <div className="cat-label">
@@ -145,21 +145,21 @@ export default function DresserPage() {
       
             
             <div className="row row-cols-4 row-cols-sm-5 row-cols-md-7 row-cols-lg-9 g-2 mb-5">
-              <div className="col"><Link href="/products" className="cat-pill" title="De Luxe"><img src={assetUrl('images/demo/category1.avif')} alt="De Luxe" /></Link></div>
-              <div className="col"><Link href="/products" className="cat-pill" title="Sensation"><img src={assetUrl('images/demo/category2.avif')} alt="Sensation" /></Link></div>
-              <div className="col"><Link href="/products" className="cat-pill" title="Prince"><img src={assetUrl('images/demo/category3.avif')} alt="Prince" /></Link></div>
-              <div className="col"><Link href="/products" className="cat-pill" title="XTRO"><img src={assetUrl('images/demo/category4.avif')} alt="XTRO" /></Link></div>
-              <div className="col"><Link href="/products" className="cat-pill" title="Хөөсөн будаг"><img src={assetUrl('images/demo/category5.avif')} alt="Хөөсөн будаг" /></Link></div>
-              <div className="col"><Link href="/products" className="cat-pill" title="ANTI-YELLOW"><img src={assetUrl('images/demo/category6.avif')} alt="ANTI-YELLOW" /></Link></div>
-              <div className="col"><Link href="/products" className="cat-pill" title="ESTELLER"><img src={assetUrl('images/demo/product1.jpg')} alt="ESTELLER" /></Link></div>
-              <div className="col"><Link href="/products" className="cat-pill" title="Newtone"><img src={assetUrl('images/demo/product2.jpg')} alt="Newtone" /></Link></div>
-              <div className="col"><Link href="/products" className="cat-pill" title="Niagara"><img src={assetUrl('images/demo/product4.jpg')} alt="Niagara" /></Link></div>
-              <div className="col"><Link href="/products" className="cat-pill" title="Lissage"><img src={assetUrl('images/demo/product3.jpg')} alt="Lissage" /></Link></div>
-              <div className="col"><Link href="/products" className="cat-pill" title="Alpha"><img src={assetUrl('images/demo/product9.png')} alt="Alpha" /></Link></div>
-              <div className="col"><Link href="/products" className="cat-pill" title="Genevie Pro"><img src={assetUrl('images/demo/product7.png')} alt="Genevie Pro" /></Link></div>
-              <div className="col"><Link href="/products" className="cat-pill" title="Top salon"><img src={assetUrl('images/demo/product8.png')} alt="Top salon" /></Link></div>
-              <div className="col"><Link href="/products" className="cat-pill" title="Proart"><img src={assetUrl('images/demo/product5.jpg')} alt="Proart" /></Link></div>
-              <div className="col"><Link href="/products" className="cat-pill" title="Airex"><img src={assetUrl('images/demo/product6.jpg')} alt="Airex" /></Link></div>
+              <div className="col"><Link href="/dresser/list" className="cat-pill" title="De Luxe"><img src={assetUrl('images/demo/category1.avif')} alt="De Luxe" /></Link></div>
+              <div className="col"><Link href="/dresser/list" className="cat-pill" title="Sensation"><img src={assetUrl('images/demo/category2.avif')} alt="Sensation" /></Link></div>
+              <div className="col"><Link href="/dresser/list" className="cat-pill" title="Prince"><img src={assetUrl('images/demo/category3.avif')} alt="Prince" /></Link></div>
+              <div className="col"><Link href="/dresser/list" className="cat-pill" title="XTRO"><img src={assetUrl('images/demo/category4.avif')} alt="XTRO" /></Link></div>
+              <div className="col"><Link href="/dresser/list" className="cat-pill" title="Хөөсөн будаг"><img src={assetUrl('images/demo/category5.avif')} alt="Хөөсөн будаг" /></Link></div>
+              <div className="col"><Link href="/dresser/list" className="cat-pill" title="ANTI-YELLOW"><img src={assetUrl('images/demo/category6.avif')} alt="ANTI-YELLOW" /></Link></div>
+              <div className="col"><Link href="/dresser/list" className="cat-pill" title="ESTELLER"><img src={assetUrl('images/demo/product1.jpg')} alt="ESTELLER" /></Link></div>
+              <div className="col"><Link href="/dresser/list" className="cat-pill" title="Newtone"><img src={assetUrl('images/demo/product2.jpg')} alt="Newtone" /></Link></div>
+              <div className="col"><Link href="/dresser/list" className="cat-pill" title="Niagara"><img src={assetUrl('images/demo/product4.jpg')} alt="Niagara" /></Link></div>
+              <div className="col"><Link href="/dresser/list" className="cat-pill" title="Lissage"><img src={assetUrl('images/demo/product3.jpg')} alt="Lissage" /></Link></div>
+              <div className="col"><Link href="/dresser/list" className="cat-pill" title="Alpha"><img src={assetUrl('images/demo/product9.png')} alt="Alpha" /></Link></div>
+              <div className="col"><Link href="/dresser/list" className="cat-pill" title="Genevie Pro"><img src={assetUrl('images/demo/product7.png')} alt="Genevie Pro" /></Link></div>
+              <div className="col"><Link href="/dresser/list" className="cat-pill" title="Top salon"><img src={assetUrl('images/demo/product8.png')} alt="Top salon" /></Link></div>
+              <div className="col"><Link href="/dresser/list" className="cat-pill" title="Proart"><img src={assetUrl('images/demo/product5.jpg')} alt="Proart" /></Link></div>
+              <div className="col"><Link href="/dresser/list" className="cat-pill" title="Airex"><img src={assetUrl('images/demo/product6.jpg')} alt="Airex" /></Link></div>
             </div>
       
             
@@ -170,15 +170,15 @@ export default function DresserPage() {
                 <strong className="fs-14 fc-dark">Эмчилгээний набор</strong>
               </div>
               <div className="row row-cols-4 row-cols-sm-5 row-cols-md-7 row-cols-lg-9 g-2">
-                <div className="col"><Link href="/products" className="line-pill" title="Peptides"><img src={assetUrl('images/demo/product10.png')} alt="Peptides" /></Link></div>
-                <div className="col"><Link href="/products" className="line-pill" title="Цветочный экстаз"><img src={assetUrl('images/demo/product11.png')} alt="Цветочный экстаз" /></Link></div>
-                <div className="col"><Link href="/products" className="line-pill" title="Кератин"><img src={assetUrl('images/demo/product12.png')} alt="Кератин" /></Link></div>
-                <div className="col"><Link href="/products" className="line-pill" title="Remount"><img src={assetUrl('images/demo/product1.jpg')} alt="Remount" /></Link></div>
-                <div className="col"><Link href="/products" className="line-pill" title="Filler"><img src={assetUrl('images/demo/product3.jpg')} alt="Filler" /></Link></div>
-                <div className="col"><Link href="/products" className="line-pill" title="Banya"><img src={assetUrl('images/demo/product5.jpg')} alt="Banya" /></Link></div>
-                <div className="col"><Link href="/products" className="line-pill" title="Collagen"><img src={assetUrl('images/demo/product6.jpg')} alt="Collagen" /></Link></div>
-                <div className="col"><Link href="/products" className="line-pill" title="Q3"><img src={assetUrl('images/demo/product7.png')} alt="Q3" /></Link></div>
-                <div className="col"><Link href="/products" className="line-pill" title="ХЕК"><img src={assetUrl('images/demo/product8.png')} alt="ХЕК" /></Link></div>
+                <div className="col"><Link href="/dresser/list" className="line-pill" title="Peptides"><img src={assetUrl('images/demo/product10.png')} alt="Peptides" /></Link></div>
+                <div className="col"><Link href="/dresser/list" className="line-pill" title="Цветочный экстаз"><img src={assetUrl('images/demo/product11.png')} alt="Цветочный экстаз" /></Link></div>
+                <div className="col"><Link href="/dresser/list" className="line-pill" title="Кератин"><img src={assetUrl('images/demo/product12.png')} alt="Кератин" /></Link></div>
+                <div className="col"><Link href="/dresser/list" className="line-pill" title="Remount"><img src={assetUrl('images/demo/product1.jpg')} alt="Remount" /></Link></div>
+                <div className="col"><Link href="/dresser/list" className="line-pill" title="Filler"><img src={assetUrl('images/demo/product3.jpg')} alt="Filler" /></Link></div>
+                <div className="col"><Link href="/dresser/list" className="line-pill" title="Banya"><img src={assetUrl('images/demo/product5.jpg')} alt="Banya" /></Link></div>
+                <div className="col"><Link href="/dresser/list" className="line-pill" title="Collagen"><img src={assetUrl('images/demo/product6.jpg')} alt="Collagen" /></Link></div>
+                <div className="col"><Link href="/dresser/list" className="line-pill" title="Q3"><img src={assetUrl('images/demo/product7.png')} alt="Q3" /></Link></div>
+                <div className="col"><Link href="/dresser/list" className="line-pill" title="ХЕК"><img src={assetUrl('images/demo/product8.png')} alt="ХЕК" /></Link></div>
               </div>
             </div>
       
@@ -188,12 +188,12 @@ export default function DresserPage() {
                 <strong className="fs-14 fc-dark">Curex</strong>
               </div>
               <div className="row row-cols-4 row-cols-sm-5 row-cols-md-7 row-cols-lg-9 g-2">
-                <div className="col"><Link href="/products" className="line-pill" title="CLASSIC"><img src={assetUrl('images/demo/product4.jpg')} alt="CLASSIC" /></Link></div>
-                <div className="col"><Link href="/products" className="line-pill" title="THERAPY"><img src={assetUrl('images/demo/product5.jpg')} alt="THERAPY" /></Link></div>
-                <div className="col"><Link href="/products" className="line-pill" title="COLOR SAVE"><img src={assetUrl('images/demo/product6.jpg')} alt="COLOR SAVE" /></Link></div>
-                <div className="col"><Link href="/products" className="line-pill" title="COLOR INTENSE"><img src={assetUrl('images/demo/product7.png')} alt="COLOR INTENSE" /></Link></div>
-                <div className="col"><Link href="/products" className="line-pill" title="SUNFLOWER"><img src={assetUrl('images/demo/product8.png')} alt="SUNFLOWER" /></Link></div>
-                <div className="col"><Link href="/products" className="line-pill" title="BRILLIANCE"><img src={assetUrl('images/demo/product9.png')} alt="BRILLIANCE" /></Link></div>
+                <div className="col"><Link href="/dresser/list" className="line-pill" title="CLASSIC"><img src={assetUrl('images/demo/product4.jpg')} alt="CLASSIC" /></Link></div>
+                <div className="col"><Link href="/dresser/list" className="line-pill" title="THERAPY"><img src={assetUrl('images/demo/product5.jpg')} alt="THERAPY" /></Link></div>
+                <div className="col"><Link href="/dresser/list" className="line-pill" title="COLOR SAVE"><img src={assetUrl('images/demo/product6.jpg')} alt="COLOR SAVE" /></Link></div>
+                <div className="col"><Link href="/dresser/list" className="line-pill" title="COLOR INTENSE"><img src={assetUrl('images/demo/product7.png')} alt="COLOR INTENSE" /></Link></div>
+                <div className="col"><Link href="/dresser/list" className="line-pill" title="SUNFLOWER"><img src={assetUrl('images/demo/product8.png')} alt="SUNFLOWER" /></Link></div>
+                <div className="col"><Link href="/dresser/list" className="line-pill" title="BRILLIANCE"><img src={assetUrl('images/demo/product9.png')} alt="BRILLIANCE" /></Link></div>
               </div>
             </div>
       
@@ -203,11 +203,11 @@ export default function DresserPage() {
                 <strong className="fs-14 fc-dark">Туслах материал</strong>
               </div>
               <div className="row row-cols-4 row-cols-sm-5 row-cols-md-7 row-cols-lg-9 g-2">
-                <div className="col"><Link href="/products" className="line-pill" title="Каталоги"><img src={assetUrl('images/demo/product13.png')} alt="Каталоги" /></Link></div>
-                <div className="col"><Link href="/products" className="line-pill" title="Хормогч Нөмрөг"><img src={assetUrl('images/demo/product2.jpg')} alt="Хормогч Нөмрөг" /></Link></div>
-                <div className="col"><Link href="/products" className="line-pill" title="Аяга багс"><img src={assetUrl('images/demo/product4.jpg')} alt="Аяга багс" /></Link></div>
-                <div className="col"><Link href="/products" className="line-pill" title="Сам"><img src={assetUrl('images/demo/product7.png')} alt="Сам" /></Link></div>
-                <div className="col"><Link href="/products" className="line-pill" title="Бусад"><img src={assetUrl('images/demo/product10.png')} alt="Бусад" /></Link></div>
+                <div className="col"><Link href="/dresser/list" className="line-pill" title="Каталоги"><img src={assetUrl('images/demo/product13.png')} alt="Каталоги" /></Link></div>
+                <div className="col"><Link href="/dresser/list" className="line-pill" title="Хормогч Нөмрөг"><img src={assetUrl('images/demo/product2.jpg')} alt="Хормогч Нөмрөг" /></Link></div>
+                <div className="col"><Link href="/dresser/list" className="line-pill" title="Аяга багс"><img src={assetUrl('images/demo/product4.jpg')} alt="Аяга багс" /></Link></div>
+                <div className="col"><Link href="/dresser/list" className="line-pill" title="Сам"><img src={assetUrl('images/demo/product7.png')} alt="Сам" /></Link></div>
+                <div className="col"><Link href="/dresser/list" className="line-pill" title="Бусад"><img src={assetUrl('images/demo/product10.png')} alt="Бусад" /></Link></div>
               </div>
             </div>
       

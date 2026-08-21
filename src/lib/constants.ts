@@ -1,6 +1,10 @@
 export const ASSET_BASE = 'https://alphalabs.mn/nextstore-html/estel';
 
+export const FALLBACK_PRODUCT_IMAGE = 'images/demo/product6.jpg';
+
 export function assetUrl(path: string): string {
+  if (!path) return `${ASSET_BASE}/${FALLBACK_PRODUCT_IMAGE}`;
+  if (/^https?:\/\//i.test(path)) return path;
   return `${ASSET_BASE}/${path.replace(/^\//, '')}`;
 }
 

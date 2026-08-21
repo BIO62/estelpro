@@ -5,9 +5,12 @@ import type { CatalogProduct } from '@/lib/products';
 import {
   cartCount,
   cartDiscount,
+  cartItemKey,
   cartSubtotal,
   cartTotal,
   mergeCartItem,
+  originalPriceForProduct,
+  priceForProduct,
   readCart,
   toCartItem,
   writeCart,
@@ -23,6 +26,7 @@ type CartContextValue = {
   discount: number;
   addItem: (product: CatalogProduct, selection?: CartSelection) => void;
   setQty: (key: string, qty: number) => void;
+  updateItemSelection: (key: string, selection: CartSelection) => void;
   removeItem: (key: string) => void;
   clearCart: () => void;
 };
@@ -35,6 +39,7 @@ const CartContext = createContext<CartContextValue>({
   discount: 0,
   addItem: () => undefined,
   setQty: () => undefined,
+  updateItemSelection: () => undefined,
   removeItem: () => undefined,
   clearCart: () => undefined,
 });
@@ -68,6 +73,39 @@ export default function CartProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const updateItemSelection = useCallback((key: string, selection: CartSelection) => {
+    setItems((current) => {
+      const item = current.find((entry) => entry.key === key);
+      if (!item) return current;
+      const nextSel = { size: selection.size ?? item.size, shade: selection.shade ?? item.shade };
+      const nextKey = cartItemKey(item.productId, nextSel);
+      const stub = {
+        id: item.productId,
+        name: item.name,
+        category: item.category,
+        image: item.image,
+        price: String(item.price),
+        originalPrice: item.originalPrice ? String(item.originalPrice) : undefined,
+        sizes: item.sizes,
+        shades: item.shades,
+      } as CatalogProduct;
+      const nextItem: CartItem = {
+        ...item,
+        key: nextKey,
+        size: nextSel.size,
+        shade: nextSel.shade,
+        price: priceForProduct(stub, nextSel),
+        originalPrice: originalPriceForProduct(stub, nextSel) || priceForProduct(stub, nextSel),
+      };
+      const rest = current.filter((entry) => entry.key !== key);
+      const dup = rest.find((entry) => entry.key === nextKey);
+      if (dup) {
+        return rest.map((entry) => (entry.key === nextKey ? { ...entry, qty: entry.qty + item.qty } : entry));
+      }
+      return current.map((entry) => (entry.key === key ? nextItem : entry));
+    });
+  }, []);
+
   const removeItem = useCallback((key: string) => {
     setItems((current) => current.filter((item) => item.key !== key));
   }, []);
@@ -83,10 +121,11 @@ export default function CartProvider({ children }: { children: ReactNode }) {
       discount: cartDiscount(items),
       addItem,
       setQty,
+      updateItemSelection,
       removeItem,
       clearCart,
     }),
-    [items, addItem, setQty, removeItem, clearCart]
+    [items, addItem, setQty, updateItemSelection, removeItem, clearCart]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

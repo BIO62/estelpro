@@ -10,6 +10,7 @@ import './wrap.css';
 import './globals.css';
 import ClientLayout from '@/components/layout/ClientLayout';
 import { ASSET_BASE } from '@/lib/constants';
+import { getSyliusTaxons, toMenuTaxons } from '@/lib/api/sylius';
 
 const montserrat = Montserrat({
   subsets: ['latin', 'cyrillic'],
@@ -25,18 +26,19 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const taxons = toMenuTaxons(await getSyliusTaxons(), 'consumer');
   return (
     <html lang="mn">
       <head>
         <link rel="icon" href={`${ASSET_BASE}/images/favicon.svg`} />
       </head>
       <body className={montserrat.className}>
-        <ClientLayout>{children}</ClientLayout>
+        <ClientLayout taxons={taxons}>{children}</ClientLayout>
       </body>
     </html>
   );

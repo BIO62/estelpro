@@ -13,11 +13,7 @@ export interface Product {
   inStock?: boolean;
 }
 
-export interface CartItem {
-  product: Product;
-  quantity: number;
-  selectedVariant?: string;
-}
+export type { CartItem, CartSelection } from '@/lib/cart';
 
 export interface Branch {
   name: string;

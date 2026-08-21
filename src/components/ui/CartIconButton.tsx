@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import CartBagIcon from '@/components/ui/CartBagIcon';
-import { hasProductOptions, useQuickView } from '@/components/providers/QuickViewProvider';
+import { useQuickView } from '@/components/providers/QuickViewProvider';
 import type { CatalogProduct } from '@/lib/products';
 
 type Props = {
@@ -11,7 +11,7 @@ type Props = {
 };
 
 export default function CartIconButton({ product, className = '' }: Props) {
-  const { openQuickView, addToCart } = useQuickView();
+  const { addToCart } = useQuickView();
   const [added, setAdded] = useState(false);
 
   return (
@@ -22,12 +22,9 @@ export default function CartIconButton({ product, className = '' }: Props) {
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (product && hasProductOptions(product)) {
-          openQuickView(product);
-          return;
-        }
+        if (!product) return;
         setAdded(true);
-        if (product) addToCart(product, { size: product.sizes?.[0]?.label });
+        addToCart(product);
       }}
     >
       {className.includes('ga-card__cart-btn') ? (

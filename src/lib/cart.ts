@@ -1,4 +1,4 @@
-import type { CatalogProduct } from '@/lib/products';
+import type { CatalogProduct, ProductShade, ProductSize } from '@/lib/products';
 
 export const CART_STORAGE_KEY = 'estel-cart';
 
@@ -18,7 +18,42 @@ export type CartItem = {
   qty: number;
   size?: string;
   shade?: string;
+  sizes?: ProductSize[];
+  shades?: ProductShade[];
 };
+
+export function defaultSelection(product: CatalogProduct): CartSelection {
+  return {
+    size: product.sizes?.[0]?.label,
+    shade: product.shades?.[0]?.name,
+  };
+}
+
+export function openCartDrawer() {
+  if (typeof window === 'undefined') return;
+  const el = document.getElementById('cartCanvas');
+  if (!el) return;
+  const show = (Offcanvas?: { getOrCreateInstance: (node: Element) => { show: () => void } }) => {
+    Offcanvas?.getOrCreateInstance(el).show();
+  };
+  const existing = (
+    window as Window & {
+      bootstrap?: { Offcanvas?: { getOrCreateInstance: (node: Element) => { show: () => void } } };
+    }
+  ).bootstrap?.Offcanvas;
+  if (existing) {
+    show(existing);
+    return;
+  }
+  void import('bootstrap/dist/js/bootstrap.bundle.min.js').then(() => {
+    const loaded = (
+      window as Window & {
+        bootstrap?: { Offcanvas?: { getOrCreateInstance: (node: Element) => { show: () => void } } };
+      }
+    ).bootstrap?.Offcanvas;
+    show(loaded);
+  });
+}
 
 export function parsePrice(label: string) {
   return Number(String(label).replace(/[^\d]/g, '')) || 0;
@@ -56,6 +91,8 @@ export function toCartItem(product: CatalogProduct, selection: CartSelection = {
     qty,
     size: selection.size,
     shade: selection.shade,
+    sizes: product.sizes,
+    shades: product.shades,
   };
 }
 

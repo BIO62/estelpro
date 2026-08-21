@@ -2,16 +2,17 @@
 
 import Link from 'next/link';
 import { assetUrl } from '@/lib/constants';
+import type { MenuTaxon } from '@/lib/api/sylius';
 
-const categories = [
-  { name: 'Үсний будаг', img: 'images/demo/category1.avif', cat: 'hair-dye' },
-  { name: 'Үс арчилгаа', img: 'images/demo/category2.avif', cat: 'hair-care' },
-  { name: 'Арьс & Бие арчилгаа', img: 'images/demo/category3.avif', cat: 'skin-body' },
-  { name: 'Alpha', img: 'images/demo/category4.avif', cat: 'alpha' },
-  { name: 'Хүүхдийн арчилгаа', img: 'images/demo/category5.avif', href: '/products' },
-  { name: 'Хэлбэржүүлэлт', img: 'images/demo/category6.avif', cat: 'styling' },
-  { name: 'Бүх бүтээгдэхүүн', img: 'images/demo/category6.avif', href: '/products' },
-];
+const TAXON_IMAGES: Record<string, string> = {
+  hair_coloring: 'images/demo/category1.avif',
+  hair_care: 'images/demo/category2.avif',
+  skin_body: 'images/demo/category3.avif',
+  Alpha: 'images/demo/category4.avif',
+  kids_care: 'images/demo/category5.avif',
+  styling: 'images/demo/category6.avif',
+  all_products: 'images/demo/category6.avif',
+};
 
 const brands = [
   { name: 'Couture Luxury', img: 'images/brands/500x500px logo 1.jpg' },
@@ -28,45 +29,18 @@ const brands = [
   { name: 'Airex', img: 'images/brands/500x500px logo 12.jpg' },
 ];
 
-const subcats: Record<string, string[]> = {
-  'hair-dye': ['Signature', 'Love'],
-  'hair-care': [
-    'Хуурай',
-    'Тослог',
-    'Хагтай',
-    'Будагтай',
-    'Гэмтэлтэй',
-    'Ургалт дэмжих',
-    'Цайралттай',
-    'Шулуун химитэй',
-    'Буржгар химитэй',
-    'Нарийн ширхэгтэй',
-    'Нарны хамгаалалттай',
-    'Бүх төрлийн',
-    'Хуурай шампунь',
-    'Хүүхдийн',
-    'Эрчүүдийн',
-    'Бүх бүтээгдэхүүн',
-  ],
-  'skin-body': ['Нүүр', 'Гар', 'Бие', 'Хөлс дарагч', 'Бүх бүтээгдэхүүн'],
-  alpha: [
-    'Хагны эсрэг',
-    'Уналтын эсрэг',
-    'Гаатай',
-    'Гүн чийгшүүлэх',
-    'Эмзэг мэдрэмттэй',
-    'Хөлс дарагч',
-    'Шудний ОО',
-    'Гарын тос',
-    'Хэлбэржүүлэгч',
-    'Бие',
-    'Сахал',
-    'Бүх бүтээгдэхүүн',
-  ],
-  styling: ['Вакс', 'Гель', 'Лак', 'Хөөс & Хэв баригч', 'Индүү сэнсний хамгаалалт', 'Уг босгогч', 'Сахал', 'Бүх бүтээгдэхүүн'],
-};
+export default function MainMenuOffcanvas({ taxons = [] }: { taxons?: MenuTaxon[] }) {
+  const categories = taxons.length
+    ? taxons
+    : [
+        { code: 'hair_care', name: 'Үс арчилгаа', children: [] },
+        { code: 'skin_body', name: 'Арьс & Бие арчилгаа', children: [] },
+        { code: 'Alpha', name: 'Alpha', children: [] },
+        { code: 'kids_care', name: 'Хүүхдийн арчилгаа', children: [] },
+        { code: 'styling', name: 'Хэлбэржүүлэлт', children: [] },
+        { code: 'all_products', name: 'Бүх бүтээгдэхүүн', children: [] },
+      ];
 
-export default function MainMenuOffcanvas() {
   return (
     <div
       className="offcanvas offcanvas-start mainMenuCanvas"
@@ -88,7 +62,7 @@ export default function MainMenuOffcanvas() {
             </button>
           </div>
           <div className="position-relative d-flex flex-column flex-grow-1">
-            <Link href="/products" className="btn text-start d-flex align-items-center border-0 p-3" data-bs-dismiss="offcanvas">
+            <Link href="/list" className="btn text-start d-flex align-items-center border-0 p-3" data-bs-dismiss="offcanvas" prefetch>
               <span className="flex-grow-1 fs-12 text-uppercase">Бүх бүтээгдэхүүн</span>
             </Link>
             <hr className="my-1 opacity-10" />
@@ -104,31 +78,36 @@ export default function MainMenuOffcanvas() {
                 <span className="flex-grow-1 fs-12 text-uppercase">ҮНДСЭН ЦЭС РҮҮ БУЦАХ</span>
               </button>
               <div className="row row-cols-2 gx-2 gy-3">
-                {categories.map((cat) => (
-                  <div className="col" key={cat.name}>
-                    {cat.href ? (
-                      <Link href={cat.href} className="singleNav d-flex flex-column gap-2 text-decoration-none fc-dark" data-bs-dismiss="offcanvas">
-                        <div className="singleNavImage rounded-3 overflow-hidden">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={assetUrl(cat.img)} alt="" className="w-100 h-auto ratio-11" />
-                        </div>
-                        <span className="flex-grow-1 fs-12 text-uppercase">{cat.name}</span>
-                      </Link>
-                    ) : (
-                      <button
-                        type="button"
-                        className="singleNav d-flex flex-column gap-2 text-decoration-none fc-dark border-0 bg-white text-start p-0"
-                        data-cat={cat.cat}
-                      >
-                        <div className="singleNavImage rounded-3 overflow-hidden">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={assetUrl(cat.img)} alt="" className="w-100 h-auto ratio-11" />
-                        </div>
-                        <span className="flex-grow-1 fs-12 text-uppercase">{cat.name}</span>
-                      </button>
-                    )}
-                  </div>
-                ))}
+                {categories.map((cat) => {
+                  const href =
+                    cat.code === 'all_products' ? '/new' : `/list?taxon=${encodeURIComponent(cat.code)}`;
+                  const hasChildren = cat.children.length > 0 && cat.code !== 'all_products';
+                  return (
+                    <div className="col" key={cat.code}>
+                      {hasChildren ? (
+                        <button
+                          type="button"
+                          className="singleNav d-flex flex-column gap-2 text-decoration-none fc-dark border-0 bg-white text-start p-0"
+                          data-cat={cat.code}
+                        >
+                          <div className="singleNavImage rounded-3 overflow-hidden">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={assetUrl(TAXON_IMAGES[cat.code] || 'images/demo/category6.avif')} alt="" className="w-100 h-auto ratio-11" />
+                          </div>
+                          <span className="flex-grow-1 fs-12 text-uppercase">{cat.name}</span>
+                        </button>
+                      ) : (
+                        <Link href={href} className="singleNav d-flex flex-column gap-2 text-decoration-none fc-dark" data-bs-dismiss="offcanvas">
+                          <div className="singleNavImage rounded-3 overflow-hidden">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={assetUrl(TAXON_IMAGES[cat.code] || 'images/demo/category6.avif')} alt="" className="w-100 h-auto ratio-11" />
+                          </div>
+                          <span className="flex-grow-1 fs-12 text-uppercase">{cat.name}</span>
+                        </Link>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
             <div className="position-absolute bg-white zindex-1 navigationLevelTwo top-0 h-100 start-0 w-100 overflow-y-auto overflow-x-hidden pb-4">
@@ -142,16 +121,16 @@ export default function MainMenuOffcanvas() {
                 <img src={assetUrl('images/icons/chevronLeftSmall.svg')} alt="" />
                 <span className="flex-grow-1 fs-12 text-uppercase">АНГИЛЛЫН ЦЭС РҮҮ БУЦАХ</span>
               </button>
-              {Object.entries(subcats).map(([key, items]) => (
-                <div key={key} data-subcat={key} className="d-none flex-column gap-2">
-                  {items.map((item) => (
+              {categories.map((cat) => (
+                <div key={cat.code} data-subcat={cat.code} className="d-none flex-column gap-2">
+                  {cat.children.map((item) => (
                     <Link
-                      key={item}
-                      href="/products"
+                      key={item.code}
+                      href={`/list?taxon=${encodeURIComponent(item.code)}`}
                       className="d-flex align-items-center text-decoration-none fc-dark bg-light rounded-3 px-3 py-2"
                       data-bs-dismiss="offcanvas"
                     >
-                      {item}
+                      {item.name}
                     </Link>
                   ))}
                 </div>
@@ -172,7 +151,7 @@ export default function MainMenuOffcanvas() {
               <div className="row row-cols-2 gx-2 gy-3">
                 {brands.map((brand) => (
                   <div className="col" key={brand.name}>
-                    <Link href="/products" className="singleNav d-flex flex-column gap-2 text-decoration-none fc-dark" data-bs-dismiss="offcanvas">
+                    <Link href="/list" className="singleNav d-flex flex-column gap-2 text-decoration-none fc-dark" data-bs-dismiss="offcanvas">
                       <div className="singleNavImage rounded-3 overflow-hidden">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={assetUrl(brand.img)} alt="" className="w-100 h-auto ratio-11" />
@@ -184,14 +163,14 @@ export default function MainMenuOffcanvas() {
               </div>
             </div>
             <hr className="my-1 opacity-10" />
-            <Link href="/products" className="btn text-start d-flex align-items-center border-0 p-3" data-bs-dismiss="offcanvas">
+            <Link href="/new" className="btn text-start d-flex align-items-center border-0 p-3" data-bs-dismiss="offcanvas" prefetch>
               <span className="flex-grow-1 fs-12 text-uppercase">Шинэ бүтээгдэхүүн</span>
             </Link>
-            <Link href="/products" className="d-block my-3">
+            <Link href="/new" className="d-block my-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={assetUrl('images/demo/menuBanner.webp')} alt="" className="w-100 h-auto" />
             </Link>
-            <Link href="/products" className="btn text-start d-flex align-items-center border-0 p-3" data-bs-dismiss="offcanvas">
+            <Link href="/list?sort=onsale" className="btn text-start d-flex align-items-center border-0 p-3" data-bs-dismiss="offcanvas">
               <span className="me-2 fs-12 text-uppercase">Хямдрал</span>
               <div className="d-flex align-items-center flex-grow-1">
                 {/* eslint-disable-next-line @next/next/no-img-element */}

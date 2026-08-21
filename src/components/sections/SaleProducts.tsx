@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import ProductCard from '../ui/ProductCard';
-import { saleProducts } from '@/lib/products';
+import type { CatalogProduct } from '@/lib/products';
 import { useSwiperControls } from '@/lib/useSwiperControls';
 
 function SliderArrow() {
@@ -18,15 +18,16 @@ function SliderArrow() {
   );
 }
 
-export default function SaleProducts() {
+export default function SaleProducts({ products = [] }: { products?: CatalogProduct[] }) {
   const { prevRef, nextRef, ready } = useSwiperControls();
+  if (!products.length) return null;
 
   return (
     <section className="ga-slider-section">
       <div className="container">
         <header className="ga-slider-header">
           <h2 className="ga-slider-heading">
-            <Link href="/products">Хямдрал</Link>
+            <Link href="/list?sort=onsale">Хямдрал</Link>
           </h2>
           <div className="ga-slider-controls">
             <button ref={prevRef} type="button" className="ga-slider-control" aria-label="Өмнөх">
@@ -56,14 +57,14 @@ export default function SaleProducts() {
           navigation={ready ? { prevEl: prevRef.current, nextEl: nextRef.current } : false}
           className="ga-product-slider"
         >
-          {saleProducts.map((product) => (
+          {products.map((product) => (
             <SwiperSlide key={product.id}>
               <ProductCard {...product} />
             </SwiperSlide>
           ))}
           <SwiperSlide>
             <article className="ga-slider-more">
-              <Link href="/products" className="ga-slider-more__action">
+              <Link href="/list?sort=onsale" className="ga-slider-more__action">
                 <span className="ga-slider-more__btn">
                   бүгдийг харах
                   <svg fill="none" viewBox="0 0 14 11" aria-hidden="true">

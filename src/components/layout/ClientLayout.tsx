@@ -9,8 +9,9 @@ import EstelScripts from '@/components/providers/EstelScripts';
 
 import CartProvider from '@/components/providers/CartProvider';
 import QuickViewProvider from '@/components/providers/QuickViewProvider';
+import type { MenuTaxon } from '@/lib/api/sylius';
 
-export default function ClientLayout({ children }: { children: React.ReactNode }) {
+export default function ClientLayout({ children, taxons = [] }: { children: React.ReactNode; taxons?: MenuTaxon[] }) {
   return (
     <CartProvider>
     <QuickViewProvider>
@@ -18,7 +19,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       <Header />
       <main className="">{children}</main>
       <Footer />
-      <MainMenuOffcanvas />
+      <MainMenuOffcanvas taxons={taxons} />
       <CartOffcanvas />
       <LoginOffcanvas />
       <BootstrapClient />
