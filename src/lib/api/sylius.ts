@@ -4,7 +4,7 @@ import { CONSUMER_ROOT_TAXONS, isDresserProduct, isDresserTaxonCode } from '@/li
 
 export const SYLIUS_BASE_URL = process.env.NEXT_PUBLIC_SYLIUS_URL || 'https://estel.nextstore.mn';
 
-export type ProductSort = 'newest' | 'price-asc' | 'price-desc' | 'onsale';
+export type ProductSort = 'random' | 'newest' | 'price-asc' | 'price-desc' | 'onsale';
 
 export interface SyliusImage {
   id: number;
@@ -136,11 +136,63 @@ function variantLabel(variant: SyliusVariant): string {
   return match ? match[1].replace(/\s+/g, '') : source;
 }
 
-function isRecentlyCreated(createdAt?: string): boolean {
+function productTime(product: SyliusProduct): number {
+  if (product.createdAt) {
+    const created = new Date(product.createdAt.replace(' ', 'T')).getTime();
+    if (!Number.isNaN(created)) return created;
+  }
+  return product.id || 0;
+}
+
+export function isRecentlyCreated(createdAt?: string): boolean {
   if (!createdAt) return false;
   const created = new Date(createdAt.replace(' ', 'T')).getTime();
   if (Number.isNaN(created)) return false;
   return Date.now() - created < 90 * 24 * 60 * 60 * 1000;
+}
+
+export function filterNewProducts(products: SyliusProduct[]): SyliusProduct[] {
+  const ranked = [...products].sort((a, b) => productTime(b) - productTime(a));
+  const recent = ranked.filter((product) => isRecentlyCreated(product.createdAt));
+  if (recent.length >= 8) return recent;
+  return ranked.slice(0, Math.min(24, ranked.length));
+}
+
+export function sortSyliusProducts(products: SyliusProduct[], sort: ProductSort, seed = ''): SyliusProduct[] {
+  const copy = [...products];
+  if (sort === 'price-asc' || sort === 'price-desc') {
+    copy.sort((a, b) => {
+      const pa = a.variants?.[0]?.price ?? 0;
+      const pb = b.variants?.[0]?.price ?? 0;
+      return sort === 'price-asc' ? pa - pb : pb - pa;
+    });
+    return copy;
+  }
+  if (sort === 'onsale') {
+    return copy.filter(isOnSale).sort((a, b) => productTime(b) - productTime(a));
+  }
+  if (sort === 'newest') {
+    return copy.sort((a, b) => productTime(b) - productTime(a));
+  }
+  return seededShuffle(copy, seed || `${new Date().toISOString().slice(0, 10)}:${copy.length}`);
+}
+
+function seededShuffle<T>(items: T[], seed: string): T[] {
+  const copy = [...items];
+  let hash = 2166136261;
+  for (let i = 0; i < seed.length; i += 1) hash = Math.imul(hash ^ seed.charCodeAt(i), 16777619);
+  let t = hash >>> 0;
+  const rand = () => {
+    t += 0x6d2b79f5;
+    let r = Math.imul(t ^ (t >>> 15), t | 1);
+    r ^= r + Math.imul(r ^ (r >>> 7), r | 61);
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rand() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
 }
 
 export function toCatalogProduct(product: SyliusProduct, opts?: { forceNew?: boolean }): CatalogProduct {
@@ -237,6 +289,59 @@ export async function getSyliusProducts(options?: {
 }): Promise<SyliusProduct[]> {
   const { items } = await getSyliusProductsCollection(options);
   return items;
+}
+
+export async function getAllSyliusProducts(options?: {
+  taxonCode?: string;
+  audience?: 'consumer' | 'dresser';
+}): Promise<SyliusProduct[]> {
+  const itemsPerPage = 50;
+  const audience = options?.audience || 'consumer';
+  const collected: SyliusProduct[] = [];
+
+  const first = await fetchShopProductsPage({
+    taxonCode: options?.taxonCode,
+    page: 1,
+    itemsPerPage,
+  });
+  collected.push(...first.items);
+
+  const totalPages = Math.min(30, Math.max(1, Math.ceil((first.total || first.items.length) / itemsPerPage)));
+  if (totalPages > 1) {
+    const rest = await Promise.all(
+      Array.from({ length: totalPages - 1 }, (_, index) =>
+        fetchShopProductsPage({
+          taxonCode: options?.taxonCode,
+          page: index + 2,
+          itemsPerPage,
+        })
+      )
+    );
+    for (const page of rest) collected.push(...page.items);
+  }
+
+  const seen = new Set<string>();
+  return collected.filter((product) => {
+    if (!product?.code || seen.has(product.code)) return false;
+    seen.add(product.code);
+    return audience === 'dresser' ? isDresserProduct(product) : !isDresserProduct(product);
+  });
+}
+
+async function fetchShopProductsPage(options: {
+  taxonCode?: string;
+  page: number;
+  itemsPerPage: number;
+}): Promise<SyliusProductCollection> {
+  const params = new URLSearchParams();
+  if (options.taxonCode) params.append('productTaxons.taxon.code', options.taxonCode);
+  params.append('page', String(options.page));
+  params.append('itemsPerPage', String(options.itemsPerPage));
+  params.append('order[createdAt]', 'desc');
+  const res = await fetch(`${SYLIUS_BASE_URL}/api/v2/shop/products?${params.toString()}`, fetchOpts());
+  if (!res.ok) return { items: [], total: 0 };
+  const data = await res.json();
+  return { items: unwrapList<SyliusProduct>(data), total: unwrapTotal(data, 0) };
 }
 
 export async function getSyliusProductByCode(code: string): Promise<SyliusProduct | null> {

@@ -8,12 +8,14 @@ import BootstrapClient from '@/components/providers/BootstrapClient';
 import EstelScripts from '@/components/providers/EstelScripts';
 
 import CartProvider from '@/components/providers/CartProvider';
+import WishlistProvider from '@/components/providers/WishlistProvider';
 import QuickViewProvider from '@/components/providers/QuickViewProvider';
 import type { MenuTaxon } from '@/lib/api/sylius';
 
 export default function ClientLayout({ children, taxons = [] }: { children: React.ReactNode; taxons?: MenuTaxon[] }) {
   return (
     <CartProvider>
+    <WishlistProvider>
     <QuickViewProvider>
       <PromoBar />
       <Header />
@@ -25,6 +27,7 @@ export default function ClientLayout({ children, taxons = [] }: { children: Reac
       <BootstrapClient />
       <EstelScripts />
     </QuickViewProvider>
+    </WishlistProvider>
     </CartProvider>
   );
 }

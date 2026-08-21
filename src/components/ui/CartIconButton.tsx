@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import CartBagIcon from '@/components/ui/CartBagIcon';
 import { useQuickView } from '@/components/providers/QuickViewProvider';
+import { useCart } from '@/components/providers/CartProvider';
+import { openCartDrawer } from '@/lib/cart';
 import type { CatalogProduct } from '@/lib/products';
 
 type Props = {
@@ -12,7 +13,8 @@ type Props = {
 
 export default function CartIconButton({ product, className = '' }: Props) {
   const { addToCart } = useQuickView();
-  const [added, setAdded] = useState(false);
+  const { items } = useCart();
+  const added = Boolean(product && items.some((item) => item.productId === product.id));
 
   return (
     <button
@@ -23,7 +25,10 @@ export default function CartIconButton({ product, className = '' }: Props) {
         e.preventDefault();
         e.stopPropagation();
         if (!product) return;
-        setAdded(true);
+        if (added) {
+          openCartDrawer();
+          return;
+        }
         addToCart(product);
       }}
     >

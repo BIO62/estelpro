@@ -28,6 +28,87 @@ header .btn {
   border-color: transparent;
 }
 
+header {
+  background: #fff;
+}
+
+header .header-logo {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+header .header-wish-btn,
+header .btn {
+  position: relative;
+  z-index: 4;
+  pointer-events: auto;
+}
+
+.mainMenuCanvas .navigationLevelOne,
+.mainMenuCanvas .navigationLevelTwo {
+  pointer-events: none;
+  transform: translateX(-110%);
+  visibility: hidden;
+  z-index: 3;
+}
+
+.mainMenuCanvas .navigationLevelOne.active,
+.mainMenuCanvas .navigationLevelTwo.active {
+  pointer-events: auto;
+  transform: translateX(0);
+  visibility: visible;
+}
+
+.navigationLevelOne .singleNav .singleNavImage,
+.navigationLevelTwo .singleNav .singleNavImage {
+  position: relative;
+  background-color: #fff;
+}
+
+.navigationLevelOne .singleNav .singleNavImage img,
+.navigationLevelTwo .singleNav .singleNavImage img {
+  display: block;
+  transition: opacity 0.2s ease;
+}
+
+.navigationLevelOne .singleNav .singleNavImage::after,
+.navigationLevelTwo .singleNav .singleNavImage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #4a4a4a;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.navigationLevelOne .singleNav.darkenImage .singleNavImage::after,
+.navigationLevelTwo .singleNav.darkenImage .singleNavImage::after {
+  opacity: 0.72;
+}
+
+@media (hover: hover) {
+  .navTileGrid:hover .singleNav .singleNavImage::after {
+    opacity: 0.72;
+  }
+
+  .navTileGrid:hover .singleNav:hover .singleNavImage::after,
+  .navTileGrid:hover .singleNav:hover .singleNavImage img {
+    opacity: 1;
+  }
+
+  .ga-plp-grid:hover .ga-plp-item {
+    opacity: 0.38;
+    transition: opacity 0.2s ease;
+  }
+
+  .ga-plp-grid:hover .ga-plp-item:hover {
+    opacity: 1;
+  }
+}
+
 .thumbSlider .swiper-slide video {
   width: 100%;
   height: auto;
@@ -659,6 +740,7 @@ header .btn {
 
 .ga-card__units {
   display: flex;
+  align-items: center;
   gap: 8px;
 }
 
@@ -672,6 +754,12 @@ header .btn {
   justify-content: center;
   font-size: 12px;
   line-height: 1;
+}
+
+.ga-card__unit-more {
+  font-size: 12px;
+  line-height: 1;
+  color: #767676;
 }
 
 .ga-card__type {
@@ -717,24 +805,16 @@ header .btn {
   color: #b4b4b4;
 }
 
-.ga-card__actions {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  aspect-ratio: 1 / 1;
-  pointer-events: none;
-}
-
 .ga-card__labels {
   position: absolute;
   top: 8px;
   left: 8px;
-  z-index: 2;
+  z-index: 3;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
+  pointer-events: none;
 }
 
 .ga-card__label {
@@ -767,7 +847,7 @@ header .btn {
   position: absolute;
   top: 8px;
   right: 8px;
-  z-index: 2;
+  z-index: 3;
   width: 32px;
   height: 32px;
   padding: 0;
@@ -789,12 +869,30 @@ header .btn {
   color: #ff006e;
 }
 
+.ga-plp-banner {
+  height: 240px;
+}
+
 .ga-card__cart {
   position: absolute;
   right: 8px;
   bottom: 8px;
   z-index: 2;
   pointer-events: auto;
+}
+
+@media (hover: hover) {
+  .ga-card__cart {
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .ga-card:hover .ga-card__cart,
+  .ga-card__cart:has(.is-added) {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .ga-card__cart-btn {
@@ -819,6 +917,116 @@ header .btn {
 .ga-card__cart-btn.is-added {
   background: #111;
   color: #fff;
+}
+
+.ga-card__coupon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  line-height: 1.2;
+  color: #111;
+  background:
+    radial-gradient(circle at 0 50%, transparent 5px, #f3f3f3 5.5px) left / 12px 100% no-repeat,
+    radial-gradient(circle at 100% 50%, transparent 5px, #f3f3f3 5.5px) right / 12px 100% no-repeat,
+    linear-gradient(#f3f3f3, #f3f3f3) center / calc(100% - 12px) 100% no-repeat;
+}
+
+.ga-card__coupon-div {
+  color: #b4b4b4;
+}
+
+.ga-card__price-from {
+  font-size: 0.7em;
+  font-weight: 400;
+}
+
+.ga-card--l .ga-card__type {
+  font-size: 14px;
+}
+
+.ga-card--l .ga-card__name {
+  font-size: 16px;
+}
+
+.ga-card--l .ga-card__price {
+  font-size: 25px;
+}
+
+.ga-card--l .ga-card__color {
+  width: 18px;
+  height: 18px;
+}
+
+.ga-card--h .ga-card__body {
+  height: 100%;
+}
+
+.ga-card--h .ga-card__link {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  height: 100%;
+}
+
+.ga-card--h .ga-card__info {
+  padding: 16px 16px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.ga-card--h .ga-card__price {
+  font-size: 23px;
+}
+
+.ga-card--l .ga-card__ratio {
+  aspect-ratio: 4 / 5;
+}
+
+.ga-plp-grid {
+  --column-count: 4;
+  --row-gap: 12px;
+  --column-gap: 16px;
+  position: relative;
+  width: 100%;
+}
+
+.ga-plp-item {
+  min-width: 0;
+}
+
+.ga-plp-item .ga-card__info {
+  padding-top: 8px;
+}
+
+@media (max-width: 1199.98px) {
+  .ga-plp-grid {
+    --column-count: 2;
+    --row-gap: 12px;
+    --column-gap: 12px;
+  }
+
+  .ga-card--l .ga-card__ratio {
+    aspect-ratio: 1 / 1;
+  }
+
+  .ga-card--h .ga-card__link {
+    display: flex;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .ga-plp-grid {
+    --row-gap: 10px;
+    --column-gap: 8px;
+  }
+
+  .ga-card--l .ga-card__price {
+    font-size: 20px;
+  }
 }
 
 .ga-slider-more {

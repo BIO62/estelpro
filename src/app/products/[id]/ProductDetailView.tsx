@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { assetUrl } from '@/lib/constants';
 import RelatedProducts from '@/components/ui/RelatedProducts';
 import { useQuickView } from '@/components/providers/QuickViewProvider';
+import { useWishlist } from '@/components/providers/WishlistProvider';
 import type { CatalogProduct } from '@/lib/products';
 
 type Props = {
@@ -19,6 +20,8 @@ export default function ProductDetailView({ product, related, description, inSto
   const [qty, setQty] = useState(1);
   const [sizeIdx, setSizeIdx] = useState(0);
   const { addToCart } = useQuickView();
+  const { has, toggle } = useWishlist();
+  const wished = has(product.id);
   const size = product.sizes?.[sizeIdx];
   const price = size?.price || product.price;
   const original = size?.originalPrice || product.originalPrice;
@@ -135,8 +138,19 @@ export default function ProductDetailView({ product, related, description, inSto
                   <img src={assetUrl('images/icons/cartAddWhite.svg')} alt="" />
                   <strong>Сагслах</strong>
                 </button>
-                <button type="button" className="btn btn-main p-3 wishlistBtn2 d-flex align-items-center justify-content-center" style={{ border: '1px solid #fff' }}>
-                  <img src={assetUrl('images/icons/heart.svg')} alt="" className="w-20 h-20" style={{ filter: 'brightness(0) invert(1)' }} />
+                <button
+                  type="button"
+                  className="btn btn-main p-3 wishlistBtn2 d-flex align-items-center justify-content-center"
+                  style={{ border: '1px solid #fff' }}
+                  aria-label={wished ? 'Хадгалснаас хасах' : 'Хадгалах'}
+                  onClick={() => toggle(product)}
+                >
+                  <img
+                    src={assetUrl(wished ? 'images/icons/heartSolidRed.svg' : 'images/icons/heart.svg')}
+                    alt=""
+                    className="w-20 h-20"
+                    style={wished ? undefined : { filter: 'brightness(0) invert(1)' }}
+                  />
                 </button>
               </div>
 

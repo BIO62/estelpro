@@ -7,9 +7,9 @@ import { Autoplay } from 'swiper/modules';
 import { assetUrl } from '@/lib/constants';
 
 const toastProducts = [
-  { img: 'images/demo/product1.jpg', text: 'Magni voluptatibus nulla nisi placeat quasi error dolorem, illo quibusdam in.' },
-  { img: 'images/demo/product2.jpg', text: 'Lorem ipsum dolor sit amet consectetur adipisicing elit.' },
-  { img: 'images/demo/product3.jpg', text: 'Earum voluptas magni voluptatibus laudantium impedit et ut eligendi sed molestias.' },
+  { img: 'images/demo/product1.jpg', text: 'Буурал үсийг 100% дарах тогтвортой крем-гель будаг.' },
+  { img: 'images/demo/product2.jpg', text: 'Буурал үсийг 100% дарах тогтвортой крем-гель будаг.' },
+  { img: 'images/demo/product3.jpg', text: 'Буурал үсийг 100% дарах тогтвортой крем-гель будаг.' },
 ];
 
 export default function HeroSlider() {

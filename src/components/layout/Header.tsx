@@ -33,12 +33,12 @@ export default function Header() {
               <img src={assetUrl('images/icons/search.svg')} alt="" />
             </button>
           </div>
-          <Link href="/" className="d-block py-3">
+          <Link href="/" className="header-logo d-block py-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={assetUrl('images/logo.svg')} alt="" className="h-24" />
           </Link>
-          <div className="d-flex">
-            <Link href="/wishlist" className="btn p-2">
+          <div className="d-flex position-relative" style={{ zIndex: 3 }}>
+            <Link href="/wishlist" className="btn p-2 header-wish-btn" aria-label="Хадгалсан бараа">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={assetUrl('images/icons/heart.svg')} alt="" />
             </Link>

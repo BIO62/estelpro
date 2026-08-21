@@ -3,12 +3,14 @@
 import Link from 'next/link';
 import { assetUrl } from '@/lib/constants';
 import CartIconButton from '@/components/ui/CartIconButton';
+import WishlistButton from '@/components/ui/WishlistButton';
 import type { CatalogProduct } from '@/lib/products';
 
 type ProductCardProps = Partial<CatalogProduct> & {
   id: string;
   wished?: boolean;
   className?: string;
+  layout?: 's' | 'l' | 'h';
 };
 
 export default function ProductCard({
@@ -25,8 +27,8 @@ export default function ProductCard({
   gallery,
   sizes,
   shades,
-  wished = false,
   className = '',
+  layout = 's',
 }: ProductCardProps) {
   const product: CatalogProduct = {
     id,
@@ -47,11 +49,12 @@ export default function ProductCard({
   const displayOriginal = sizes?.[0]?.originalPrice || originalPrice;
   const showSizes = Boolean(sizes && sizes.length > 1);
   const showShades = Boolean(shades && shades.length > 0);
-  const extraShades = shades && shades.length > 3 ? shades.length - 3 : 0;
+  const extraShades = shades && shades.length > 2 ? shades.length - 2 : 0;
+  const extraSizes = sizes && sizes.length > 2 ? sizes.length - 2 : 0;
   const hoverImages = (gallery && gallery.length > 1 ? gallery.slice(1, 6) : []).filter(Boolean);
 
   return (
-    <article className={`ga-card ${className}`}>
+    <article className={`ga-card ga-card--${layout}${className ? ` ${className}` : ''}`}>
       <div className="ga-card__body">
         <Link href={`/products/${encodeURIComponent(id)}`} className="ga-card__link">
           <div className="ga-card__ratio">
@@ -67,13 +70,24 @@ export default function ProductCard({
                 </div>
               ))}
             </div>
+            {(discount || hit || isNew) && (
+              <div className="ga-card__labels">
+                {discount && <span className="ga-card__label ga-card__label--sale">{discount}</span>}
+                {hit && <span className="ga-card__label ga-card__label--hit">HIT</span>}
+                {isNew && <span className="ga-card__label ga-card__label--new">NEW</span>}
+              </div>
+            )}
+            <WishlistButton product={product} />
+            <div className="ga-card__cart">
+              <CartIconButton product={product} className="ga-card__cart-btn" />
+            </div>
           </div>
           <div className="ga-card__info">
             {(showShades || showSizes) && (
               <div className="ga-card__attrs">
                 {showShades && (
                   <div className="ga-card__colors">
-                    {shades!.slice(0, 3).map((shade) => (
+                    {shades!.slice(0, 2).map((shade) => (
                       <span
                         key={shade.id}
                         className="ga-card__color"
@@ -86,11 +100,12 @@ export default function ProductCard({
                 )}
                 {showSizes && (
                   <div className="ga-card__units">
-                    {sizes!.map((size) => (
+                    {sizes!.slice(0, 2).map((size) => (
                       <span key={size.label} className="ga-card__unit">
                         {size.label}
                       </span>
                     ))}
+                    {extraSizes > 0 && <span className="ga-card__unit-more">+{extraSizes}</span>}
                   </div>
                 )}
               </div>
@@ -100,37 +115,20 @@ export default function ProductCard({
               <span className="ga-card__brand">{brand}</span>
               <span className="ga-card__title">{name}</span>
             </div>
+            {discount && (
+              <div className="ga-card__coupon">
+                <span>ХЯМДРАЛ</span>
+                <span className="ga-card__coupon-div">|</span>
+                <span>{`до −${String(discount).replace(/^[−\-]?/, '').replace(/%$/, '')}%`}</span>
+              </div>
+            )}
             <div className="ga-card__price">
+              {showSizes && <span className="ga-card__price-from">от</span>}
               <strong>{displayPrice}</strong>
               {displayOriginal && <s>{displayOriginal}</s>}
             </div>
           </div>
         </Link>
-        <div className="ga-card__actions">
-          {(discount || hit || isNew) && (
-            <div className="ga-card__labels">
-              {discount && <span className="ga-card__label ga-card__label--sale">{discount}</span>}
-              {hit && <span className="ga-card__label ga-card__label--hit">HIT</span>}
-              {isNew && <span className="ga-card__label ga-card__label--new">NEW</span>}
-            </div>
-          )}
-          <button
-            type="button"
-            className={`ga-card__fav${wished ? ' is-active' : ''}`}
-            aria-label="Хадгалах"
-          >
-            <svg viewBox="0 0 15 15" aria-hidden="true">
-              <path
-                fill={wished ? 'currentColor' : 'none'}
-                stroke="currentColor"
-                d="m7.138 3.04.362.38.361-.38c.382-.398 1.253-1.104 2.296-1.402 1.003-.286 2.167-.202 3.281.963 1.119 1.17 1.208 2.41.928 3.484-.288 1.103-.967 2.02-1.348 2.417l-3.255 3.406-1.824 1.909-.44.46-.438-.46-1.824-1.909-3.255-3.406C1.602 8.104.922 7.188.634 6.085.354 5.01.443 3.772 1.561 2.6c1.114-1.165 2.279-1.25 3.282-.963 1.042.298 1.914 1.004 2.295 1.403Z"
-              />
-            </svg>
-          </button>
-          <div className="ga-card__cart">
-            <CartIconButton product={product} className="ga-card__cart-btn" />
-          </div>
-        </div>
       </div>
     </article>
   );

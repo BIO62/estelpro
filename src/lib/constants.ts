@@ -1,11 +1,17 @@
 export const ASSET_BASE = 'https://alphalabs.mn/nextstore-html/estel';
+export const ASSET_VERSION = '20260821';
 
 export const FALLBACK_PRODUCT_IMAGE = 'images/demo/product6.jpg';
 
 export function assetUrl(path: string): string {
-  if (!path) return `${ASSET_BASE}/${FALLBACK_PRODUCT_IMAGE}`;
+  if (!path) return assetUrl(FALLBACK_PRODUCT_IMAGE);
   if (/^https?:\/\//i.test(path)) return path;
-  return `${ASSET_BASE}/${path.replace(/^\//, '')}`;
+  const encoded = path
+    .replace(/^\//, '')
+    .split('/')
+    .map(encodeURIComponent)
+    .join('/');
+  return `${ASSET_BASE}/${encoded}?v=${ASSET_VERSION}`;
 }
 
 export const SITE_NAME = 'ESTEL';

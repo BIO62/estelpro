@@ -1,16 +1,39 @@
 import Link from 'next/link';
 import { assetUrl } from '@/lib/constants';
+import MasonryGrid from '@/components/catalog/MasonryGrid';
 import ProductCard from '@/components/ui/ProductCard';
 import {
-  getSyliusProductsCollection,
+  filterNewProducts,
+  getAllSyliusProducts,
   getSyliusTaxons,
+  sortSyliusProducts,
   toCatalogProduct,
   toMenuTaxons,
   type ProductSort,
 } from '@/lib/api/sylius';
 import { isDresserTaxonCode } from '@/lib/catalog-audience';
+import { getMenuBrand, MENU_BRANDS, productMatchesBrand } from '@/lib/brands';
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 24;
+
+const LISTING_PATTERN: { layout: 's' | 'l' | 'h' }[] = [
+  { layout: 's' },
+  { layout: 's' },
+  { layout: 'l' },
+  { layout: 'l' },
+  { layout: 's' },
+  { layout: 's' },
+  { layout: 's' },
+  { layout: 's' },
+  { layout: 'l' },
+  { layout: 's' },
+  { layout: 's' },
+  { layout: 'h' },
+];
+
+function listingSlot(index: number) {
+  return LISTING_PATTERN[index % LISTING_PATTERN.length];
+}
 
 function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -18,11 +41,12 @@ function firstParam(value: string | string[] | undefined) {
 
 function catalogHref(
   basePath: string,
-  params: { taxon?: string; sort?: string; page?: number }
+  params: { taxon?: string; brand?: string; sort?: string; page?: number }
 ) {
   const query = new URLSearchParams();
   if (params.taxon) query.set('taxon', params.taxon);
-  if (params.sort && params.sort !== 'newest') query.set('sort', params.sort);
+  if (params.brand) query.set('brand', params.brand);
+  if (params.sort && params.sort !== 'random') query.set('sort', params.sort);
   if (params.page && params.page > 1) query.set('page', String(params.page));
   const qs = query.toString();
   return qs ? `${basePath}?${qs}` : basePath;
@@ -45,15 +69,13 @@ export default async function ProductCatalog({
   let taxon = firstParam(sp.taxon);
   if (audience === 'consumer' && isDresserTaxonCode(taxon)) taxon = undefined;
   if (audience === 'dresser' && (!taxon || !isDresserTaxonCode(taxon))) taxon = 'hair_coloring';
-  const sort = (firstParam(sp.sort) as ProductSort) || 'newest';
+  const brand = getMenuBrand(firstParam(sp.brand))?.slug;
+  const sort = ((firstParam(sp.sort) as ProductSort) || (forceNew ? 'newest' : 'random')) as ProductSort;
   const page = Math.max(1, Number(firstParam(sp.page)) || 1);
 
-  const [collection, taxons] = await Promise.all([
-    getSyliusProductsCollection({
+  const [allProducts, taxons] = await Promise.all([
+    getAllSyliusProducts({
       taxonCode: taxon,
-      page,
-      itemsPerPage: PAGE_SIZE,
-      sort: forceNew ? 'newest' : sort,
       audience,
     }),
     getSyliusTaxons(),
@@ -63,25 +85,35 @@ export default async function ProductCatalog({
   const currentTaxon =
     menuTaxons.find((item) => item.code === taxon) ||
     menuTaxons.flatMap((item) => item.children).find((item) => item.code === taxon);
-  const products = collection.items.map((item) => toCatalogProduct(item, { forceNew }));
-  const knownTotal = collection.total;
-  const totalPages = knownTotal
-    ? Math.max(1, Math.ceil(knownTotal / PAGE_SIZE))
-    : page + (products.length === PAGE_SIZE ? 1 : 0);
-  const countLabel = knownTotal || products.length;
-  const title = currentTaxon?.name || defaultTitle;
-  const sortOptions: { value: ProductSort; label: string }[] = [
-    { value: 'newest', label: 'Шинэ эхэндээ' },
-    { value: 'price-asc', label: 'Үнэ: багаас их' },
-    { value: 'price-desc', label: 'Үнэ: ихээс бага' },
-    { value: 'onsale', label: 'Хямдралтай' },
-  ];
-  const sortLabel = sortOptions.find((item) => item.value === sort)?.label || 'Шинэ эхэндээ';
+  const currentBrand = getMenuBrand(brand);
+  const branded = brand ? allProducts.filter((item) => productMatchesBrand(item, brand)) : allProducts;
+  const filtered = forceNew ? filterNewProducts(branded) : branded;
+  const sorted = sortSyliusProducts(filtered, sort, `${taxon || 'all'}:${brand || 'all'}:${filtered.length}`);
+  const knownTotal = sorted.length;
+  const totalPages = Math.max(1, Math.ceil(knownTotal / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const products = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE).map((item) => toCatalogProduct(item));
+  const countLabel = knownTotal;
+  const title = currentBrand?.name || currentTaxon?.name || defaultTitle;
+  const sortOptions: { value: ProductSort; label: string }[] = forceNew
+    ? [
+        { value: 'newest', label: 'Шинэ эхэндээ' },
+        { value: 'price-asc', label: 'Үнэ: багаас их' },
+        { value: 'price-desc', label: 'Үнэ: ихээс бага' },
+      ]
+    : [
+        { value: 'random', label: 'Санамсаргүй' },
+        { value: 'newest', label: 'Шинэ эхэндээ' },
+        { value: 'price-asc', label: 'Үнэ: багаас их' },
+        { value: 'price-desc', label: 'Үнэ: ихээс бага' },
+        { value: 'onsale', label: 'Хямдралтай' },
+      ];
+  const sortLabel = sortOptions.find((item) => item.value === sort)?.label || sortOptions[0].label;
 
   const taxonLinks = menuTaxons.map((item) => (
     <Link
       key={item.code}
-      href={catalogHref(basePath, { taxon: item.code, sort })}
+                      href={catalogHref(basePath, { taxon: item.code, brand, sort })}
       className="filter-check text-decoration-none"
     >
       <span className={`filter-check-box${taxon === item.code ? ' bg-main' : ''}`} />
@@ -93,18 +125,9 @@ export default async function ProductCatalog({
     <>
       <section className="py-4">
         <div className="container">
-          <div className="row g-4">
-            <div className="col-lg-3 d-none d-lg-block">
-              <div className="filter-section">
-                <span className="filter-label d-block mb-3">Ангилал</span>
-                <div className="d-flex flex-column">{taxonLinks}</div>
-              </div>
-            </div>
-
-            <div className="col-12 col-lg-9">
-              <div className="position-relative overflow-hidden rounded-4 mb-4" style={{ height: '200px' }}>
+              <div className="position-relative overflow-hidden rounded-4 mb-4 ga-plp-banner">
                 <img
-                  src={assetUrl('images/demo/slide3.webp')}
+                  src={assetUrl('images/taxon/800x375 taxon banner.jpg')}
                   alt={title}
                   style={{ position: 'absolute', inset: '0', width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }}
                 />
@@ -121,7 +144,7 @@ export default async function ProductCatalog({
                   <strong className="fc-dark">{countLabel}</strong> бараа олдлоо
                 </span>
                 <div className="d-flex align-items-center gap-2">
-                  <button type="button" className="btn btn-outline-secondary btn-sm d-lg-none d-flex align-items-center gap-1" data-bs-toggle="offcanvas" data-bs-target="#filterCanvas">
+                  <button type="button" className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" data-bs-toggle="offcanvas" data-bs-target="#filterCanvas">
                     <img src={assetUrl('images/icons/swap.svg')} alt="" className="w-16 h-16" />
                     <span className="fs-13">Шүүлт</span>
                   </button>
@@ -134,7 +157,7 @@ export default async function ProductCatalog({
                       {sortOptions.map((option) => (
                         <li key={option.value}>
                           <Link
-                            href={catalogHref(basePath, { taxon, sort: option.value })}
+                            href={catalogHref(basePath, { taxon, brand, sort: option.value })}
                             className={`dropdown-item d-flex align-items-center justify-content-between px-3 py-2 fs-13${sort === option.value ? ' fw-semibold fc-main' : ''}`}
                           >
                             {option.label}
@@ -147,39 +170,46 @@ export default async function ProductCatalog({
                 </div>
               </div>
 
-              <div className="row g-3" id="productGrid">
-                {products.map((product) => (
-                  <div className="col-6 col-md-4" key={product.id}>
-                    <ProductCard {...product} />
-                  </div>
-                ))}
-              </div>
+              <MasonryGrid className="ga-plp-grid" id="productGrid">
+                {products.map((product, index) => {
+                  const slot = listingSlot(index);
+                  return (
+                    <div className={`ga-plp-item ga-plp-item--${slot.layout}`} key={product.id}>
+                      <ProductCard {...product} layout={slot.layout} />
+                    </div>
+                  );
+                })}
+              </MasonryGrid>
 
               {totalPages > 1 && (
                 <nav className="mt-5 d-flex justify-content-center" aria-label="Page navigation">
                   <ul className="pagination pagination-sm gap-1 mb-0">
-                    <li className={`page-item${page <= 1 ? ' disabled' : ''}`}>
-                      <Link className="page-link rounded-3 border-0" href={catalogHref(basePath, { taxon, sort, page: page - 1 })}>
+                    <li className={`page-item${safePage <= 1 ? ' disabled' : ''}`}>
+                      <Link className="page-link rounded-3 border-0" href={catalogHref(basePath, { taxon, brand, sort, page: safePage - 1 })}>
                         <img src={assetUrl('images/icons/chevronLeftSmall.svg')} alt="" className="w-16 h-16" />
                       </Link>
                     </li>
-                    {Array.from({ length: Math.min(totalPages, 6) }, (_, i) => i + 1).map((n) => (
-                      <li className={`page-item${n === page ? ' active' : ''}`} key={n}>
-                        <Link className="page-link rounded-3 border-0" href={catalogHref(basePath, { taxon, sort, page: n })}>
+                    {Array.from({ length: Math.min(totalPages, 8) }, (_, i) => {
+                      const window = Math.min(totalPages, 8);
+                      const start = Math.max(1, Math.min(safePage - 3, totalPages - window + 1));
+                      return start + i;
+                    })
+                      .filter((n) => n >= 1 && n <= totalPages)
+                      .map((n) => (
+                      <li className={`page-item${n === safePage ? ' active' : ''}`} key={n}>
+                        <Link className="page-link rounded-3 border-0" href={catalogHref(basePath, { taxon, brand, sort, page: n })}>
                           {n}
                         </Link>
                       </li>
                     ))}
-                    <li className={`page-item${page >= totalPages ? ' disabled' : ''}`}>
-                      <Link className="page-link rounded-3 border-0" href={catalogHref(basePath, { taxon, sort, page: page + 1 })}>
+                    <li className={`page-item${safePage >= totalPages ? ' disabled' : ''}`}>
+                      <Link className="page-link rounded-3 border-0" href={catalogHref(basePath, { taxon, brand, sort, page: safePage + 1 })}>
                         <img src={assetUrl('images/icons/chevronRightSmall.svg')} alt="" className="w-16 h-16" />
                       </Link>
                     </li>
                   </ul>
                 </nav>
               )}
-            </div>
-          </div>
         </div>
       </section>
 
@@ -195,6 +225,21 @@ export default async function ProductCatalog({
             <div className="filter-section">
               <span className="filter-label d-block mb-3">Ангилал</span>
               <div className="d-flex flex-column">{taxonLinks}</div>
+            </div>
+            <div className="filter-section mt-4">
+              <span className="filter-label d-block mb-3">Брэнд</span>
+              <div className="d-flex flex-column">
+                {MENU_BRANDS.map((item) => (
+                  <Link
+                    key={item.slug}
+                    href={catalogHref(basePath, { taxon, brand: item.slug, sort })}
+                    className="filter-check text-decoration-none"
+                  >
+                    <span className={`filter-check-box${brand === item.slug ? ' bg-main' : ''}`} />
+                    <span className="fs-13 fc-dark">{item.name}</span>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
           <div className="pt-3">
