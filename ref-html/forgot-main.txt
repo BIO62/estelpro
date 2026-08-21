@@ -1,0 +1,23 @@
+<section class="pt-4 pt-sm-5 pb-5 d-flex align-items-start" style="min-height:calc(100vh - 120px);background:#fff;">
+      <div class="container">
+        <div class="row justify-content-center">
+          <div class="col-sm-9 col-md-6 col-lg-4">
+            <div class="bg-white rounded-4 p-4" style="box-shadow:0 4px 32px rgba(0,0,0,.07);">
+              <a href="login.html" class="d-inline-flex align-items-center gap-1 text-decoration-none fc-secondary fs-13 mb-4">
+                <img src="images/icons/chevronLeftSmall.svg" alt="" class="w-16 h-16">
+                Буцах
+              </a>
+              <h5 class="fw-bold mb-1">Нууц үг сэргээх</h5>
+              <p class="fc-secondary fs-13 mb-4">Бүртгэлтэй утасны дугаар эсвэл имэйл хаягаа оруулна уу. Баталгаажуулах код илгээнэ.</p>
+              <div class="d-flex flex-column gap-3">
+                <div class="form-floating">
+                  <input type="text" class="form-control rounded-3" id="forgotPhone" placeholder=" ">
+                  <label for="forgotPhone" class="fc-secondary">Утасны дугаар эсвэл Имэйл</label>
+                </div>
+                <a href="verify.html" class="btn btn-main p-3 rounded-3 fw-semibold text-decoration-none text-center">Код илгээх</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>

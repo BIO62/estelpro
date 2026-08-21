@@ -1,0 +1,113 @@
+<!-- Mobile tab bar -->
+    <div class="d-lg-none border-bottom bg-white">
+      <div class="container">
+        <nav style="display:grid;grid-template-columns:1fr 1fr;">
+          <a href="profile.html" class="btn btn-sm fs-13 fc-secondary py-2 text-start">Хувийн мэдээлэл</a>
+          <a href="address.html" class="btn btn-sm fs-13 fc-secondary py-2 text-start">Хүргэлтийн хаяг</a>
+          <a href="orders.html" class="btn btn-sm fs-13 fw-semibold fc-main py-2 text-start">Миний захиалгууд</a>
+          <a href="wishlist.html" class="btn btn-sm fs-13 fc-secondary py-2 text-start">Хадгалсан бараа</a>
+        </nav>
+      </div>
+    </div>
+
+    <section class="py-5">
+      <div class="container">
+        <div class="row g-5 align-items-start">
+
+          <!-- Account sidebar -->
+          <div class="col-lg-3 d-none d-lg-block">
+            <div class="sticky-top" style="top:88px;">
+              <div class="d-flex align-items-center gap-3 mb-4 pb-4" style="border-bottom:1px solid rgba(0,0,0,.07);">
+                <div class="d-flex align-items-center justify-content-center bg-main fc-white fw-bold rounded-5 flex-shrink-0" style="width:44px;height:44px;font-size:18px;">Б</div>
+                <div style="min-width:0;">
+                  <strong class="d-block fs-14 lh-sm text-truncate">Батболд</strong>
+                  <span class="fs-12 fc-secondary d-block text-truncate">batbold@gmail.com</span>
+                </div>
+              </div>
+              <span class="d-block fs-11 fw-bold text-uppercase fc-secondary mb-3" style="letter-spacing:.12em;">Миний бүртгэл</span>
+              <nav class="d-flex flex-column">
+                <a href="profile.html" class="side-nav-item">Хувийн мэдээлэл</a>
+                <a href="address.html" class="side-nav-item">Хүргэлтийн хаяг</a>
+                <a href="orders.html" class="side-nav-item active">Миний захиалгууд</a>
+                <a href="wishlist.html" class="side-nav-item">Хадгалсан бараа</a>
+              </nav>
+              <div style="border-top:1px solid rgba(0,0,0,.07);margin-top:8px;padding-top:8px;">
+                <button class="side-nav-item border-0 bg-transparent text-start w-100" style="color:#FF006E;">Системээс гарах</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Content -->
+          <div class="col-lg-9">
+            <!-- Header -->
+            <div class="d-flex align-items-start gap-3 mb-4 flex-wrap">
+              <div>
+                <h5 class="fw-bold mb-1">Захиалга #20240312</h5>
+                <span class="fc-secondary fs-13">2024.03.12 14:30 · 2 бараа</span>
+              </div>
+              <span class="ms-auto badge rounded-pill px-3 py-2 fs-12 fw-semibold flex-shrink-0" style="background:#FFF3E0;color:#C05500;">Хүлээгдэж буй</span>
+            </div>
+
+            <!-- Products -->
+            <div class="bg-white rounded-4 p-4 mb-3">
+              <strong class="d-block fs-14 mb-3">Барааны жагсаалт</strong>
+              <div class="d-flex flex-column gap-3">
+                <div class="d-flex gap-3 align-items-start">
+                  <a href="detail.html" class="flex-shrink-0">
+                    <img src="images/demo/product1.jpg" alt="" class="rounded-3 img-cover" style="width:64px;height:64px;object-fit:cover;">
+                  </a>
+                  <div class="flex-grow-1 min-width-0">
+                    <a href="detail.html" class="d-block fc-dark text-decoration-none fw-semibold lh-sm mb-1">De Luxe Үсний будаг 60мл</a>
+                    <span class="fc-secondary fs-13">× 2</span>
+                  </div>
+                  <strong class="flex-shrink-0 fs-14">36,000₮</strong>
+                </div>
+                <hr class="my-0 opacity-10">
+                <div class="d-flex gap-3 align-items-start">
+                  <a href="detail.html" class="flex-shrink-0">
+                    <img src="images/demo/product2.jpg" alt="" class="rounded-3 img-cover" style="width:64px;height:64px;object-fit:cover;">
+                  </a>
+                  <div class="flex-grow-1">
+                    <a href="detail.html" class="d-block fc-dark text-decoration-none fw-semibold lh-sm mb-1">Curex Balance шампунь 250мл</a>
+                    <span class="fc-secondary fs-13">× 1</span>
+                  </div>
+                  <strong class="flex-shrink-0 fs-14">24,500₮</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Address + Pricing -->
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="bg-white rounded-4 p-4 h-100">
+                  <strong class="d-block fs-14 mb-3">Хүргэлтийн хаяг</strong>
+                  <p class="fc-secondary fs-13 mb-1">Батболд Д.</p>
+                  <p class="fc-secondary fs-13 mb-1">+976 9900 0000</p>
+                  <p class="fc-secondary fs-13 mb-0">Улаанбаатар, Баянзүрх дүүрэг, 1-р хороо, Токиогийн гудамж 23</p>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="bg-white rounded-4 p-4 h-100">
+                  <strong class="d-block fs-14 mb-3">Төлбөрийн дүн</strong>
+                  <div class="d-flex justify-content-between fs-13 mb-2">
+                    <span class="fc-secondary">Барааны дүн</span>
+                    <span>60,500₮</span>
+                  </div>
+                  <div class="d-flex justify-content-between fs-13 mb-3">
+                    <span class="fc-secondary">Хүргэлт</span>
+                    <span>5,000₮</span>
+                  </div>
+                  <hr class="opacity-10 my-0 mb-3">
+                  <div class="d-flex justify-content-between fw-bold mb-3">
+                    <span>Нийт</span>
+                    <span>65,500₮</span>
+                  </div>
+                  <a href="payment.html" class="btn btn-main w-100 py-3 fw-semibold">Төлбөр төлөх</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>

@@ -1,0 +1,243 @@
+<section class="py-5" style="background:#fff;min-height:calc(100vh - 120px);">
+      <div class="container">
+        <div class="row g-4 align-items-start">
+
+          <!-- Left: form sections -->
+          <div class="col-lg-7">
+
+            <!-- 1. Хүргэлтийн хаяг -->
+            <div class="bg-white rounded-4 p-4 mb-4" style="box-shadow:0 2px 12px rgba(0,0,0,.05);">
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <div class="pay-step-dot pay-step-current" style="width:24px;height:24px;font-size:11px;">1</div>
+                <h6 class="fw-bold mb-0">Хүргэлтийн хаяг</h6>
+              </div>
+              <div class="rounded-3 p-3 d-flex align-items-start gap-3" style="background:#F8FBFF;border:1.5px solid #D0E6F7;">
+                <div>
+                  <div class="d-flex align-items-center gap-2 mb-1">
+                    <strong class="fs-14">Гэр</strong>
+                    <span class="bg-main fc-white fs-11 fw-semibold px-2 rounded-5" style="padding-top:2px;padding-bottom:2px;">Үндсэн</span>
+                  </div>
+                  <p class="fs-13 fc-secondary mb-1">Батболд Дорж · +976 9911-2233</p>
+                  <p class="fs-13 fc-dark mb-0">Сүхбаатар дүүрэг, 1-р хороо, Энхтайваны өргөн чөлөө 17</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Хүргэлтийн хугацаа -->
+            <div class="bg-white rounded-4 p-4 mb-4" style="box-shadow:0 2px 12px rgba(0,0,0,.05);">
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <div class="pay-step-dot pay-step-current" style="width:24px;height:24px;font-size:11px;">2</div>
+                <h6 class="fw-bold mb-0">Хүргэлтийн хугацаа</h6>
+              </div>
+              <div class="d-flex flex-column gap-2">
+                <label class="delivery-option d-flex align-items-center gap-3 p-3">
+                  <input type="radio" name="delivery" checked style="position:absolute;opacity:0;pointer-events:none;">
+                  <div class="pay-radio"></div>
+                  <div class="flex-grow-1">
+                    <strong class="fs-14 d-block lh-sm">Стандарт хүргэлт</strong>
+                    <span class="fs-12 fc-secondary">1–2 ажлын өдөр</span>
+                  </div>
+                  <span class="fw-semibold fs-14 flex-shrink-0">5,000₮</span>
+                </label>
+                <label class="delivery-option d-flex align-items-center gap-3 p-3">
+                  <input type="radio" name="delivery" style="position:absolute;opacity:0;pointer-events:none;">
+                  <div class="pay-radio"></div>
+                  <div class="flex-grow-1">
+                    <strong class="fs-14 d-block lh-sm">UB Cab хүргэлт</strong>
+                    <span class="fs-12 fc-secondary">Өнөөдөр 18:00 цагт</span>
+                  </div>
+                  <span class="fw-semibold fs-14 flex-shrink-0">Тооцоологдоно</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 3. Төлбөрийн арга -->
+            <div class="bg-white rounded-4 p-4" style="box-shadow:0 2px 12px rgba(0,0,0,.05);">
+              <div class="d-flex align-items-center gap-2 mb-4">
+                <div class="pay-step-dot pay-step-current" style="width:24px;height:24px;font-size:11px;">3</div>
+                <h6 class="fw-bold mb-0">Төлбөрийн арга</h6>
+              </div>
+
+              <!-- Method selector -->
+              <div class="row g-2 mb-4">
+                <div class="col-4">
+                  <label class="pay-method-card d-flex flex-column align-items-center gap-2 p-3 w-100 position-relative">
+                    <input type="radio" name="payMethod" value="qpay" checked>
+                    <img src="images/demo/qpay.png" alt="QPay" style="width:40px;height:40px;object-fit:contain;">
+                    <span class="fs-13 fw-semibold fc-dark">QPay</span>
+                  </label>
+                </div>
+                <div class="col-4">
+                  <label class="pay-method-card d-flex flex-column align-items-center gap-2 p-3 w-100 position-relative">
+                    <input type="radio" name="payMethod" value="storepay">
+                    <img src="images/storePay.png" alt="StorePay" style="width:40px;height:40px;object-fit:contain;">
+                    <span class="fs-13 fw-semibold fc-dark">StorePay</span>
+                  </label>
+                </div>
+                <div class="col-4">
+                  <label class="pay-method-card d-flex flex-column align-items-center gap-2 p-3 w-100 position-relative">
+                    <input type="radio" name="payMethod" value="pocket">
+                    <img src="images/pocketZero.png" alt="Pocket" style="width:40px;height:40px;object-fit:contain;">
+                    <span class="fs-13 fw-semibold fc-dark">Pocket</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- QPay panel -->
+              <div id="panel-qpay" class="pay-panel">
+                <div class="d-flex flex-column flex-sm-row align-items-start gap-4 rounded-3 p-4" style="background:#F8FBFF;border:1.5px solid #D0E6F7;">
+                  <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0 bg-white p-2" style="width:180px;height:180px;border:1.5px solid #D0E6F7;">
+                    <img src="images/demo/qr-code.svg" alt="QR код" style="width:156px;height:156px;">
+                  </div>
+                  <div class="d-flex flex-column gap-3">
+                    <div>
+                      <p class="fs-12 fc-secondary mb-1">Нийт төлөх дүн</p>
+                      <strong class="fc-dark" style="font-size:34px;letter-spacing:-.02em;line-height:1.1;">51,000₮</strong>
+                    </div>
+                    <div class="d-inline-flex align-items-center gap-2 rounded-3 px-3 py-2" style="background:#FFF9E6;width:fit-content;">
+                      <span class="fs-13" style="color:#856404;">Хүчинтэй: <strong id="payQpayTimer">04:59</strong></span>
+                    </div>
+                    <p class="fs-12 fc-secondary mb-0">QPay апп нээж, QR код уншуулна уу</p>
+                    <div class="d-flex gap-2">
+                      <button class="btn btn-outline-secondary rounded-3 px-3 py-2 fs-13">Дахин авах</button>
+                      <a href="qpay.html" class="btn btn-main rounded-3 px-3 py-2 fs-13">Q Pay</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pocket panel -->
+              <div id="panel-pocket" class="pay-panel d-none">
+                <div class="rounded-3 p-4 d-flex align-items-start gap-3" style="background:#F5F0FF;border:1.5px solid #D4BBFF;">
+                  <img src="images/pocketZero.png" alt="Pocket" class="flex-shrink-0 rounded-3" style="width:48px;height:48px;object-fit:contain;">
+                  <div>
+                    <strong class="fs-14 d-block mb-1">Pocket апп-р төлөх</strong>
+                    <p class="fs-13 fc-secondary mb-0">Pocket апп нээж QR кодыг уншуулах эсвэл утасны дугаараар шилжүүлнэ үү.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- StorePay panel -->
+              <div id="panel-storepay" class="pay-panel d-none">
+                <div class="rounded-3 p-4" style="background:#FFF5F9;border:1.5px solid #FFD6E8;">
+                  <div class="d-flex align-items-center gap-3 mb-3">
+                    <img src="images/storePay.png" alt="StorePay" class="flex-shrink-0 rounded-3" style="width:48px;height:48px;object-fit:contain;">
+                    <div>
+                      <strong class="fs-15 d-block">StorePay</strong>
+                      <span class="fs-12 fc-secondary">Одоо аваад, хожим төлөх</span>
+                    </div>
+                  </div>
+                  <div class="d-flex flex-column gap-2 mb-3">
+                    <div class="d-flex align-items-start gap-2 fs-13 fc-secondary">
+                      <span>30 хоногийн дотор, 0% хүүгүй төлнө</span>
+                    </div>
+                    <div class="d-flex align-items-start gap-2 fs-13 fc-secondary">
+                      <span>Нэмэлт хураамж, шимтгэл байхгүй</span>
+                    </div>
+                    <div class="d-flex align-items-start gap-2 fs-13 fc-secondary">
+                      <span>StorePay апп-д урьдчилан бүртгүүлсэн байх шаардлагатай</span>
+                    </div>
+                  </div>
+                  <p class="fs-12 fc-secondary mb-0">Захиалга баталгаажсаны дараа StorePay апп-р нэвтэрч баталгаажуулна уу.</p>
+                </div>
+              </div>
+
+              <button class="btn btn-main w-100 p-3 rounded-3 fw-semibold mt-3" style="font-size:15px;">Төлбөр шалгах</button>
+
+            </div>
+          </div>
+
+          <!-- Right: Order summary -->
+          <div class="col-lg-5">
+            <div class="bg-white rounded-4 p-4 sticky-top" style="top:88px;box-shadow:0 2px 12px rgba(0,0,0,.05);">
+              <h6 class="fw-bold mb-4">Захиалгын хураангуй</h6>
+
+              <!-- Items -->
+              <div class="d-flex flex-column gap-3 mb-4">
+                <div class="d-flex align-items-center gap-3">
+                  <img src="images/demo/product1.jpg" alt="" class="rounded-3 flex-shrink-0" style="width:56px;height:56px;object-fit:cover;">
+                  <div class="flex-grow-1" style="min-width:0;">
+                    <p class="fs-13 fw-semibold fc-dark mb-0 lh-sm" style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">ESTEL De Luxe Крем будаг 60 мл</p>
+                    <span class="fs-12 fc-secondary">×1</span>
+                  </div>
+                  <strong class="fs-14 flex-shrink-0">17,000₮</strong>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                  <img src="images/demo/product2.jpg" alt="" class="rounded-3 flex-shrink-0" style="width:56px;height:56px;object-fit:cover;">
+                  <div class="flex-grow-1" style="min-width:0;">
+                    <p class="fs-13 fw-semibold fc-dark mb-0 lh-sm" style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">Sensation Аммиакгүй будаг 60 мл</p>
+                    <span class="fs-12 fc-secondary">×1</span>
+                  </div>
+                  <strong class="fs-14 flex-shrink-0">17,000₮</strong>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                  <img src="images/demo/product3.jpg" alt="" class="rounded-3 flex-shrink-0" style="width:56px;height:56px;object-fit:cover;">
+                  <div class="flex-grow-1" style="min-width:0;">
+                    <p class="fs-13 fw-semibold fc-dark mb-0 lh-sm" style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">ESTEL Professional Окси крем 150 мл</p>
+                    <span class="fs-12 fc-secondary">×1</span>
+                  </div>
+                  <strong class="fs-14 flex-shrink-0">17,000₮</strong>
+                </div>
+              </div>
+
+              <hr style="opacity:.07;margin:0 0 16px;">
+
+              <!-- Breakdown -->
+              <div class="d-flex flex-column gap-2 mb-4">
+                <div class="d-flex justify-content-between">
+                  <span class="fs-13 fc-secondary">Барааны нийт</span>
+                  <span class="fs-13 fc-dark">54,000₮</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span class="fs-13 fc-secondary">Хүргэлтийн төлбөр</span>
+                  <span class="fs-13 fc-dark">5,000₮</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span class="fs-13 fc-secondary">Хямдрал</span>
+                  <span class="fs-13" style="color:#2D9B4E;">−6,000₮</span>
+                </div>
+              </div>
+
+              <hr style="opacity:.07;margin:0 0 16px;">
+
+              <div class="d-flex justify-content-between align-items-baseline mb-4">
+                <span class="fw-bold fs-14">Нийт төлөх</span>
+                <strong class="fc-dark" style="font-size:24px;letter-spacing:-.02em;">53,000₮</strong>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <script>
+      // Payment method switching
+      document.querySelectorAll('input[name="payMethod"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+          document.querySelectorAll('.pay-panel').forEach(p => p.classList.add('d-none'));
+          const panel = document.getElementById('panel-' + this.value);
+          if (panel) panel.classList.remove('d-none');
+        });
+      });
+
+      // QPay countdown
+      let qpaySeconds = 299;
+      const qpayEl = document.getElementById('payQpayTimer');
+      const qpayInterval = setInterval(() => {
+        qpaySeconds--;
+        if (qpaySeconds < 0) { qpayEl.textContent = '00:00'; clearInterval(qpayInterval); return; }
+        const m = String(Math.floor(qpaySeconds / 60)).padStart(2, '0');
+        const s = String(qpaySeconds % 60).padStart(2, '0');
+        qpayEl.textContent = m + ':' + s;
+      }, 1000);
+
+      // Bank selection
+      function selectBank(btn, name, acc) {
+        document.querySelectorAll('.bank-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('bankName').textContent = name;
+        document.getElementById('bankAccNum').textContent = acc;
+      }
+    </script>

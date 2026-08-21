@@ -1,0 +1,93 @@
+<!-- Mobile tab nav -->
+    <div class="d-lg-none border-bottom bg-white">
+      <div class="container">
+                <nav style="display:grid;grid-template-columns:1fr 1fr;">
+          <a href="about.html" class="btn btn-sm fs-13 fc-secondary py-2 text-start">Бидний тухай</a>
+          <a href="terms.html" class="btn btn-sm fs-13 fw-semibold fc-main py-2 text-start">Үйлчилгээний нөхцөл</a>
+          <a href="delivery_term.html" class="btn btn-sm fs-13 fc-secondary py-2 text-start">Хүргэлтийн нөхцөл</a>
+          <a href="payment_term.html" class="btn btn-sm fs-13 fc-secondary py-2 text-start">Төлбөрийн нөхцөл</a>
+        </nav>
+      </div>
+    </div>
+
+    <section class="py-5">
+      <div class="container">
+        <div class="row g-5 align-items-start">
+
+          <!-- Sidebar nav -->
+          <div class="col-lg-3 d-none d-lg-block">
+            <div class="sticky-top" style="top:88px;">
+              <nav class="d-flex flex-column">
+                <a href="about.html" class="side-nav-item">Бидний тухай</a>
+                <a href="terms.html" class="side-nav-item active">Үйлчилгээний нөхцөл</a>
+                <a href="delivery_term.html" class="side-nav-item">Хүргэлтийн нөхцөл</a>
+                <a href="payment_term.html" class="side-nav-item">Төлбөрийн нөхцөл</a>
+              </nav>
+            </div>
+          </div>
+
+          <div class="col-lg-9">
+            <h1 class="fw-bold fs-4 mb-5">Үйлчилгээний нөхцөл</h1>
+            <div class="d-flex flex-column gap-5">
+
+              <div>
+                <h2 class="fw-bold fs-5 mb-3">1. Ерөнхий заалт</h2>
+                <p class="fc-secondary lh-lg mb-2">ESTEL Store вэбсайтыг ашигласнаар та доорх үйлчилгээний нөхцлийг бүрэн хүлээн зөвшөөрч байна гэж үзнэ.</p>
+                <p class="fc-secondary lh-lg mb-0">Бид үйлчилгээний нөхцөлийг өөрчлөх эрхтэй бөгөөд өөрчлөлт орсон тохиолдолд вэбсайтад мэдэгдэл нийтлэнэ.</p>
+              </div>
+
+              <div>
+                <h2 class="fw-bold fs-5 mb-3">2. Бүртгэл ба нууцлал</h2>
+                <p class="fc-secondary lh-lg mb-2">Вэбсайтад бүртгүүлэхдээ та үнэн зөв, бүрэн мэдээлэл өгөх үүрэгтэй. Таны бүртгэл болон нууц үгийн аюулгүй байдлыг хангах хариуцлага өөрт тань байна.</p>
+                <ul class="fc-secondary lh-lg ps-4 mb-0">
+                  <li class="mb-2">Нэг хэрэглэгч зөвхөн нэг бүртгэлтэй байна.</li>
+                  <li class="mb-2">Бусдын мэдээллийг ашиглан бүртгүүлэхийг хориглоно.</li>
+                  <li class="mb-0">Бүртгэлийн мэдээллээ бусдад дамжуулахгүй.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h2 class="fw-bold fs-5 mb-3">3. Захиалга ба худалдан авалт</h2>
+                <p class="fc-secondary lh-lg mb-2">Захиалга хийснээр та тухайн бүтээгдэхүүний үнийг төлөх үүрэг хүлээнэ. Захиалга амжилттай болсны дараа SMS-ээр баталгаажуулалт илгээнэ.</p>
+                <p class="fc-secondary lh-lg mb-2">Дараах тохиолдолд захиалгыг цуцлах эрхийг бид өөртөө хадгална:</p>
+                <ul class="fc-secondary lh-lg ps-4 mb-0">
+                  <li class="mb-2">Бараа нөөцөд байхгүй болсон тохиолдолд</li>
+                  <li class="mb-2">Мэдээллийн алдаа (үнэ, тоо ширхэг) гарсан тохиолдолд.</li>
+                  <li class="mb-0">Төлбөр төлөгдөөгүй 24 цаг болсон тохиолдолд.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h2 class="fw-bold fs-5 mb-3">4. Буцаалт ба солилт</h2>
+                <p class="fc-secondary lh-lg mb-2">Бараа хүлээн авснаас хойш <strong>14 хоногийн дотор</strong> буцаах эсвэл солих боломжтой. Бараа анхны байдлаараа, савлагаатай, ашиглаагүй байх ёстой.</p>
+                <p class="fc-secondary lh-lg mb-2">Дараах тохиолдолд буцаалт хүлээн авахгүй:</p>
+                <ul class="fc-secondary lh-lg ps-4 mb-0">
+                  <li class="mb-2">Ашигласан буюу савлагаа нь гэмтсэн бараа</li>
+                  <li class="mb-2">Хугацаа дууссан бараа</li>
+                  <li class="mb-0">Тусгай захиалгаар хийсэн бараа</li>
+                </ul>
+              </div>
+
+              <div>
+                <h2 class="fw-bold fs-5 mb-3">5. Хориглох зүйлс</h2>
+                <ul class="fc-secondary lh-lg ps-4 mb-0">
+                  <li class="mb-2">Хуурамч захиалга өгөх, хуурамч мэдээлэл оруулах</li>
+                  <li class="mb-2">Вэбсайтын програм хангамжид хөндлөнгөөс оролцох</li>
+                  <li class="mb-2">Арилжааны зорилгоор дахин зарах</li>
+                  <li class="mb-0">Бусад хэрэглэгчдийн мэдээлэлд хандах</li>
+                </ul>
+              </div>
+
+              <div>
+                <h2 class="fw-bold fs-5 mb-3">6. Холбоо барих</h2>
+                <div class="bg-light rounded-3 p-3">
+                  <p class="mb-1 fs-14"><strong>И-мэйл:</strong> <a href="mailto:info@estel.mn" class="fc-main text-decoration-none">info@estel.mn</a></p>
+                  <p class="mb-0 fs-14"><strong>Утас:</strong> <a href="tel:+97699112233" class="fc-main text-decoration-none">+976 8620 7202</a></p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>

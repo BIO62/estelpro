@@ -1,0 +1,1222 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Нүүр - ESTEL</title>
+  <link rel="icon" href="images/favicon.svg" sizes="any" type="image/svg+xml">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+  <link rel="stylesheet" href="css/wrap.css" />
+</head>
+
+<body>
+
+  <section class="bg-dark">
+    <div class="container-fluid">
+      <div class="d-flex">
+        <div class="d-flex justify-content-center flex-grow-1 fc-white fw-semibold align-items-center overflow-hidden ps-sm-5">
+          <span class="ticker-text fs-12 d-block lh-sm my-1 ms-sm-5 ps-sm-5" id="promo-ticker">
+            Хот дотор 80,000₮ дээш худалдан авалтанд хүргэлт үнэгүй
+          </span>
+        </div>
+        <a href="login-dresser.html" class="btn px-2 py-1 d-flex align-items-center justify-content-center gap-1 border-0 rounded-0 ms-auto">
+          <img src="images/icons/loginWhite.svg" alt="">
+          <span class="fc-white fs-12 text-nowrap">Салон нэвтрэх</span>
+        </a>
+      </div>
+      
+    </div>
+  </section>
+
+  <!-- Толгой хэсэг -->
+  <header class="position-sticky top-0 zindex-6">
+    <div class="container-fluid">
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="d-flex">
+          <button type="button" class="btn p-2" data-bs-toggle="offcanvas" data-bs-target="#mainMenuCanvas" aria-controls="mainMenuCanvas">
+            <img src="images/icons/nav.svg" alt="">
+          </button>
+          <button type="button" class="btn p-2" data-bs-toggle="offcanvas" data-bs-target="#mainMenuCanvas" aria-controls="mainMenuCanvas">
+            <img src="images/icons/search.svg" alt="">
+          </button>
+        </div>
+        <a href="index.html" class="d-block py-3">
+          <img src="images/logo.svg" alt="" class="h-24">
+        </a>
+        <div class="d-flex">
+          <a href="#" class="btn p-2">
+            <img src="images/icons/heart.svg" alt="">
+          </a>
+          <button type="button" class="btn p-2" data-bs-toggle="offcanvas" data-bs-target="#loginCanvas" aria-controls="loginCanvas">
+            <img src="images/icons/user.svg" alt="">
+          </button>
+          <button type="button" class="btn p-2 position-relative" data-bs-toggle="offcanvas" data-bs-target="#cartCanvas" aria-controls="cartCanvas">
+            <img src="images/icons/cart.svg" alt="">
+            <span class="fs-10 fw-bold fc-white bg-dark w-20 h-20 d-flex align-items-center justify-content-center position-absolute top-0 end-0 rounded-5">1</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+  <style>
+    .dresser-hero { position:relative; overflow:hidden; min-height:520px; display:flex; align-items:center; }
+    .dresser-hero-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; }
+    .dresser-hero-overlay { position:absolute; inset:0; background:linear-gradient(100deg,rgba(8,18,32,.88) 0%,rgba(8,18,32,.65) 50%,rgba(8,18,32,.25) 100%); }
+    .dresser-hero-content { position:relative; z-index:1; }
+    .cat-card { position:relative; overflow:hidden; cursor:pointer; }
+    .cat-card img { transition:transform .45s ease; width:100%; height:100%; object-fit:cover; display:block; }
+    .cat-card:hover img { transform:scale(1.06); }
+    .cat-overlay { position:absolute; inset:0; background:linear-gradient(to top,rgba(0,0,0,.72) 0%,rgba(0,0,0,.1) 55%,transparent 100%); }
+    .cat-label { position:absolute; bottom:0; left:0; right:0; padding:20px 18px; }
+    .brand-logo-card { border:1.5px solid #E8EFF5; border-radius:14px; background:#fff; transition:border-color .2s,box-shadow .2s,transform .2s; cursor:pointer; padding:18px 14px; display:flex; align-items:center; justify-content:center; }
+    .brand-logo-card:hover { border-color:#1170B7; box-shadow:0 6px 20px rgba(17,112,183,.12); transform:translateY(-3px); }
+    .line-pill { text-decoration:none; display:block; transition:transform .15s,opacity .15s; }
+    .line-pill:hover { transform:scale(1.05); opacity:.85; }
+    .line-pill img { width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; display:block; }
+    .cat-pill { text-decoration:none; display:block; transition:transform .15s,opacity .15s; }
+    .cat-pill:hover { transform:scale(1.05); opacity:.85; }
+    .cat-pill img { width:100%; aspect-ratio:2/1; object-fit:cover; border-radius:10px; display:block; }
+    .dresser-section-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.15em; color:#708C9E; }
+    .hero-stat-line { width:1px; background:rgba(255,255,255,.18); align-self:stretch; }
+    .cat-group-img { width:36px; height:36px; object-fit:contain; border-radius:6px; background:#fff; border:1px solid #E0E8EF; padding:2px; flex-shrink:0; }
+  </style>
+
+  <!-- Hero -->
+  <section class="dresser-hero">
+    <img src="images/demo/mainSlide1.webp" alt="" class="dresser-hero-img">
+    <div class="dresser-hero-overlay"></div>
+    <div class="container py-5 dresser-hero-content w-100">
+      <div class="row py-3">
+        <div class="col-lg-7 col-xl-6">
+          <span class="dresser-section-label d-block mb-3" style="color:rgba(255,255,255,.65);">Салоны мэргэжлийн портал</span>
+          <h1 class="fw-bold fc-white lh-sm mb-3" style="font-size:clamp(28px,4vw,52px);">ESTEL Professional<br><span style="color:#FFC20F;">Мэргэжлийн каталог</span></h1>
+          <p class="mb-4 fs-15" style="color:rgba(255,255,255,.72);">Дэлхийн тэргүүлэгч ESTEL брэндийн бүтээгдэхүүнийг мэргэжлийн үнэ, нөхцөлтэйгөөр салондоо авна уу.</p>
+          <div class="d-flex gap-3 flex-wrap mb-5">
+            <a href="list.html" class="btn btn-main px-4 py-3 fw-semibold rounded-3">Бүх барааг харах</a>
+            <a href="#brands" class="btn px-4 py-3 fw-semibold rounded-3" style="background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.25);">Брэнд сонгох</a>
+          </div>
+          <div class="d-flex gap-4 align-items-center">
+            <div>
+              <strong class="fc-white d-block" style="font-size:26px;letter-spacing:-.02em;">50+</strong>
+              <span class="fs-12" style="color:rgba(255,255,255,.55);">Брэнд</span>
+            </div>
+            <div class="hero-stat-line"></div>
+            <div>
+              <strong class="fc-white d-block" style="font-size:26px;letter-spacing:-.02em;">5,000+</strong>
+              <span class="fs-12" style="color:rgba(255,255,255,.55);">Бараа</span>
+            </div>
+            <div class="hero-stat-line"></div>
+            <div>
+              <strong class="fc-white d-block" style="font-size:26px;letter-spacing:-.02em;">20K+</strong>
+              <span class="fs-12" style="color:rgba(255,255,255,.55);">Үйлчлүүлэгч</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ангилал -->
+  <section class="py-5" id="categories">
+    <div class="container">
+      <div class="d-flex align-items-end justify-content-between mb-4">
+        <div>
+          <span class="dresser-section-label d-block mb-1">Каталог</span>
+          <h2 class="fw-bold mb-0" style="font-size:28px;">Онцлох ангилал</h2>
+        </div>
+      </div>
+
+      <!-- Row 1: big left + tall right -->
+      <div class="row g-3 mb-3">
+        <div class="col-lg-8">
+          <a href="list.html" class="d-block cat-card rounded-4" style="height:340px;">
+            <img src="images/demo/category1.avif" alt="De Luxe">
+            <div class="cat-overlay"></div>
+            <div class="cat-label">
+              <span class="dresser-section-label d-block mb-1" style="color:rgba(255,255,255,.65);">Хамгийн эрэлттэй</span>
+              <h3 class="fw-bold fc-white mb-1" style="font-size:28px;">De Luxe</h3>
+              <p class="mb-0 fs-13" style="color:rgba(255,255,255,.72);">Урт эдэлгээт мэргэжлийн өнгийн будаг</p>
+            </div>
+          </a>
+        </div>
+        <div class="col-lg-4">
+          <a href="list.html" class="d-block cat-card rounded-4" style="height:340px;">
+            <img src="images/demo/category5.avif" alt="Haute Couture">
+            <div class="cat-overlay"></div>
+            <div class="cat-label">
+              <span class="dresser-section-label d-block mb-1" style="color:rgba(255,255,255,.65);">Тансаг чанар</span>
+              <h4 class="fw-bold fc-white mb-1">Haute Couture</h4>
+              <p class="mb-0 fs-13" style="color:rgba(255,255,255,.72);">Мэргэжлийн үс арчилгаа</p>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Row 2: 3 equal tiles -->
+      <div class="row g-3 mb-3">
+        <div class="col-4">
+          <a href="list.html" class="d-block cat-card rounded-4" style="height:210px;">
+            <img src="images/demo/category2.avif" alt="Sensation">
+            <div class="cat-overlay"></div>
+            <div class="cat-label">
+              <h5 class="fw-bold fc-white mb-1">Sensation</h5>
+              <p class="mb-0 fs-12" style="color:rgba(255,255,255,.7);">Аммиакгүй будаг</p>
+            </div>
+          </a>
+        </div>
+        <div class="col-4">
+          <a href="list.html" class="d-block cat-card rounded-4" style="height:210px;">
+            <img src="images/demo/category4.avif" alt="Curex">
+            <div class="cat-overlay"></div>
+            <div class="cat-label">
+              <h5 class="fw-bold fc-white mb-1">Curex</h5>
+              <p class="mb-0 fs-12" style="color:rgba(255,255,255,.7);">Эмчилгээний цуврал</p>
+            </div>
+          </a>
+        </div>
+        <div class="col-4">
+          <a href="list.html" class="d-block cat-card rounded-4" style="height:210px;">
+            <img src="images/demo/category6.avif" alt="Alpha Homme">
+            <div class="cat-overlay"></div>
+            <div class="cat-label">
+              <h5 class="fw-bold fc-white mb-1">Alpha Homme</h5>
+              <p class="mb-0 fs-12" style="color:rgba(255,255,255,.7);">Эрэгтэй цуврал</p>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Бүтээгдэхүүний ангилал -->
+  <section class="py-5" style="background:#F2F2F2;" id="lines">
+    <div class="container">
+      <div class="d-flex align-items-end justify-content-between mb-4">
+        <div>
+          <span class="dresser-section-label d-block mb-1">ESTEL</span>
+          <h2 class="fw-bold mb-0" style="font-size:28px;">Ангилал</h2>
+        </div>
+      </div>
+
+      <!-- Дэд ангилалгүй ангиллууд -->
+      <div class="row row-cols-4 row-cols-sm-5 row-cols-md-7 row-cols-lg-9 g-2 mb-5">
+        <div class="col"><a href="list.html" class="cat-pill" title="De Luxe"><img src="images/demo/category1.avif" alt="De Luxe"></a></div>
+        <div class="col"><a href="list.html" class="cat-pill" title="Sensation"><img src="images/demo/category2.avif" alt="Sensation"></a></div>
+        <div class="col"><a href="list.html" class="cat-pill" title="Prince"><img src="images/demo/category3.avif" alt="Prince"></a></div>
+        <div class="col"><a href="list.html" class="cat-pill" title="XTRO"><img src="images/demo/category4.avif" alt="XTRO"></a></div>
+        <div class="col"><a href="list.html" class="cat-pill" title="Хөөсөн будаг"><img src="images/demo/category5.avif" alt="Хөөсөн будаг"></a></div>
+        <div class="col"><a href="list.html" class="cat-pill" title="ANTI-YELLOW"><img src="images/demo/category6.avif" alt="ANTI-YELLOW"></a></div>
+        <div class="col"><a href="list.html" class="cat-pill" title="ESTELLER"><img src="images/demo/product1.jpg" alt="ESTELLER"></a></div>
+        <div class="col"><a href="list.html" class="cat-pill" title="Newtone"><img src="images/demo/product2.jpg" alt="Newtone"></a></div>
+        <div class="col"><a href="list.html" class="cat-pill" title="Niagara"><img src="images/demo/product4.jpg" alt="Niagara"></a></div>
+        <div class="col"><a href="list.html" class="cat-pill" title="Lissage"><img src="images/demo/product3.jpg" alt="Lissage"></a></div>
+        <div class="col"><a href="list.html" class="cat-pill" title="Alpha"><img src="images/demo/product9.png" alt="Alpha"></a></div>
+        <div class="col"><a href="list.html" class="cat-pill" title="Genevie Pro"><img src="images/demo/product7.png" alt="Genevie Pro"></a></div>
+        <div class="col"><a href="list.html" class="cat-pill" title="Top salon"><img src="images/demo/product8.png" alt="Top salon"></a></div>
+        <div class="col"><a href="list.html" class="cat-pill" title="Proart"><img src="images/demo/product5.jpg" alt="Proart"></a></div>
+        <div class="col"><a href="list.html" class="cat-pill" title="Airex"><img src="images/demo/product6.jpg" alt="Airex"></a></div>
+      </div>
+
+      <!-- Дэд ангилалтай ангиллууд -->
+
+      <!-- Эмчилгээний набор -->
+      <div class="mb-4">
+        <div class="d-flex align-items-center gap-2 mb-3 pb-2" style="border-bottom:1.5px solid #E0E8EF;">
+          <strong class="fs-14 fc-dark">Эмчилгээний набор</strong>
+        </div>
+        <div class="row row-cols-4 row-cols-sm-5 row-cols-md-7 row-cols-lg-9 g-2">
+          <div class="col"><a href="list.html" class="line-pill" title="Peptides"><img src="images/demo/product10.png" alt="Peptides"></a></div>
+          <div class="col"><a href="list.html" class="line-pill" title="Цветочный экстаз"><img src="images/demo/product11.png" alt="Цветочный экстаз"></a></div>
+          <div class="col"><a href="list.html" class="line-pill" title="Кератин"><img src="images/demo/product12.png" alt="Кератин"></a></div>
+          <div class="col"><a href="list.html" class="line-pill" title="Remount"><img src="images/demo/product1.jpg" alt="Remount"></a></div>
+          <div class="col"><a href="list.html" class="line-pill" title="Filler"><img src="images/demo/product3.jpg" alt="Filler"></a></div>
+          <div class="col"><a href="list.html" class="line-pill" title="Banya"><img src="images/demo/product5.jpg" alt="Banya"></a></div>
+          <div class="col"><a href="list.html" class="line-pill" title="Collagen"><img src="images/demo/product6.jpg" alt="Collagen"></a></div>
+          <div class="col"><a href="list.html" class="line-pill" title="Q3"><img src="images/demo/product7.png" alt="Q3"></a></div>
+          <div class="col"><a href="list.html" class="line-pill" title="ХЕК"><img src="images/demo/product8.png" alt="ХЕК"></a></div>
+        </div>
+      </div>
+
+      <!-- Curex -->
+      <div class="mb-4">
+        <div class="d-flex align-items-center gap-2 mb-3 pb-2" style="border-bottom:1.5px solid #E0E8EF;">
+          <strong class="fs-14 fc-dark">Curex</strong>
+        </div>
+        <div class="row row-cols-4 row-cols-sm-5 row-cols-md-7 row-cols-lg-9 g-2">
+          <div class="col"><a href="list.html" class="line-pill" title="CLASSIC"><img src="images/demo/product4.jpg" alt="CLASSIC"></a></div>
+          <div class="col"><a href="list.html" class="line-pill" title="THERAPY"><img src="images/demo/product5.jpg" alt="THERAPY"></a></div>
+          <div class="col"><a href="list.html" class="line-pill" title="COLOR SAVE"><img src="images/demo/product6.jpg" alt="COLOR SAVE"></a></div>
+          <div class="col"><a href="list.html" class="line-pill" title="COLOR INTENSE"><img src="images/demo/product7.png" alt="COLOR INTENSE"></a></div>
+          <div class="col"><a href="list.html" class="line-pill" title="SUNFLOWER"><img src="images/demo/product8.png" alt="SUNFLOWER"></a></div>
+          <div class="col"><a href="list.html" class="line-pill" title="BRILLIANCE"><img src="images/demo/product9.png" alt="BRILLIANCE"></a></div>
+        </div>
+      </div>
+
+      <!-- Туслах материал -->
+      <div class="mb-4">
+        <div class="d-flex align-items-center gap-2 mb-3 pb-2" style="border-bottom:1.5px solid #E0E8EF;">
+          <strong class="fs-14 fc-dark">Туслах материал</strong>
+        </div>
+        <div class="row row-cols-4 row-cols-sm-5 row-cols-md-7 row-cols-lg-9 g-2">
+          <div class="col"><a href="list.html" class="line-pill" title="Каталоги"><img src="images/demo/product13.png" alt="Каталоги"></a></div>
+          <div class="col"><a href="list.html" class="line-pill" title="Хормогч Нөмрөг"><img src="images/demo/product2.jpg" alt="Хормогч Нөмрөг"></a></div>
+          <div class="col"><a href="list.html" class="line-pill" title="Аяга багс"><img src="images/demo/product4.jpg" alt="Аяга багс"></a></div>
+          <div class="col"><a href="list.html" class="line-pill" title="Сам"><img src="images/demo/product7.png" alt="Сам"></a></div>
+          <div class="col"><a href="list.html" class="line-pill" title="Бусад"><img src="images/demo/product10.png" alt="Бусад"></a></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  </main>
+
+  <!-- Хөл хэсэг -->
+  <footer class="bg-dark py-5">
+    <div class="container">
+      <div class="row g-lg-3 gy-5">
+        <div class="col-xl-3 col-sm-4">
+          <strong class="opacity-50 fc-white fw-medium mb-2 d-block">Хэрэглэгчийн тусламж</strong>
+          <div class="d-flex flex-column gap-2">
+             <a href="" class="d-block text-decoration-none">
+              <span class="d-block lh-sm fc-white">Бидний тухай</span>
+            </a>
+            <a href="" class="d-block text-decoration-none">
+              <span class="d-block lh-sm fc-white">Үйлчилгээний нөхцөл</span>
+            </a>
+            <a href="" class="d-block text-decoration-none">
+              <span class="d-block lh-sm fc-white">Хүргэлтийн нөхцөл</span>
+            </a>
+            <a href="" class="d-block text-decoration-none">
+              <span class="d-block lh-sm fc-white">Төлбөрийн нөхцөл</span>
+            </a>
+          </div>
+        </div>
+        <div class="offset-xl-3 col-xl-6 col-sm-8">
+          <div class="row row-cols-sm-2 row-cols-1">
+            <div class="col">
+              <div class="d-flex flex-column gap-2">
+                <div class="d-flex flex-column text-decoration-none py-1">
+                  <strong class="opacity-50 fc-white fw-medium mb-2 d-block">Байршил</strong>
+                  <span class="f d-block lh-sm fc-white">Улаанбаатар хот, Баянзүрх дүүрэг, 1-р хороо, 12-р хороолол (13381), Токиогийн гудамж-23, Имарт Чингис</span>
+                </div>
+                <div class="d-flex flex-column text-decoration-none py-1">
+                  <strong class="opacity-50 fc-white fw-medium mb-2 d-block">Имэйл</strong>
+                  <a href="#" class="f d-block lh-sm fc-white text-decoration-none">info@estelpro.mn</a>
+                </div>
+                <div class="d-flex flex-column text-decoration-none py-1">
+                  <strong class="opacity-50 fc-white fw-medium mb-2 d-block">Цагийн хуваарь</strong>
+                  <span class="f d-block lh-sm fc-white">09:00 - 22:00</span> 
+                </div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="d-flex flex-column gap-2">
+                <div class="d-flex flex-column text-decoration-none py-1">
+                  <strong class="opacity-50 fc-white fw-medium mb-2 d-block">Мэдээлэл авах</strong>
+                  <a href="#" class="f d-block lh-sm fc-white text-decoration-none">86207202, 18 цаг хүртэл ажиллна.</a>
+                </div>
+                <div class="d-flex flex-column text-decoration-none py-1">
+                  <strong class="opacity-50 fc-white fw-medium mb-2 d-block">Холбоо барих</strong>
+                  <div class="d-flex flex-wrap column-gap-2 row-gap-1">
+                    <a href="#" class="f d-block lh-sm fc-white text-decoration-none">7707 2207,</a>
+                    <a href="#" class="f d-block lh-sm fc-white text-decoration-none">8605 7202,</a>
+                    <a href="#" class="f d-block lh-sm fc-white text-decoration-none">8603 7202</a>
+                  </div>
+                </div>
+                <div class="d-flex flex-column text-decoration-none py-1">
+                  <strong class="opacity-50 fc-white fw-medium mb-2 d-block">Сошиал хаягууд</strong>
+                  <div class="d-flex flex-wrap column-gap-2 row-gap-1">
+                    <a href="#" class="f d-block lh-sm fc-white text-decoration-none">
+                      <img src="images/icons/facebookWhite.svg" alt="">
+                    </a>
+                    <a href="#" class="f d-block lh-sm fc-white text-decoration-none">
+                      <img src="images/icons/instagramWhite.svg" alt="">
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <hr class="opacity-25 border-dark-subtle my-5">
+      <div class="row row-cols-lg-2 row-cols-1 gx-4 g-3 align-items-center">
+        <div class="col">
+          <span class="fs-12 fc-white text-lg-start text-center d-block fw-medium">Copyright © 2026 ESTELPRO.mn - All Rights Reserved.</span>
+        </div>
+        <div class="col">
+          <a href="#" class="btn p-2 d-flex align-items-center gap-2 justify-content-lg-end justify-content-center">
+            <span class="fs-12 fc-white fw-medium">Powered by</span>
+            <img src="images/nextstoreWhite.svg" alt="" class="h-16">
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Үндсэн цэс -->
+  <div class="offcanvas offcanvas-start mainMenuCanvas" tabindex="-1" id="mainMenuCanvas" aria-labelledby="mainMenuCanvasLabel">
+    <div class="offcanvas-body d-flex flex-column">
+      <div class="d-flex flex-column flex-grow-1 mb-3">
+        <div class="d-flex mb-3 gap-2">
+          <div class="d-flex border align-items-center rounded-3 flex-grow-1">
+            <img src="images/icons/search.svg" alt="" class="w-20 h-20 ms-3">
+            <input type="search" class="form-control border-0 flex-grow-1 shadow-none fs-14 p-3" placeholder="Хайх...">
+          </div>
+          <button type="button" class="btn btn-light p-3" data-bs-dismiss="offcanvas" aria-label="Close">
+            <img src="images/icons/times.svg" alt="">
+          </button>
+        </div>
+        <div class="position-relative d-flex flex-column flex-grow-1">
+          <a href="list.html" class="btn text-start d-flex align-items-center border-0 p-3">
+            <span class="flex-grow-1 fs-12 text-uppercase">Бүх бүтээгдэхүүн</span>
+          </a>
+          <hr class="my-1 opacity-10">
+          <button type="button" class="navigationButton btn text-start d-flex align-items-center border-0 p-3">
+            <span class="flex-grow-1 fs-12 text-uppercase">Ангилал</span>
+            <img src="images/icons/chevronRightSmall.svg" alt="">
+          </button>
+          <div class="position-absolute bg-white zindex-1 navigationLevelOne top-0 h-100 start-0 w-100 overflow-y-auto overflow-x-hidden pb-4">
+            <button type="button" class="btn btn-back border-0 py-2 px-0 mb-3">
+              <img src="images/icons/chevronLeftSmall.svg" alt="">
+              <span class="flex-grow-1 fs-12 text-uppercase">Back to main menu</span>
+            </button>
+            <div class="row row-cols-2 gx-2 gy-3">
+              <div class="col">
+                <button class="singleNav d-flex flex-column gap-2 text-decoration-none fc-dark border-0 bg-white text-start p-0">
+                  <div class="singleNavImage rounded-3 overflow-hidden">
+                    <img src="images/demo/category1.avif" alt="" class="w-100 h-auto ratio-11">
+                  </div>
+                  
+                  <span class="flex-grow-1 fs-12 text-uppercase">Hair</span>
+                </button>
+              </div>
+              <div class="col">
+                <button class="singleNav d-flex flex-column gap-2 text-decoration-none fc-dark border-0 bg-white text-start p-0">
+                  <div class="singleNavImage rounded-3 overflow-hidden">
+                    <img src="images/demo/category2.avif" alt="" class="w-100 h-auto ratio-11">
+                  </div>
+                  
+                  <span class="flex-grow-1 fs-12 text-uppercase">Lips</span>
+                </button>
+              </div>
+              <div class="col">
+                <button class="singleNav d-flex flex-column gap-2 text-decoration-none fc-dark border-0 bg-white text-start p-0">
+                  <div class="singleNavImage rounded-3 overflow-hidden">
+                    <img src="images/demo/category3.avif" alt="" class="w-100 h-auto ratio-11">
+                  </div>
+                  
+                  <span class="flex-grow-1 fs-12 text-uppercase">Gift sets & Bundles</span>
+                </button>
+              </div>
+              <div class="col">
+                <button class="singleNav d-flex flex-column gap-2 text-decoration-none fc-dark border-0 bg-white text-start p-0">
+                  <div class="singleNavImage rounded-3 overflow-hidden">
+                    <img src="images/demo/category4.avif" alt="" class="w-100 h-auto ratio-11">
+                  </div>
+                  
+                  <span class="flex-grow-1 fs-12 text-uppercase">Skin</span>
+                </button>
+              </div>
+              <div class="col">
+                <button class="singleNav d-flex flex-column gap-2 text-decoration-none fc-dark border-0 bg-white text-start p-0">
+                  <div class="singleNavImage rounded-3 overflow-hidden">
+                    <img src="images/demo/category5.avif" alt="" class="w-100 h-auto ratio-11">
+                  </div>
+                  
+                  <span class="flex-grow-1 fs-12 text-uppercase">Exclusive on Estel.com</span>
+                </button>
+              </div>
+              <div class="col">
+                <button class="singleNav d-flex flex-column gap-2 text-decoration-none fc-dark border-0 bg-white text-start p-0">
+                  <div class="singleNavImage rounded-3 overflow-hidden">
+                    <img src="images/demo/category6.avif" alt="" class="w-100 h-auto ratio-11">
+                  </div>
+                  
+                  <span class="flex-grow-1 fs-12 text-uppercase">Shop all</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="position-absolute bg-white zindex-1 navigationLevelTwo top-0 h-100 start-0 w-100 overflow-y-auto overflow-x-hidden pb-4">
+            <button type="button" class="btn btn-back border-0 py-2 px-0 mb-3">
+              <img src="images/icons/chevronLeftSmall.svg" alt="">
+              <span class="flex-grow-1 fs-12 text-uppercase">Back to main menu</span>
+            </button>
+            <button type="button" class="btn btn-back border-0 py-2 px-0 mb-3">
+              <img src="images/icons/chevronLeftSmall.svg" alt="">
+              <span class="flex-grow-1 fs-12 text-uppercase">Back to product categories</span>
+            </button>
+            <hr class="my-1 opacity-10">
+            <a href="list.html" class="btn w-100 my-1 p-3">
+              <span class="flex-grow-1 fs-12 text-uppercase fw-semibold">Shop all hair products</span>
+            </a>
+            <hr class="my-1 opacity-10">
+            <div class="d-flex flex-column gap-2">
+              <a href="detail.html" class="d-flex align-items-center text-decoration-none gap-3 fc-dark bg-light rounded-3 overflow-hidden px-3 py-2 position-relative">
+                <span class="flex-grow-1 fs-10 text-uppercase position-absolute top-0 end-0 px-1 bg-main fc-white text-center">New</span>
+                <span>Honey Infused Hair & Body Mist</span>
+              </a>
+              <a href="detail.html" class="d-flex align-items-center text-decoration-none gap-3 fc-dark bg-light rounded-3 overflow-hidden px-3 py-2 position-relative">
+                <span>Honey Infused Hair & Body Mist</span>
+              </a>
+              <a href="detail.html" class="d-flex align-items-center text-decoration-none gap-3 fc-dark bg-light rounded-3 overflow-hidden px-3 py-2 position-relative">
+                <span>Honey Infused Hair & Body Mist</span>
+              </a>
+              <a href="detail.html" class="d-flex align-items-center text-decoration-none gap-3 fc-dark bg-light rounded-3 overflow-hidden px-3 py-2 position-relative">
+                <span>Honey Infused Hair & Body Mist</span>
+              </a>
+              <a href="detail.html" class="d-flex align-items-center text-decoration-none gap-3 fc-dark bg-light rounded-3 overflow-hidden px-3 py-2 position-relative">
+                <span class="flex-grow-1 fs-10 text-uppercase position-absolute top-0 end-0 px-1 bg-main fc-white text-center">New</span>
+                <span>Honey Infused Hair & Body Mist</span>
+              </a>
+              <a href="detail.html" class="d-flex align-items-center text-decoration-none gap-3 fc-dark bg-light rounded-3 overflow-hidden px-3 py-2 position-relative">
+                <span>Honey Infused Hair & Body Mist</span>
+              </a>
+              <a href="detail.html" class="d-flex align-items-center text-decoration-none gap-3 fc-dark bg-light rounded-3 overflow-hidden px-3 py-2 position-relative">
+                <span>Honey Infused Hair & Body Mist</span>
+              </a>
+              <a href="detail.html" class="d-flex align-items-center text-decoration-none gap-3 fc-dark bg-light rounded-3 overflow-hidden px-3 py-2 position-relative">
+                <span>Honey Infused Hair & Body Mist</span>
+              </a>
+              <a href="detail.html" class="d-flex align-items-center text-decoration-none gap-3 fc-dark bg-light rounded-3 overflow-hidden px-3 py-2 position-relative">
+                <span class="flex-grow-1 fs-10 text-uppercase position-absolute top-0 end-0 px-1 bg-main fc-white text-center">New</span>
+                <span>Honey Infused Hair & Body Mist</span>
+              </a>
+              <a href="detail.html" class="d-flex align-items-center text-decoration-none gap-3 fc-dark bg-light rounded-3 overflow-hidden px-3 py-2 position-relative">
+                <span>Honey Infused Hair & Body Mist</span>
+              </a>
+              <a href="detail.html" class="d-flex align-items-center text-decoration-none gap-3 fc-dark bg-light rounded-3 overflow-hidden px-3 py-2 position-relative">
+                <span>Honey Infused Hair & Body Mist</span>
+              </a>
+              <a href="detail.html" class="d-flex align-items-center text-decoration-none gap-3 fc-dark bg-light rounded-3 overflow-hidden px-3 py-2 position-relative">
+                <span>Honey Infused Hair & Body Mist</span>
+              </a>
+            </div>
+          </div>
+          <hr class="my-1 opacity-10">
+          <button type="button" class="navigationButton btn text-start d-flex align-items-center border-0 p-3">
+            <span class="flex-grow-1 fs-12 text-uppercase">Брэнд</span>
+            <img src="images/icons/chevronRightSmall.svg" alt="">
+          </button>
+          <div class="position-absolute bg-white zindex-1 navigationLevelOne top-0 h-100 start-0 w-100 overflow-y-auto overflow-x-hidden pb-4">
+            <button type="button" class="btn btn-back border-0 py-2 px-0 mb-3">
+              <img src="images/icons/chevronLeftSmall.svg" alt="">
+              <span class="flex-grow-1 fs-12 text-uppercase">Back to main menu</span>
+            </button>
+            <div class="row row-cols-2 gx-2 gy-3">
+              <div class="col">
+                <a href="list.html" class="singleNav d-flex flex-column gap-2 text-decoration-none fc-dark">
+                  <div class="singleNavImage rounded-3 overflow-hidden">
+                    <img src="images/demo/category1.avif" alt="" class="w-100 h-auto ratio-11">
+                  </div>
+                  
+                  <div class="d-flex flex-column">
+                    <span class="flex-grow-1 fs-12 text-uppercase">De Luxe</span>
+                    <span class="fs-10 d-block lh-sm">Colour care product for long-lasting coloring and shading</span>
+                  </div>
+                </a>
+              </div>
+              <div class="col">
+                <a href="list.html" class="singleNav d-flex flex-column gap-2 text-decoration-none fc-dark">
+                  <div class="singleNavImage rounded-3 overflow-hidden">
+                    <img src="images/demo/category2.avif" alt="" class="w-100 h-auto ratio-11">
+                  </div>
+                  
+                  <div class="d-flex flex-column">
+                    <span class="flex-grow-1 fs-12 text-uppercase">Sensation</span>
+                    <span class="fs-10 d-block lh-sm">Ammonia-free hair color cream</span>
+                  </div>
+                </a>
+              </div>
+              <div class="col">
+                <a href="list.html" class="singleNav d-flex flex-column gap-2 text-decoration-none fc-dark">
+                  <div class="singleNavImage rounded-3 overflow-hidden">
+                    <img src="images/demo/category3.avif" alt="" class="w-100 h-auto ratio-11">
+                  </div>
+                  
+                  <div class="d-flex flex-column">
+                    <span class="flex-grow-1 fs-12 text-uppercase">Anti-Yellow</span>
+                    <span class="fs-10 d-block lh-sm">Color cream</span>
+                  </div>
+                </a>
+              </div>
+              <div class="col">
+                <a href="list.html" class="singleNav d-flex flex-column gap-2 text-decoration-none fc-dark">
+                  <div class="singleNavImage rounded-3 overflow-hidden">
+                    <img src="images/demo/category4.avif" alt="" class="w-100 h-auto ratio-11">
+                  </div>
+                  
+                  <div class="d-flex flex-column">
+                    <span class="flex-grow-1 fs-12 text-uppercase">Prince</span>
+                    <span class="fs-10 d-block lh-sm">Classic permanent color</span>
+                  </div>
+                </a>
+              </div>
+              <div class="col">
+                <a href="list.html" class="singleNav d-flex flex-column gap-2 text-decoration-none fc-dark">
+                  <div class="singleNavImage rounded-3 overflow-hidden">
+                    <img src="images/demo/category5.avif" alt="" class="w-100 h-auto ratio-11">
+                  </div>
+                  
+                  <div class="d-flex flex-column">
+                    <span class="flex-grow-1 fs-12 text-uppercase">New tone</span>
+                    <span class="fs-10 d-block lh-sm">Hair shading with conditioning mask toning</span>
+                  </div>
+                </a>
+              </div>
+              <div class="col">
+                <a href="list.html" class="singleNav d-flex flex-column gap-2 text-decoration-none fc-dark">
+                  <div class="singleNavImage rounded-3 overflow-hidden">
+                    <img src="images/demo/category6.avif" alt="" class="w-100 h-auto ratio-11">
+                  </div>
+                  
+                  <div class="d-flex flex-column">
+                    <span class="flex-grow-1 fs-12 text-uppercase">Enigma</span>
+                    <span class="fs-10 d-block lh-sm">Color cream for eyebrows and eyelashes</span>
+                  </div>
+                </a>
+              </div>
+              <div class="col">
+                <a href="list.html" class="singleNav d-flex flex-column gap-2 text-decoration-none fc-dark">
+                  <div class="singleNavImage rounded-3 overflow-hidden">
+                    <img src="images/demo/category6.avif" alt="" class="w-100 h-auto ratio-11">
+                  </div>
+                  
+                  <div class="d-flex flex-column">
+                    <span class="flex-grow-1 fs-12 text-uppercase">Special</span>
+                    <span class="fs-10 d-block lh-sm"></span>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+          <hr class="my-1 opacity-10">
+          <a href="list.html" class="btn text-start d-flex align-items-center border-0 p-3">
+            <span class="flex-grow-1 fs-12 text-uppercase">Шинэ бүтээгдэхүүн</span>
+          </a>
+          <a href="#" class="d-block my-3">
+            <img src="images/demo/menuBanner.webp" alt="" class="w-100 h-auto">
+          </a>
+          <a href="list.html" class="btn text-start d-flex align-items-center border-0 p-3">
+            <span class="me-2 fs-12 text-uppercase">Хямдрал</span>
+            <div class="d-flex align-items-center flex-grow-1">
+              <img src="images/icons/alarm.svg" alt="" class="me-1">
+              <span class="fw-semibold fs-12 fc-red">1 өдөр 15:17:55</span>
+            </div>
+          </a>
+          <hr class="my-1 opacity-10">
+          <a href="about.html" class="btn text-start d-flex align-items-center border-0 p-3">
+            <span class="flex-grow-1 fs-12 text-uppercase">Академи</span>
+          </a>
+        </div>
+        <hr class="my-1 opacity-10">
+        <button type="button" class="btn text-start d-flex align-items-center border-0 p-3">
+          <img src="images/icons/user.svg" alt="" class="me-2">
+          <span class="flex-grow-1 fs-12 text-uppercase">Нэвтрэх</span>
+        </button>
+      </div>  
+    </div>
+  </div>
+
+  <!-- Сагс -->
+  <div class="offcanvas offcanvas-end cartCanvas" tabindex="-1" id="cartCanvas" aria-labelledby="cartCanvasLabel">
+    <div class="offcanvas-header border-bottom">
+      <div class="d-flex align-items-center gap-2 w-100">
+        <h4 class="m-0 flex-grow-1">Сагс</h4>
+        <button type="button" class="btn btn-light p-3" data-bs-dismiss="offcanvas" aria-label="Close">
+          <img src="images/icons/times.svg" alt="">
+        </button>
+      </div>
+    </div>
+    <div class="offcanvas-body">
+      <div class="d-flex flex-column gap-3">
+        <div class="d-flex gap-3">
+          <a href="detail.html" class="d-block">
+            <img src="images/demo/product1.jpg" alt="" class="w-64 h-64 ratio-11 img-cover rounded-3">
+          </a>
+          <div class="d-flex flex-column gap-2">
+            <div class="d-flex align-items-start gap-2">
+              <a href="detail.html" class="d-block lh-sm fw-bold fc-dark text-decoration-none">Honey Infused Hair Perfume Limited Edition</a>
+              <button type="button" class="btn p-1">
+                <img src="images/icons/times.svg" alt="">
+              </button>
+            </div>
+            <div class="d-flex align-items-center">
+              <div class="d-flex">
+                <button type="button" class="btn border rounded-end-0 w-32 h-32 d-flex align-items-center justify-content-center flex-shrink-0">
+                  <img src="images/icons/minus.svg" alt="">
+                </button>
+                <input type="number" class="form-control text-center fs-14 fw-bold rounded-0 border-0 w-40 h-32 px-0 border-top border-bottom" id="exampleFormControlInput1" placeholder="" value="1">
+                <button type="button" class="btn border rounded-start-0 w-32 h-32 d-flex align-items-center justify-content-center flex-shrink-0">
+                  <img src="images/icons/plus.svg" alt="">
+                </button>
+              </div>
+              <strong class="fs-5 ms-auto">17,000₮</strong>
+            </div>
+          </div>
+        </div>
+        <hr class="my-1 opacity-10">
+        <div class="d-flex gap-3">
+          <a href="detail.html" class="d-block">
+            <img src="images/demo/product2.jpg" alt="" class="w-64 h-64 ratio-11 img-cover rounded-3">
+          </a>
+          <div class="d-flex flex-column gap-2">
+            <div class="d-flex align-items-start gap-2">
+              <a href="detail.html" class="d-block lh-sm fw-bold fc-dark text-decoration-none">Honey Infused Hair Perfume Limited Edition</a>
+              <button type="button" class="btn p-1">
+                <img src="images/icons/times.svg" alt="">
+              </button>
+            </div>
+            <div class="d-flex align-items-center">
+              <div class="d-flex">
+                <button type="button" class="btn border rounded-end-0 w-32 h-32 d-flex align-items-center justify-content-center flex-shrink-0">
+                  <img src="images/icons/minus.svg" alt="">
+                </button>
+                <input type="number" class="form-control text-center fs-14 fw-bold rounded-0 border-0 w-40 h-32 px-0 border-top border-bottom" id="exampleFormControlInput1" placeholder="" value="1">
+                <button type="button" class="btn border rounded-start-0 w-32 h-32 d-flex align-items-center justify-content-center flex-shrink-0">
+                  <img src="images/icons/plus.svg" alt="">
+                </button>
+              </div>
+              <strong class="fs-5 ms-auto">17,000₮</strong>
+            </div>
+          </div>
+        </div>
+        <hr class="my-1 opacity-10">
+        <div class="d-flex gap-3">
+          <a href="detail.html" class="d-block">
+            <img src="images/demo/product3.jpg" alt="" class="w-64 h-64 ratio-11 img-cover rounded-3">
+          </a>
+          <div class="d-flex flex-column gap-2">
+            <div class="d-flex align-items-start gap-2">
+              <a href="detail.html" class="d-block lh-sm fw-bold fc-dark text-decoration-none">Honey Infused Hair Perfume Limited Edition</a>
+              <button type="button" class="btn p-1">
+                <img src="images/icons/times.svg" alt="">
+              </button>
+            </div>
+            <div class="d-flex align-items-center">
+              <div class="d-flex">
+                <button type="button" class="btn border rounded-end-0 w-32 h-32 d-flex align-items-center justify-content-center flex-shrink-0">
+                  <img src="images/icons/minus.svg" alt="">
+                </button>
+                <input type="number" class="form-control text-center fs-14 fw-bold rounded-0 border-0 w-40 h-32 px-0 border-top border-bottom" id="exampleFormControlInput1" placeholder="" value="1">
+                <button type="button" class="btn border rounded-start-0 w-32 h-32 d-flex align-items-center justify-content-center flex-shrink-0">
+                  <img src="images/icons/plus.svg" alt="">
+                </button>
+              </div>
+              <strong class="fs-5 ms-auto">17,000₮</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="offcanvas-footer p-3 border-top">
+      <div class="d-flex align-items-baseline mb-2">
+        <span>Нийт үнэ:</span>
+        <strong class="fs-5 ms-auto">51,000₮</strong>
+      </div>
+      <a href="payment.html" class="btn btn-main p-3 w-100">
+        <strong>Үргэлжлүүлэх</strong>
+      </a>
+    </div>
+  </div>
+
+  <div class="offcanvas offcanvas-end loginCanvas" tabindex="-1" id="loginCanvas" aria-labelledby="loginCanvasLabel">
+    <div class="offcanvas-header border-bottom">
+      <div class="d-flex align-items-center gap-2 w-100">
+        <div class="d-flex flex-column flex-grow-1">
+          <h4 class="m-0 flex-grow-1">Нэвтрэх</h4>
+          <span>Бүртгүүлэх</span>
+        </div>
+        
+        <button type="button" class="btn btn-light p-3" data-bs-dismiss="offcanvas" aria-label="Close">
+          <img src="images/icons/times.svg" alt="">
+        </button>
+      </div>
+    </div>
+    <div class="offcanvas-body">
+      <div class="d-flex flex-column gap-4">
+        <div class="input-group has-validation">
+          <div class="form-floating is-invalid">
+            <input type="text" class="form-control is-invalid" id="floatingInputGroup2" placeholder="Username" required>
+            <label for="floatingInputGroup2">Утасны дугаар эсвэл Имэйл хаяг</label>
+          </div>
+          <div class="invalid-feedback">
+            Please choose a username.
+          </div>
+        </div>
+        <div class="input-group has-validation">
+          <div class="form-floating is-invalid">
+            <input type="password" class="form-control is-invalid" id="floatingInputGroup2" placeholder="Username" required>
+            <label for="floatingInputGroup2">Нууц үг</label>
+          </div>
+          <div class="invalid-feedback">
+            Please choose a username.
+          </div>
+        </div>
+        <div class="d-flex gap-3">
+          <div class="form-check d-flex align-items-center gap-2 p-1 m-0 cursor-pointer flex-grow-1">
+            <input class="form-check-input m-0 start-0 cursor-pointer" type="checkbox" value="" id="filterCheck19">
+            <label class="form-check-label text-start cursor-pointer" for="filterCheck19">
+              Нэвтрэх нэр сануулах
+            </label>
+          </div>
+          <a href="forgot.html" class="btn px-0">
+            <span>Нууц үг мартсан</span>
+          </a>
+        </div>
+        <button type="button" class="btn btn-main p-3 rounded-3">
+          <span class="fw-medium fs-6">Нэвтрэх</span>
+        </button>
+        <button type="button" class="btn btn-outline-secondary p-3 rounded-3 d-flex align-items-center justify-content-center gap-2">
+          <img src="images/gmail.png" alt="" class="w-24 h-24">
+          <span class="fw-medium">Gmail-р нэвтрэх</span>
+        </button>
+        <a href="register.html" class="btn p-3 rounded-3">
+          <span class="fs-14 text-decoration-underline">Бүртгүүлэх</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  <script>
+    const toastEl = document.getElementById('toastSlide');
+    const toast = new bootstrap.Toast(toastEl, { autohide: false });
+    toast.show();
+  </script>
+  <script>
+
+    // $(window).on('load', function () {
+    //  $('#searchModal').modal('show');
+    // });
+
+    var toastProductSlide = new Swiper(".toastProductSlide", {
+      spaceBetween: 8,
+      loop: true,
+      autoplay: {
+        delay: 5000,
+        disableOnInteraction: true,
+      },
+    });
+
+    var mainSlide = new Swiper(".mainBigSlide", {
+      spaceBetween: 10,
+      effect: "fade",
+      autoplay: {
+        delay: 3500,
+        disableOnInteraction: false,
+      },
+      navigation: {
+        nextEl: ".mainBigSlide-Next",
+        prevEl: ".mainBigSlide-Prev",
+      },
+      pagination: {
+        el: ".mainBigSlide-pagination",
+        dynamicBullets: true,
+      },
+    });
+
+    var swiper = new Swiper(".categorySlider", {
+      spaceBetween: 4,
+      slidesPerView: 3,
+      watchSlidesProgress: true,
+      navigation: {
+        nextEl: ".categorySliderNext",
+        prevEl: ".categorySliderPrev",
+      },
+      pagination: {
+        el: ".categorySlider-pagination",
+        dynamicBullets: true,
+      },
+      breakpoints: {
+
+        768: {
+          slidesPerView: 6,
+          spaceBetween: 8,
+        },
+        1200: {
+          slidesPerView: 8,
+          spaceBetween: 16,
+        },
+      },
+    });
+
+    var mainSlide = new Swiper(".bigProducts", {
+      spaceBetween: 10,
+      loop: true,
+      autoplay: {
+        delay: 5000,
+        disableOnInteraction: false,
+      },
+      navigation: {
+        nextEl: ".bigProducts-Next",
+        prevEl: ".bigProducts-Prev",
+      },
+      pagination: {
+        el: ".bigProducts-pagination",
+        dynamicBullets: true,
+      },
+    });
+
+    var swiper = new Swiper(".productsSlider", {
+      spaceBetween: 4,
+      slidesPerView: 1.2,
+      watchSlidesProgress: true,
+      centeredSlides: true,
+      navigation: {
+        nextEl: ".productsSlider-Next",
+        prevEl: ".productsSlider-Prev",
+      },
+      pagination: {
+        el: ".productsSlider-pagination",
+        dynamicBullets: true,
+      },
+      autoplay: {
+        delay: 5000,
+        disableOnInteraction: false,
+        pauseOnMouseEnter: true,
+      },
+      breakpoints: {
+
+        768: {
+          slidesPerView: 3,
+          spaceBetween: 8,
+          centeredSlides: false,
+        },
+        1200: {
+          slidesPerView: 4,
+          spaceBetween: 8,
+          centeredSlides: false,
+        },
+      },
+    });
+
+    var swiper = new Swiper(".branchesSlider", {
+      spaceBetween: 4,
+      slidesPerView: 1.2,
+      slidesPerGroup: 1,
+      centeredSlides: true,
+      watchSlidesProgress: true,
+      autoplay: {
+        delay: 5000,
+        disableOnInteraction: false,
+      },
+      navigation: {
+        nextEl: ".branchesSlider-Next",
+        prevEl: ".branchesSlider-Prev",
+      },
+      pagination: {
+        el: ".saleSlide-pagination",
+        dynamicBullets: true,
+      },
+      breakpoints: {
+
+        768: {
+          slidesPerView: 3,
+          spaceBetween: 8,
+          slidesPerGroup: 2,
+          centeredSlides: false,
+        },
+        1200: {
+          slidesPerView: 4,
+          spaceBetween: 8,
+          slidesPerGroup: 2,
+          centeredSlides: false,
+        },
+      },
+    });
+
+    var swiper = new Swiper(".featuredProductsSlide", {
+      spaceBetween: 4,
+      slidesPerView: 2,
+      watchSlidesProgress: true,
+      navigation: {
+        nextEl: ".featuredButtonNext",
+        prevEl: ".featuredButtonPrev",
+      },
+      pagination: {
+        el: ".featured-pagination",
+        dynamicBullets: true,
+      },
+      breakpoints: {
+
+        768: {
+          slidesPerView: 3,
+          spaceBetween: 8,
+        },
+      },
+    });
+    var swiper = new Swiper(".branchesSlide", {
+      spaceBetween: 4,
+      slidesPerView: 2,
+      watchSlidesProgress: true,
+      navigation: {
+        nextEl: ".branchesButtonNext",
+        prevEl: ".branchesButtonPrev",
+      },
+      pagination: {
+        el: ".branches-pagination",
+        dynamicBullets: true,
+      },
+      breakpoints: {
+
+        768: {
+          slidesPerView: 4,
+          spaceBetween: 8,
+        },
+      },
+    });
+
+    let isPausedByUser = false;
+    const videoProgress = {};
+    let currentIndex = 0;
+    let isNavigating = false; // prevents feedback loop between the two swipers
+
+    /* ── helpers ─────────────────────────────────────────────── */
+    function getVideo(index) {
+      return thumbSwiper.slides[index]?.querySelector("video") ?? null;
+    }
+
+    function setActiveThumb(index) {
+      thumbSwiper.slides.forEach((s, i) =>
+        s.classList.toggle("swiper-slide-thumb-active", i === index)
+      );
+      thumbSwiper.slideTo(index, 200, false);
+    }
+
+    function playActive() {
+      const video = getVideo(currentIndex);
+      if (!video) return;
+      if (videoProgress[currentIndex] != null) {
+        video.currentTime = videoProgress[currentIndex];
+      }
+      if (!isPausedByUser) {
+        video.muted = true;
+        video.play().catch(() => {});
+      }
+    }
+
+    /* ── click handler wiring ────────────────────────────────── */
+    let activeClickHandler = null;
+
+    function attachClickHandler(index) {
+      if (activeClickHandler) {
+        thumbSwiper.slides[activeClickHandler.index]
+          ?.removeEventListener("click", activeClickHandler.fn);
+      }
+      const video = getVideo(index);
+      const slide = thumbSwiper.slides[index];
+      if (!video || !slide) return;
+
+      const fn = () => {
+        if (video.paused) {
+          isPausedByUser = false;
+          video.play().catch(() => {});
+        } else {
+          isPausedByUser = true;
+          videoProgress[index] = video.currentTime;
+          video.pause();
+        }
+      };
+      slide.addEventListener("click", fn);
+      activeClickHandler = { index, fn };
+    }
+
+    /* ── Swiper init ─────────────────────────────────────────── */
+    var thumbSwiper = new Swiper(".thumbSlider", {
+      spaceBetween: 8,
+      slidesPerView: 1.2,
+      centeredSlides: true,
+      breakpoints: {
+        768: {
+          slidesPerView: 2,
+          spaceBetween: 8,
+          centeredSlides: false,
+        },
+        1200: {
+          slidesPerView: 3,
+          spaceBetween: 8,
+          centeredSlides: false,
+        },
+      },
+      on: {
+        // tap a thumb → go to that slide
+        click() {
+          const idx = this.clickedIndex;
+          if (idx == null) return;
+          isNavigating = true;
+          mainSwiper.slideTo(idx, 300);
+        },
+        // swipe the thumb strip → follow with mainSwiper
+        slideChangeTransitionEnd() {
+          if (isNavigating) { isNavigating = false; return; }
+          const idx = this.activeIndex;
+          if (idx === currentIndex) return;
+          isNavigating = true;
+          mainSwiper.slideTo(idx, 300);
+        },
+      },
+    });
+
+    var mainSwiper = new Swiper(".reelSlider", {
+      spaceBetween: 8,
+      autoplay: {
+        delay: 2500,
+        disableOnInteraction: false,
+      },
+      navigation: {
+        nextEl: ".reelSlider-Next",
+        prevEl: ".reelSlider-Prev",
+      },
+      pagination: {
+        el: ".reelSlider-pagination",
+        dynamicBullets: true,
+      },
+      on: {
+        afterInit() {
+          currentIndex = 0;
+          setActiveThumb(0);
+          attachClickHandler(0);
+          playActive();
+        },
+        slideChangeTransitionStart() {
+          const v = getVideo(currentIndex);
+          if (v && !v.paused) {
+            videoProgress[currentIndex] = v.currentTime;
+            v.pause();
+          }
+        },
+        slideChangeTransitionEnd() {
+          isNavigating = false;
+          currentIndex = this.activeIndex;
+          isPausedByUser = false;
+          setActiveThumb(currentIndex);
+          attachClickHandler(currentIndex);
+          playActive();
+        },
+      },
+    });
+    const messages = [
+      "Хот дотор 80,000₮ дээш худалдан авалтанд хүргэлт үнэгүй",
+      "300,000₮ дээш худалдан авалтанд бэлэгтэй"
+    ];
+    let i = 0;
+    const el = document.getElementById('promo-ticker');
+
+    setInterval(() => {
+      el.classList.add('fading');
+      setTimeout(() => {
+        i = (i + 1) % messages.length;
+        el.textContent = messages[i];
+        el.classList.remove('fading');
+      }, 500); // wait for fade out, then swap text + fade back in
+    }, 3500); // change every 3.5s
+
+    const mq = window.matchMedia('(min-width: 1025px)');
+
+    function openSelect(sb) {
+      sb.classList.add('show');
+      sb.querySelector('.btn-main').disabled = true;
+    }
+
+    function closeSelect(sb) {
+      sb.classList.remove('show');
+      sb.querySelector('.btn-main').disabled = false;
+    }
+
+    document.querySelectorAll('.selectButton').forEach(sb => {
+      sb.addEventListener('mouseenter', () => mq.matches && openSelect(sb));
+      sb.addEventListener('mouseleave', () => mq.matches && closeSelect(sb));
+    });
+
+    document.addEventListener('click', e => {
+      const mainBtn = e.target.closest('.selectButton > .btn-main');
+      const optionBtn = e.target.closest('.selectButton .position-absolute .btn');
+      const sb = e.target.closest('.selectButton');
+
+      if (mq.matches && (mainBtn || optionBtn)) return; // desktop: hover handles it
+
+      if (mainBtn) {
+        document.querySelectorAll('.selectButton.show').forEach(el => el !== sb && closeSelect(el));
+        openSelect(sb);
+      } else if (optionBtn) {
+        closeSelect(sb);
+        // ...add-to-cart logic here
+      } else if (!sb) {
+        document.querySelectorAll('.selectButton.show').forEach(closeSelect);
+      }
+    });
+    // 1. Open navigationLevelOne when its navigationButton is clicked
+    document.querySelectorAll('.navigationButton').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const levelOne = btn.nextElementSibling;
+        if (levelOne && levelOne.classList.contains('navigationLevelOne')) {
+          levelOne.classList.add('active');
+        }
+      });
+    });
+
+    // 2. Open navigationLevelTwo when a singleNav item is clicked
+    document.querySelectorAll('.singleNav').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const levelOne = btn.closest('.navigationLevelOne');
+        if (!levelOne) return;
+        const levelTwo = levelOne.nextElementSibling;
+        if (levelTwo && levelTwo.classList.contains('navigationLevelTwo')) {
+          levelTwo.classList.add('active');
+        }
+      });
+    });
+
+    // 3. Handle both "back" buttons
+    document.querySelectorAll('.btn-back').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const label = btn.querySelector('span').textContent.trim();
+
+        if (label === 'Back to main menu') {
+          // Closes everything - both levels
+          document
+            .querySelectorAll('.navigationLevelOne.active, .navigationLevelTwo.active')
+            .forEach(el => el.classList.remove('active'));
+        }
+
+        if (label === 'Back to product categories') {
+          // Only closes level two, level one stays active
+          const levelTwo = btn.closest('.navigationLevelTwo');
+          if (levelTwo) levelTwo.classList.remove('active');
+        }
+      });
+    });
+    const navItems = document.querySelectorAll('.singleNav');
+
+    navItems.forEach(item => {
+      item.addEventListener('mouseenter', () => {
+        navItems.forEach(otherItem => {
+          if (otherItem !== item) {
+            otherItem.classList.add('darkenImage');
+          }
+        });
+      });
+
+      item.addEventListener('mouseleave', () => {
+        navItems.forEach(otherItem => {
+          otherItem.classList.remove('darkenImage');
+        });
+      });
+    });
+  </script>
+</body>
+
+</html>

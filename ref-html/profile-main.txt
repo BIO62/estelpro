@@ -1,0 +1,99 @@
+<!-- Mobile tab nav -->
+    <div class="d-lg-none border-bottom bg-white">
+      <div class="container">
+                <nav style="display:grid;grid-template-columns:1fr 1fr;">
+          <a href="profile.html" class="btn btn-sm fs-13 fw-semibold fc-main py-2 text-start">Хувийн мэдээлэл</a>
+          <a href="address.html" class="btn btn-sm fs-13 fc-secondary py-2 text-start">Хүргэлтийн хаяг</a>
+          <a href="orders.html" class="btn btn-sm fs-13 fc-secondary py-2 text-start">Миний захиалгууд</a>
+          <a href="wishlist.html" class="btn btn-sm fs-13 fc-secondary py-2 text-start">Хадгалсан бараа</a>
+        </nav>
+      </div>
+    </div>
+
+    <section class="py-5">
+      <div class="container">
+        <div class="row g-5 align-items-start">
+
+          <!-- Sidebar -->
+          <div class="col-lg-3 d-none d-lg-block">
+            <div class="sticky-top" style="top:88px;">
+              <div class="d-flex align-items-center gap-3 mb-4 pb-4" style="border-bottom:1px solid rgba(0,0,0,.07);">
+                <div class="d-flex align-items-center justify-content-center bg-main fc-white fw-bold rounded-5 flex-shrink-0" style="width:44px;height:44px;font-size:18px;">Б</div>
+                <div style="min-width:0;">
+                  <strong class="d-block fs-14 lh-sm text-truncate">Батболд</strong>
+                  <span class="fs-12 fc-secondary d-block text-truncate">batbold@gmail.com</span>
+                </div>
+              </div>
+              <span class="d-block fs-11 fw-bold text-uppercase fc-secondary mb-3" style="letter-spacing:.12em;">Миний бүртгэл</span>
+              <nav class="d-flex flex-column">
+                <a href="profile.html" class="side-nav-item active">Хувийн мэдээлэл</a>
+                <a href="address.html" class="side-nav-item">Хүргэлтийн хаяг</a>
+                <a href="orders.html" class="side-nav-item">Миний захиалгууд</a>
+                <a href="wishlist.html" class="side-nav-item">Хадгалсан бараа</a>
+              </nav>
+              <div style="border-top:1px solid rgba(0,0,0,.07);margin-top:8px;padding-top:8px;">
+                <button class="side-nav-item border-0 bg-transparent text-start w-100" style="color:#FF006E;">Системээс гарах</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Content -->
+          <div class="col-lg-9">
+            <h1 class="fw-bold fs-5 mb-1">Хувийн мэдээлэл</h1>
+            <p class="fc-secondary fs-13 mb-4">Таны бүртгэлийн мэдээлэл</p>
+
+            <div class="d-flex align-items-center gap-3 mb-4 pb-4" style="border-bottom:1px solid rgba(0,0,0,.07);">
+              <div class="d-flex align-items-center justify-content-center bg-main fc-white fw-bold rounded-5 flex-shrink-0" style="width:64px;height:64px;font-size:24px;">Б</div>
+              <div>
+                <strong class="d-block mb-1">Батболд Дорж</strong>
+                <span class="fc-secondary fs-13">batbold@gmail.com</span>
+              </div>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <label class="form-label fs-13 fw-semibold">Нэр</label>
+                <input type="text" class="form-control rounded-3" value="Батболд">
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label fs-13 fw-semibold">Овог</label>
+                <input type="text" class="form-control rounded-3" value="Дорж">
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label fs-13 fw-semibold">Утасны дугаар</label>
+                <input type="tel" class="form-control rounded-3" value="+976 9911-2233">
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label fs-13 fw-semibold">И-мэйл</label>
+                <input type="email" class="form-control rounded-3" value="batbold@gmail.com">
+              </div>
+              <div class="col-12 mt-4">
+                <button class="btn btn-main px-4 py-2">Хадгалах</button>
+              </div>
+            </div>
+
+            <hr class="my-5" style="opacity:.08;">
+
+            <h2 class="fw-semibold fs-6 mb-3">Нууц үг солих</h2>
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <label class="form-label fs-13 fw-semibold">Одоогийн нууц үг</label>
+                <input type="password" class="form-control rounded-3" placeholder="••••••••">
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label fs-13 fw-semibold">Шинэ нууц үг</label>
+                <input type="password" class="form-control rounded-3" placeholder="••••••••">
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label fs-13 fw-semibold">Шинэ нууц үг давтах</label>
+                <input type="password" class="form-control rounded-3" placeholder="••••••••">
+              </div>
+              <div class="col-12 mt-2">
+                <button class="btn btn-outline-secondary px-4 py-2 rounded-3">Нууц үг солих</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
