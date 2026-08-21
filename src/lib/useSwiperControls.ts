@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 
 export function useSwiperControls() {
-  const prevRef = useRef<HTMLDivElement>(null);
-  const nextRef = useRef<HTMLDivElement>(null);
+  const prevRef = useRef<HTMLButtonElement>(null);
+  const nextRef = useRef<HTMLButtonElement>(null);
   const pagRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
 

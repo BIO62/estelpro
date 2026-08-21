@@ -8,6 +8,16 @@ const nextConfig: NextConfig = {
         hostname: 'alphalabs.mn',
         pathname: '/nextstore-html/estel/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'd2zu1tgnlo40u9.cloudfront.net',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'estel.nextstore.mn',
+        pathname: '/**',
+      },
     ],
   },
 };

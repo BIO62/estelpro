@@ -52,14 +52,14 @@ export default function BranchesSlider() {
         </div>
         <div className="position-absolute top-50 translate-middle-y w-100 start-0 zindex-1 d-sm-block d-none">
           <div className="container position-relative">
-            <div ref={prevRef} className="swiper-button-prev m-0 featuredSlidePrev bg-white p-2 m-0">
+            <button type="button" ref={prevRef} className="swiper-button-prev m-0 featuredSlidePrev bg-white p-2 m-0 border-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={assetUrl('images/icons/chevronLeft.svg')} alt="" className="w-20 h-20" />
-            </div>
-            <div ref={nextRef} className="swiper-button-next m-0 featuredSlideNext bg-white p-2 m-0">
+            </button>
+            <button type="button" ref={nextRef} className="swiper-button-next m-0 featuredSlideNext bg-white p-2 m-0 border-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={assetUrl('images/icons/chevronRight.svg')} alt="" className="w-20 h-20" />
-            </div>
+            </button>
           </div>
         </div>
       </div>

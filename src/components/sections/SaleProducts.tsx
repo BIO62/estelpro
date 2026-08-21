@@ -1,53 +1,79 @@
 'use client';
 
+import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination, Autoplay } from 'swiper/modules';
+import { Navigation } from 'swiper/modules';
 import ProductCard from '../ui/ProductCard';
-import { assetUrl } from '@/lib/constants';
 import { saleProducts } from '@/lib/products';
 import { useSwiperControls } from '@/lib/useSwiperControls';
 
+function SliderArrow() {
+  return (
+    <i className="ga-slider-control__icon" aria-hidden="true">
+      <svg fill="none" viewBox="0 0 25 15">
+        <path stroke="currentColor" d="M6 2 .5 7.5 6 13" />
+        <path fill="currentColor" d="M1 7h20v1H1z" />
+      </svg>
+    </i>
+  );
+}
+
 export default function SaleProducts() {
-  const { prevRef, nextRef, pagRef, ready } = useSwiperControls();
+  const { prevRef, nextRef, ready } = useSwiperControls();
 
   return (
-    <section className="bg-light py-sm-5 py-4">
+    <section className="ga-slider-section">
       <div className="container">
-        <h4 className="fw-bold fs-6 text-uppercase border-start ps-2 border-3 mb-3">Хямдралтай бүтээгдэхүүн</h4>
+        <header className="ga-slider-header">
+          <h2 className="ga-slider-heading">
+            <Link href="/products">Хямдрал</Link>
+          </h2>
+          <div className="ga-slider-controls">
+            <button ref={prevRef} type="button" className="ga-slider-control" aria-label="Өмнөх">
+              <SliderArrow />
+            </button>
+            <button
+              ref={nextRef}
+              type="button"
+              className="ga-slider-control ga-slider-control--right"
+              aria-label="Дараах"
+            >
+              <SliderArrow />
+            </button>
+          </div>
+        </header>
         <Swiper
-          modules={[Navigation, Pagination, Autoplay]}
-          slidesPerView={1.45}
-          spaceBetween={12}
+          modules={[Navigation]}
+          slidesPerView={2}
+          spaceBetween={8}
           preventClicks={false}
           preventClicksPropagation={false}
           watchSlidesProgress
-          autoplay={{ delay: 5000, disableOnInteraction: false, pauseOnMouseEnter: true }}
           breakpoints={{
-            576: { slidesPerView: 2.15, spaceBetween: 14 },
-            992: { slidesPerView: 3, spaceBetween: 18 },
-            1400: { slidesPerView: 3.4, spaceBetween: 20 },
+            768: { slidesPerView: 3, spaceBetween: 12 },
+            1280: { slidesPerView: 4, spaceBetween: 16 },
           }}
           navigation={ready ? { prevEl: prevRef.current, nextEl: nextRef.current } : false}
-          pagination={ready ? { el: pagRef.current, clickable: true, dynamicBullets: true } : false}
-          className="swiper productsSlider"
+          className="ga-product-slider"
         >
           {saleProducts.map((product) => (
-            <SwiperSlide key={product.id} className="h-auto">
+            <SwiperSlide key={product.id}>
               <ProductCard {...product} />
             </SwiperSlide>
           ))}
+          <SwiperSlide>
+            <article className="ga-slider-more">
+              <Link href="/products" className="ga-slider-more__action">
+                <span className="ga-slider-more__btn">
+                  бүгдийг харах
+                  <svg fill="none" viewBox="0 0 14 11" aria-hidden="true">
+                    <path stroke="currentColor" strokeWidth="1.25" d="m8 1 4.5 4.5L8 10m4-4.5H0" />
+                  </svg>
+                </span>
+              </Link>
+            </article>
+          </SwiperSlide>
         </Swiper>
-        <div className="d-flex align-items-center justify-content-center pt-2 gap-2">
-          <div ref={prevRef} className="swiper-button-prev productsSlider-Prev position-relative bg-white p-2 rounded-2 border">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={assetUrl('images/icons/chevronLeft.svg')} alt="" className="w-20 h-20" />
-          </div>
-          <div ref={pagRef} className="swiper-pagination productsSlider-pagination position-relative" />
-          <div ref={nextRef} className="swiper-button-next productsSlider-Next position-relative bg-white p-2 rounded-2 border">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={assetUrl('images/icons/chevronRight.svg')} alt="" className="w-20 h-20" />
-          </div>
-        </div>
       </div>
     </section>
   );

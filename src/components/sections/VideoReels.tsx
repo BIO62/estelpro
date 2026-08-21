@@ -1,87 +1,177 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination, Thumbs } from 'swiper/modules';
+import { Pagination } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import { assetUrl } from '@/lib/constants';
-import { useSwiperControls } from '@/lib/useSwiperControls';
 
-const reelText = `Үс шингэрэх, унах хандлагатай үсэнд зориулсан шампунь. Хуйхыг зөөлөн цэвэрлэж, чийгийн тэнцвэрийг хадгалахад дэмжлэг үзүүлнэ. Тогтмол хэрэглэснээр үсийг илүү бат бөх, өтгөн, эрүүл байлгахад тусална.`;
+const slides = [
+  {
+    title: 'OTIUM UNIQUE & Активатор',
+    description:
+      'Үс шингэрэх, унах хандлагатай үсэнд зориулсан шампунь. Хуйхыг зөөлөн цэвэрлэж, чийгийн тэнцвэрийг хадгалахад дэмжлэг үзүүлнэ.',
+    href: '/products/1',
+    cta: 'Худалдаж авах',
+    type: 'image' as const,
+    src: 'images/demo/featured mob 800x1288 1 copy.jpg',
+  },
+  {
+    title: 'Чийгшил & гялалзалт',
+    description:
+      'Тогтмол хэрэглэснээр үсийг илүү бат бөх, өтгөн, эрүүл байлгахад тусална. Гялалзсан, зөөлөн үс.',
+    href: '/products/1',
+    cta: 'Худалдаж авах',
+    type: 'video' as const,
+    src: 'videos/reel1.mp4',
+  },
+  {
+    title: 'Мэргэжлийн арчилгаа',
+    description: 'ESTEL Professional — салоны үр дүнг гэртээ. Өдөр тутмын арчилгааны цогц шийдэл.',
+    href: '/products/1',
+    cta: 'Худалдаж авах',
+    type: 'image' as const,
+    src: 'images/demo/featured mob 800x1288 2.jpg',
+  },
+  {
+    title: 'Өнгө хамгаалалт',
+    description: 'Өнгөтэй үсийг хамгаалж, гялалзлыг нэмэгдүүлнэ. Салоны дараах арчилгаанд тохиромжтой.',
+    href: '/products/1',
+    cta: 'Худалдаж авах',
+    type: 'image' as const,
+    src: 'images/demo/product1.jpg',
+  },
+  {
+    title: 'Хуйхны тэнцвэр',
+    description: 'Хуйхыг цэвэрлэж, үсний үндсийг бэхжүүлнэ. Хөнгөн бүтэцтэй, өдөр бүр хэрэглэнэ.',
+    href: '/products/1',
+    cta: 'Худалдаж авах',
+    type: 'video' as const,
+    src: 'videos/reel1.mp4',
+  },
+  {
+    title: 'Гялалзсан төгсгөл',
+    description: 'Үсний үзүүрийг тэжээж, хуурайшилтыг бууруулна. Зөөлөн, уян хатан үс.',
+    href: '/products/1',
+    cta: 'Худалдаж авах',
+    type: 'image' as const,
+    src: 'images/demo/product6.jpg',
+  },
+  {
+    title: 'Салоны дуртай',
+    description: 'Мэргэжилтнүүдийн сонголт. Үр дүн нэг удаагийн хэрэглээнээс мэдэгдэнэ.',
+    href: '/products/1',
+    cta: 'Худалдаж авах',
+    type: 'image' as const,
+    src: 'images/demo/1000x1000.jpg',
+  },
+  {
+    title: 'Бүх үсний төрөлд',
+    description: 'Нарийн, энгийн, бүдүүн үсэнд тохирно. Хүндрүүлэхгүй, хурдан шингэнэ.',
+    href: '/products/1',
+    cta: 'Худалдаж авах',
+    type: 'image' as const,
+    src: 'images/demo/product3.jpg',
+  },
+];
 
 export default function VideoReels() {
-  const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
-  const { prevRef, nextRef, pagRef, ready } = useSwiperControls();
+  const [active, setActive] = useState(0);
+  const mediaRefs = useRef<(HTMLVideoElement | null)[]>([]);
+
+  const syncMedia = (index: number) => {
+    mediaRefs.current.forEach((el, i) => {
+      if (!el) return;
+      if (i === index) {
+        el.play().catch(() => {});
+      } else {
+        el.pause();
+        el.currentTime = 0;
+      }
+    });
+  };
+
+  useEffect(() => {
+    syncMedia(active);
+  }, [active]);
+
+  const onChange = (swiper: SwiperType) => {
+    setActive(swiper.activeIndex);
+  };
 
   return (
-    <section className="py-sm-5 py-3">
-      <div className="container">
-        <div className="row g-3">
-          <div className="col-xl-3 col-lg-4 col-sm-5 order-sm-1 order-2">
+    <section className="product-focus-tabs ugc-carousel" id="estel-ugc-carousel">
+      <div className="product-focus-block" id="estel-ugc-carousel-block">
+        <div className="product-focus-tabs__block">
+          <div className="product-focus-tabs__block-content page-width">
+            {slides.map((slide, idx) => (
+              <div
+                key={idx}
+                className={`product-focus-tabs__block-content-inner js-slide-content${idx === active ? '' : ' hidden'}`}
+                data-slide-index={idx}
+              >
+                <span className="product-focus-tabs__block-content-title">{slide.title}</span>
+                <div className="product-focus-tabs__block-content-description">
+                  <div className="metafield-rich_text_field">
+                    <p>{slide.description}</p>
+                  </div>
+                </div>
+                <Link href={slide.href} className="button">
+                  {slide.cta}
+                </Link>
+              </div>
+            ))}
+          </div>
+
+          <div className="product-focus-tabs__block-slider">
             <Swiper
-              modules={[Navigation, Pagination, Thumbs]}
-              loop
-              thumbs={{ swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null }}
-              navigation={ready ? { prevEl: prevRef.current, nextEl: nextRef.current } : false}
-              pagination={ready ? { el: pagRef.current, clickable: true, dynamicBullets: true } : false}
-              className="swiper reelSlider h-100"
+              modules={[Pagination]}
+              slidesPerView={1.15}
+              spaceBetween={10}
+              speed={450}
+              watchSlidesProgress
+              slideToClickedSlide
+              pagination={{ clickable: true }}
+              breakpoints={{
+                750: {
+                  slidesPerView: 3,
+                  spaceBetween: 17,
+                },
+              }}
+              onSlideChange={onChange}
+              className="splide splide--slide splide--ltr splide--draggable is-active is-overflow is-initialized"
             >
-              {Array.from({ length: 6 }).map((_, idx) => (
-                <SwiperSlide key={idx} className="h-auto">
-                  <div className="d-flex flex-column h-100 justify-content-center align-items-start pe-sm-5 gap-1">
-                    <strong className="fs-5">OTIUM UNIQUE  &amp; Активатор</strong>
-                    <span className="d-block lh-sm">{reelText}</span>
-                    <Link href="/products/1" className="btn btn-main btn-swipe mt-3 d-inline-flex align-items-center">
-                      <span>Худалдаж авах</span>
-                      <span className="btn-arrow">→</span>
-                    </Link>
+              {slides.map((slide, idx) => (
+                <SwiperSlide
+                  key={idx}
+                  className="splide__slide"
+                  data-slide-index={idx}
+                >
+                  <div className="product-focus-tabs__slide">
+                    <div className="product-focus-tabs__slide-inner">
+                      {slide.type === 'video' ? (
+                        <video
+                          ref={(el) => {
+                            mediaRefs.current[idx] = el;
+                          }}
+                          playsInline
+                          muted
+                          loop
+                          preload="metadata"
+                          className={idx === active ? 'video-player playing' : 'video-player'}
+                        >
+                          <source src={assetUrl(slide.src)} type="video/mp4" />
+                        </video>
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={assetUrl(slide.src)} alt="" />
+                      )}
+                    </div>
                   </div>
                 </SwiperSlide>
               ))}
             </Swiper>
-          </div>
-          <div className="col-xl-9 col-lg-8 col-sm-7 order-sm-2 order-1">
-            <Swiper
-              modules={[Thumbs]}
-              onSwiper={setThumbsSwiper}
-              watchSlidesProgress
-              spaceBetween={8}
-              slidesPerView={1.2}
-              centeredSlides
-              breakpoints={{
-                768: {
-                  slidesPerView: 2,
-                  spaceBetween: 8,
-                  centeredSlides: false,
-                },
-                1200: {
-                  slidesPerView: 3,
-                  spaceBetween: 8,
-                  centeredSlides: false,
-                },
-              }}
-              className="swiper thumbSlider"
-            >
-              {Array.from({ length: 6 }).map((_, idx) => (
-                <SwiperSlide key={idx} className="d-flex h-auto align-items-end">
-                  <div className="reel-overlay" />
-                  <video src={assetUrl('videos/reel1.mp4')} className="w-100 h-auto rounded-3" playsInline muted loop autoPlay />
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          </div>
-        </div>
-        <div className="d-flex align-items-center justify-content-center pt-2 gap-2 position-relative zindex-0">
-          <div ref={prevRef} className="swiper-button-prev reelSlider-Prev position-relative bg-white p-2 rounded-2 border">
-        
-            <Image src={assetUrl('images/icons/chevronLeft.svg')} alt="" width={20} height={20} className="w-20 h-20" />
-          </div>
-          <div ref={pagRef} className="swiper-pagination reelSlider-pagination position-relative" />
-          <div ref={nextRef} className="swiper-button-next reelSlider-Next position-relative bg-white p-2 rounded-2 border">
-           
-            <Image src={assetUrl('images/icons/chevronRight.svg')} alt="" width={20} height={20} className="w-20 h-20" />
           </div>
         </div>
       </div>
