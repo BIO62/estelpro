@@ -2159,16 +2159,56 @@ body.qv-open {
   color: #111;
 }
 
-/* ===== Admin Light Luxury scope ===== */
+/* ===== Admin Light Luxury scope (Preline & Clean Isolation) ===== */
+.admin-scope {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  color: #111827 !important;
+  background-color: #f9fafb !important;
+}
+
 .admin-scope a,
 .admin-scope a:hover,
 .admin-scope a:focus {
   text-decoration: none !important;
+  color: inherit !important;
 }
 
-.admin-scope aside a,
-.admin-scope nav a {
-  color: inherit !important;
+.admin-scope aside {
+  width: 256px !important;
+  min-width: 256px !important;
+  max-width: 256px !important;
+  flex: 0 0 256px !important;
+  position: fixed !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  z-index: 50 !important;
+  background-color: #ffffff !important;
+  border-right: 1px solid #e5e7eb !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+@media (min-width: 1024px) {
+  .admin-scope .admin-main-wrap {
+    margin-left: 256px !important;
+    width: calc(100% - 256px) !important;
+    min-width: 0 !important;
+  }
+}
+
+.admin-scope aside nav a {
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  color: #4b5563 !important;
+  text-decoration: none !important;
+}
+
+.admin-scope aside nav a:hover {
+  color: #111827 !important;
+  background-color: #f3f4f6 !important;
 }
 
 /* Table — Bootstrap дарах */
@@ -2177,28 +2217,32 @@ body.qv-open {
   --bs-table-bg: transparent;
   --bs-table-color: #1e293b;
   --bs-table-striped-bg: #fafaf9;
-  margin-bottom: 0;
-  color: var(--bs-table-color);
-  width: 100%;
-  border-collapse: collapse;
+  margin-bottom: 0 !important;
+  color: var(--bs-table-color) !important;
+  width: 100% !important;
+  border-collapse: collapse !important;
 }
 
 .admin-scope th,
 .admin-scope td {
   background: transparent !important;
-  vertical-align: middle;
+  vertical-align: middle !important;
+  border-color: #f3f4f6 !important;
 }
 
 /* Form элементүүд */
 .admin-scope input,
 .admin-scope select,
 .admin-scope textarea {
-  background-image: none;
+  background-image: none !important;
+  font-family: inherit !important;
 }
 
-.admin-scope select:focus {
-  outline: none;
-  box-shadow: none;
+.admin-scope select:focus,
+.admin-scope input:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.08) !important;
 }
+
 
 
