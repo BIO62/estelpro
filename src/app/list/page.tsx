@@ -1,5 +1,7 @@
 import ProductCatalog from '@/components/catalog/ProductCatalog';
 
+export const revalidate = 300;
+
 export default function ListPage({
   searchParams,
 }: {

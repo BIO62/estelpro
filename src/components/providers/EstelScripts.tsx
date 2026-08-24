@@ -71,20 +71,6 @@ export default function EstelScripts() {
       });
     });
 
-    document.querySelectorAll('.navigationLevelOne').forEach((panel) => {
-      const navItems = panel.querySelectorAll('.singleNav');
-      navItems.forEach((item) => {
-        item.addEventListener('mouseenter', () => {
-          navItems.forEach((other) => {
-            if (other !== item) other.classList.add('darkenImage');
-          });
-        });
-        item.addEventListener('mouseleave', () => {
-          navItems.forEach((other) => other.classList.remove('darkenImage'));
-        });
-      });
-    });
-
     document.querySelectorAll('.heartWishBtn').forEach((btn) => {
       btn.addEventListener('click', () => {
         const img = btn.querySelector('img');

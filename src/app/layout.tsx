@@ -18,6 +18,8 @@ const montserrat = Montserrat({
   display: 'swap',
 });
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: 'ESTEL Professional Mongolia',
   description: 'ESTEL Professional Mongolia - Мэргэжлийн үс арчилгааны бүтээгдэхүүн',

@@ -1,6 +1,9 @@
+import { unstable_cache } from 'next/cache';
 import { FALLBACK_PRODUCT_IMAGE } from '@/lib/constants';
 import type { CatalogProduct, ProductSize } from '@/lib/products';
 import { CONSUMER_ROOT_TAXONS, isDresserProduct, isDresserTaxonCode } from '@/lib/catalog-audience';
+
+const DATA_REVALIDATE = 300;
 
 export const SYLIUS_BASE_URL = process.env.NEXT_PUBLIC_SYLIUS_URL || 'https://estel.nextstore.mn';
 
@@ -93,10 +96,9 @@ function unwrapTotal(data: unknown, fallback: number): number {
   return fallback;
 }
 
-function fetchOpts(revalidate = 120): RequestInit {
+function fetchOpts(): RequestInit {
   return {
-    cache: 'force-cache',
-    next: { revalidate },
+    next: { revalidate: DATA_REVALIDATE },
     headers: { Accept: 'application/json' },
   };
 }
@@ -291,27 +293,23 @@ export async function getSyliusProducts(options?: {
   return items;
 }
 
-export async function getAllSyliusProducts(options?: {
-  taxonCode?: string;
-  audience?: 'consumer' | 'dresser';
-}): Promise<SyliusProduct[]> {
-  const itemsPerPage = 50;
-  const audience = options?.audience || 'consumer';
+async function loadAllSyliusProducts(taxonCode: string, audience: 'consumer' | 'dresser'): Promise<SyliusProduct[]> {
+  const itemsPerPage = 100;
   const collected: SyliusProduct[] = [];
 
   const first = await fetchShopProductsPage({
-    taxonCode: options?.taxonCode,
+    taxonCode: taxonCode || undefined,
     page: 1,
     itemsPerPage,
   });
   collected.push(...first.items);
 
-  const totalPages = Math.min(30, Math.max(1, Math.ceil((first.total || first.items.length) / itemsPerPage)));
+  const totalPages = Math.min(15, Math.max(1, Math.ceil((first.total || first.items.length) / itemsPerPage)));
   if (totalPages > 1) {
     const rest = await Promise.all(
       Array.from({ length: totalPages - 1 }, (_, index) =>
         fetchShopProductsPage({
-          taxonCode: options?.taxonCode,
+          taxonCode: taxonCode || undefined,
           page: index + 2,
           itemsPerPage,
         })
@@ -326,6 +324,19 @@ export async function getAllSyliusProducts(options?: {
     seen.add(product.code);
     return audience === 'dresser' ? isDresserProduct(product) : !isDresserProduct(product);
   });
+}
+
+export async function getAllSyliusProducts(options?: {
+  taxonCode?: string;
+  audience?: 'consumer' | 'dresser';
+}): Promise<SyliusProduct[]> {
+  const taxonCode = options?.taxonCode || '';
+  const audience = options?.audience || 'consumer';
+  return unstable_cache(
+    () => loadAllSyliusProducts(taxonCode, audience),
+    ['sylius-catalog', taxonCode, audience],
+    { revalidate: DATA_REVALIDATE }
+  )();
 }
 
 async function fetchShopProductsPage(options: {
@@ -356,14 +367,20 @@ export async function getSyliusProductByCode(code: string): Promise<SyliusProduc
 }
 
 export async function getSyliusTaxons(): Promise<SyliusTaxon[]> {
-  try {
-    const res = await fetch(`${SYLIUS_BASE_URL}/api/v2/shop/taxons`, fetchOpts(300));
-    if (!res.ok) return [];
-    return unwrapList<SyliusTaxon>(await res.json());
-  } catch (error) {
-    console.error('Error fetching Sylius taxons:', error);
-    return [];
-  }
+  return unstable_cache(
+    async () => {
+      try {
+        const res = await fetch(`${SYLIUS_BASE_URL}/api/v2/shop/taxons`, fetchOpts());
+        if (!res.ok) return [];
+        return unwrapList<SyliusTaxon>(await res.json());
+      } catch (error) {
+        console.error('Error fetching Sylius taxons:', error);
+        return [];
+      }
+    },
+    ['sylius-taxons'],
+    { revalidate: DATA_REVALIDATE }
+  )();
 }
 
 function isOnSale(product: SyliusProduct): boolean {
@@ -372,15 +389,21 @@ function isOnSale(product: SyliusProduct): boolean {
   );
 }
 
-export async function getHomeCategoryPicks(): Promise<{
-  newProducts: SyliusProduct[];
-  saleProducts: SyliusProduct[];
-}> {
+function pickRandom<T>(items: T[], count: number): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy.slice(0, Math.min(count, copy.length));
+}
+
+async function loadHomeProductPool(): Promise<SyliusProduct[]> {
   const packs = await Promise.all(
     CONSUMER_ROOT_TAXONS.map(async (taxonCode) => {
       const { items } = await getSyliusProductsCollection({
         taxonCode,
-        itemsPerPage: 4,
+        itemsPerPage: 16,
         sort: 'newest',
         audience: 'consumer',
       });
@@ -388,15 +411,40 @@ export async function getHomeCategoryPicks(): Promise<{
     })
   );
 
-  const newProducts = packs.map((items) => items[0]).filter(Boolean);
-  const used = new Set(newProducts.map((item) => item.code));
-  const saleProducts = packs
-    .map((items) => {
-      const sale = items.find((item) => !used.has(item.code) && isOnSale(item));
-      const next = items.find((item) => !used.has(item.code));
-      return sale || next || items[0];
-    })
-    .filter(Boolean);
+  const seen = new Set<string>();
+  const pool: SyliusProduct[] = [];
+  for (const items of packs) {
+    for (const item of items) {
+      if (!item?.code || seen.has(item.code)) continue;
+      seen.add(item.code);
+      pool.push(item);
+    }
+  }
+  return pool;
+}
 
+async function getHomeProductPool(): Promise<SyliusProduct[]> {
+  return unstable_cache(loadHomeProductPool, ['sylius-home-pool'], { revalidate: DATA_REVALIDATE })();
+}
+
+export async function getHomeCategoryPicks(): Promise<{
+  newProducts: SyliusProduct[];
+  saleProducts: SyliusProduct[];
+}> {
+  const pool = await getHomeProductPool();
+  const newProducts = pickRandom(pool, 5);
+  const used = new Set(newProducts.map((item) => item.code));
+  const salePool = pool.filter((item) => !used.has(item.code));
+  const discounted = salePool.filter(isOnSale);
+  const saleProducts = pickRandom(discounted.length >= 8 ? discounted : salePool, 8);
   return { newProducts, saleProducts };
+}
+
+export function toHomePicksPayload(picks: { newProducts: SyliusProduct[]; saleProducts: SyliusProduct[] }) {
+  return {
+    newProducts: picks.newProducts.map((item) => toCatalogProduct(item, { forceNew: true })),
+    saleProducts: picks.saleProducts
+      .map((item) => toCatalogProduct(item))
+      .filter((item, index, list) => list.findIndex((entry) => entry.id === item.id) === index),
+  };
 }

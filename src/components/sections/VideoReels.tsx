@@ -12,7 +12,7 @@ const slides = [
     title: 'OTIUM UNIQUE & Активатор',
     description:
       'Үс шингэрэх, унах хандлагатай үсэнд зориулсан шампунь. Хуйхыг зөөлөн цэвэрлэж, чийгийн тэнцвэрийг хадгалахад дэмжлэг үзүүлнэ.',
-    href: '/products/1',
+    href: '/list',
     cta: 'Худалдаж авах',
     type: 'image' as const,
     src: 'images/demo/featured mob 800x1288 1 copy.jpg',
@@ -21,7 +21,7 @@ const slides = [
     title: 'Чийгшил & гялалзалт',
     description:
       'Тогтмол хэрэглэснээр үсийг илүү бат бөх, өтгөн, эрүүл байлгахад тусална. Гялалзсан, зөөлөн үс.',
-    href: '/products/1',
+    href: '/list',
     cta: 'Худалдаж авах',
     type: 'video' as const,
     src: 'videos/reel1.mp4',
@@ -29,7 +29,7 @@ const slides = [
   {
     title: 'Мэргэжлийн арчилгаа',
     description: 'ESTEL Professional — салоны үр дүнг гэртээ. Өдөр тутмын арчилгааны цогц шийдэл.',
-    href: '/products/1',
+    href: '/list',
     cta: 'Худалдаж авах',
     type: 'image' as const,
     src: 'images/demo/featured mob 800x1288 2.jpg',
@@ -37,7 +37,7 @@ const slides = [
   {
     title: 'Өнгө хамгаалалт',
     description: 'Өнгөтэй үсийг хамгаалж, гялалзлыг нэмэгдүүлнэ. Салоны дараах арчилгаанд тохиромжтой.',
-    href: '/products/1',
+    href: '/list',
     cta: 'Худалдаж авах',
     type: 'image' as const,
     src: 'images/demo/product1.jpg',
@@ -45,7 +45,7 @@ const slides = [
   {
     title: 'Хуйхны тэнцвэр',
     description: 'Хуйхыг цэвэрлэж, үсний үндсийг бэхжүүлнэ. Хөнгөн бүтэцтэй, өдөр бүр хэрэглэнэ.',
-    href: '/products/1',
+    href: '/list',
     cta: 'Худалдаж авах',
     type: 'video' as const,
     src: 'videos/reel1.mp4',
@@ -53,7 +53,7 @@ const slides = [
   {
     title: 'Гялалзсан төгсгөл',
     description: 'Үсний үзүүрийг тэжээж, хуурайшилтыг бууруулна. Зөөлөн, уян хатан үс.',
-    href: '/products/1',
+    href: '/list',
     cta: 'Худалдаж авах',
     type: 'image' as const,
     src: 'images/demo/product6.jpg',
@@ -61,7 +61,7 @@ const slides = [
   {
     title: 'Салоны дуртай',
     description: 'Мэргэжилтнүүдийн сонголт. Үр дүн нэг удаагийн хэрэглээнээс мэдэгдэнэ.',
-    href: '/products/1',
+    href: '/list',
     cta: 'Худалдаж авах',
     type: 'image' as const,
     src: 'images/demo/1000x1000.jpg',
@@ -69,7 +69,7 @@ const slides = [
   {
     title: 'Бүх үсний төрөлд',
     description: 'Нарийн, энгийн, бүдүүн үсэнд тохирно. Хүндрүүлэхгүй, хурдан шингэнэ.',
-    href: '/products/1',
+    href: '/list',
     cta: 'Худалдаж авах',
     type: 'image' as const,
     src: 'images/demo/product3.jpg',

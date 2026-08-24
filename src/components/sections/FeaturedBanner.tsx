@@ -33,7 +33,7 @@ export default function FeaturedBanner() {
                 9-р сарын 26-нд
               </span>
               <div className="d-flex gap-1 mt-3">
-                <Link href="/products/1" className="btn btn-white btn-swipe d-flex align-items-center text-start gap-2">
+                <Link href="/list" className="btn btn-white btn-swipe d-flex align-items-center text-start gap-2">
                   <span className="flex-grow-1">Худалдаж авах</span>
                   <span className="btn-arrow">→</span>
                 </Link>
@@ -51,7 +51,7 @@ export default function FeaturedBanner() {
                 9-р сарын 26-нд
               </span>
               <div className="d-flex gap-1 mt-3">
-                <Link href="/products/1" className="btn btn-white btn-swipe d-flex align-items-center text-start gap-2">
+                <Link href="/list" className="btn btn-white btn-swipe d-flex align-items-center text-start gap-2">
                   <span className="flex-grow-1">Худалдаж авах</span>
                   <span className="btn-arrow">→</span>
                 </Link>
@@ -72,7 +72,7 @@ export default function FeaturedBanner() {
                 9-р сарын 26-нд
               </span>
               <div className="d-flex gap-1 mt-3">
-                <Link href="/products/1" className="btn btn-white btn-swipe d-flex align-items-center text-start gap-2">
+                <Link href="/list" className="btn btn-white btn-swipe d-flex align-items-center text-start gap-2">
                   <span className="flex-grow-1">Худалдаж авах</span>
                   <span className="btn-arrow">→</span>
                 </Link>
@@ -91,7 +91,7 @@ export default function FeaturedBanner() {
                 9-р сарын 26-нд
               </span>
               <div className="d-flex gap-1 mt-3">
-                <Link href="/products/1" className="btn btn-white btn-swipe d-flex align-items-center text-start gap-2">
+                <Link href="/list" className="btn btn-white btn-swipe d-flex align-items-center text-start gap-2">
                   <span className="flex-grow-1">Худалдаж авах</span>
                   <span className="btn-arrow">→</span>
                 </Link>

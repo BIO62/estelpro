@@ -33,7 +33,7 @@ export default function HeroSlider() {
               <span>Кератин, амин хүчлээр баяжуулж, үсийг</span>
               <strong>зөөлөн, уян хатан болгоно.</strong>
               <span>9-р сарын 26-нд</span>
-              <Link href="/products/1" className="btn btn-main btn-swipe mt-3 d-inline-flex align-items-center">
+              <Link href="/list" className="btn btn-main btn-swipe mt-3 d-inline-flex align-items-center">
                 <span>Урьдчилан захиалах</span>
                 <span className="btn-arrow">→</span>
               </Link>
@@ -47,7 +47,7 @@ export default function HeroSlider() {
               <span>Үсний бүтцийг бэхжүүлж, чийгшүүлэн гадаргууг</span>
               <strong>эрүүл гялалзсан болгоно.</strong>
               <span>9-р сарын 26-нд</span>
-              <Link href="/products/1" className="btn btn-main btn-swipe mt-3 d-inline-flex align-items-center">
+              <Link href="/list" className="btn btn-main btn-swipe mt-3 d-inline-flex align-items-center">
                 <span>Урьдчилан захиалах</span>
                 <span className="btn-arrow">→</span>
               </Link>
@@ -63,7 +63,7 @@ export default function HeroSlider() {
               <span>Үсний бүтцийг бэхжүүлж, чийгшүүлэн гадаргууг</span>
               <strong>эрүүл гялалзсан болгоно.</strong>
               <span>9-р сарын 26-нд</span>
-              <Link href="/products/1" className="btn btn-main btn-swipe mt-3 d-inline-flex align-items-center">
+              <Link href="/list" className="btn btn-main btn-swipe mt-3 d-inline-flex align-items-center">
                 <span>Урьдчилан захиалах</span>
                 <span className="btn-arrow">→</span>
               </Link>
@@ -77,7 +77,7 @@ export default function HeroSlider() {
               <span>Кератин, амин хүчлээр баяжуулж, үсийг</span>
               <strong>зөөлөн, уян хатан болгоно.</strong>
               <span>9-р сарын 26-нд</span>
-              <Link href="/products/1" className="btn btn-main btn-swipe mt-3 d-inline-flex align-items-center">
+              <Link href="/list" className="btn btn-main btn-swipe mt-3 d-inline-flex align-items-center">
                 <span>Урьдчилан захиалах</span>
                 <span className="btn-arrow">→</span>
               </Link>
@@ -104,7 +104,7 @@ export default function HeroSlider() {
             >
               {toastProducts.map((item, idx) => (
                 <SwiperSlide key={idx}>
-                  <Link href="/products/1" className="d-flex align-items-center gap-2 text-decoration-none fc-dark fs-12">
+                  <Link href="/list" className="d-flex align-items-center gap-2 text-decoration-none fc-dark fs-12">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={assetUrl(item.img)} alt="" className="w-48 h-48 rounded-2 flex-shrink-0" />
                     <span className="doubleTruncate">{item.text}</span>

@@ -125,7 +125,7 @@ export default function NewProducts({ products = [] }: { products?: CatalogProdu
         <div className="text-center py-5">
           <h3 className="fw-bold mb-3">{cta.brand || 'ESTEL'}</h3>
           <p className="mb-4 mx-auto maxw-640">{cta.name}</p>
-          <Link href={productHref(cta.id)} className="btn btn-main btn-swipe d-inline-flex align-items-center">
+          <Link href="/list" className="btn btn-main btn-swipe d-inline-flex align-items-center">
             <span>Худалдаж авах</span>
             <span className="btn-arrow">→</span>
           </Link>

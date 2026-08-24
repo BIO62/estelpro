@@ -1,28 +1,22 @@
 import HeroSlider from '@/components/sections/HeroSlider';
 import VideoReels from '@/components/sections/VideoReels';
 import FeaturedBanner from '@/components/sections/FeaturedBanner';
-import NewProducts from '@/components/sections/NewProducts';
-import BestsellerSlider from '@/components/sections/BestsellerSlider';
-import SaleProducts from '@/components/sections/SaleProducts';
+import HomePicks from '@/components/sections/HomePicks';
 import BranchesSlider from '@/components/sections/BranchesSlider';
 import AcademyBanner from '@/components/sections/AcademyBanner';
-import { getHomeCategoryPicks, toCatalogProduct } from '@/lib/api/sylius';
+import { getHomeCategoryPicks, toHomePicksPayload } from '@/lib/api/sylius';
+
+export const revalidate = 300;
 
 export default async function HomePage() {
-  const { newProducts: newRaw, saleProducts: saleRaw } = await getHomeCategoryPicks();
-  const newProducts = newRaw.map((item) => toCatalogProduct(item, { forceNew: true }));
-  const saleProducts = saleRaw
-    .map((item) => toCatalogProduct(item))
-    .filter((item, index, list) => list.findIndex((entry) => entry.id === item.id) === index);
+  const picks = toHomePicksPayload(await getHomeCategoryPicks());
 
   return (
     <>
       <HeroSlider />
       <VideoReels />
       <FeaturedBanner />
-      <NewProducts products={newProducts} />
-      <BestsellerSlider />
-      <SaleProducts products={saleProducts} />
+      <HomePicks newProducts={picks.newProducts} saleProducts={picks.saleProducts} />
       <BranchesSlider />
       <AcademyBanner />
     </>

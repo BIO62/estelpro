@@ -61,54 +61,6 @@ header .btn {
   visibility: visible;
 }
 
-.navigationLevelOne .singleNav .singleNavImage,
-.navigationLevelTwo .singleNav .singleNavImage {
-  position: relative;
-  background-color: #fff;
-}
-
-.navigationLevelOne .singleNav .singleNavImage img,
-.navigationLevelTwo .singleNav .singleNavImage img {
-  display: block;
-  transition: opacity 0.2s ease;
-}
-
-.navigationLevelOne .singleNav .singleNavImage::after,
-.navigationLevelTwo .singleNav .singleNavImage::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: #4a4a4a;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-}
-
-.navigationLevelOne .singleNav.darkenImage .singleNavImage::after,
-.navigationLevelTwo .singleNav.darkenImage .singleNavImage::after {
-  opacity: 0.72;
-}
-
-@media (hover: hover) {
-  .navTileGrid:hover .singleNav .singleNavImage::after {
-    opacity: 0.72;
-  }
-
-  .navTileGrid:hover .singleNav:hover .singleNavImage::after,
-  .navTileGrid:hover .singleNav:hover .singleNavImage img {
-    opacity: 1;
-  }
-
-  .ga-plp-grid:hover .ga-plp-item {
-    opacity: 0.38;
-    transition: opacity 0.2s ease;
-  }
-
-  .ga-plp-grid:hover .ga-plp-item:hover {
-    opacity: 1;
-  }
-}
-
 .thumbSlider .swiper-slide video {
   width: 100%;
   height: auto;
