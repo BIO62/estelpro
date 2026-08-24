@@ -2159,9 +2159,7 @@ body.qv-open {
   color: #111;
 }
 
-/* ==========================================================================
-   Admin Scope & Clean Light Mode CSS (Isolates Admin from Bootstrap)
-   ========================================================================== */
+/* ===== Admin Light Luxury scope ===== */
 .admin-scope a,
 .admin-scope a:hover,
 .admin-scope a:focus {
@@ -2171,16 +2169,36 @@ body.qv-open {
 .admin-scope aside a,
 .admin-scope nav a {
   color: inherit !important;
-  text-decoration: none !important;
 }
 
-.admin-scope nav a:hover {
-  color: #1c1917 !important;
-}
-
-.admin-scope .table {
+/* Table — Bootstrap дарах */
+.admin-scope .table,
+.admin-scope table {
   --bs-table-bg: transparent;
-  --bs-table-color: #292524;
+  --bs-table-color: #1e293b;
+  --bs-table-striped-bg: #fafaf9;
+  margin-bottom: 0;
   color: var(--bs-table-color);
+  width: 100%;
+  border-collapse: collapse;
 }
+
+.admin-scope th,
+.admin-scope td {
+  background: transparent !important;
+  vertical-align: middle;
+}
+
+/* Form элементүүд */
+.admin-scope input,
+.admin-scope select,
+.admin-scope textarea {
+  background-image: none;
+}
+
+.admin-scope select:focus {
+  outline: none;
+  box-shadow: none;
+}
+
 

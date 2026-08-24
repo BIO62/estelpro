@@ -3,7 +3,7 @@ import { assetUrl } from '@/lib/constants';
 import MasonryGrid from '@/components/catalog/MasonryGrid';
 import ProductCard from '@/components/ui/ProductCard';
 import {
-  getSyliusProductsCollection,
+  getAllSyliusProducts,
   getSyliusTaxons,
   sortSyliusProducts,
   toCatalogProduct,
@@ -72,13 +72,9 @@ export default async function ProductCatalog({
   const sort = ((firstParam(sp.sort) as ProductSort) || (forceNew ? 'newest' : 'random')) as ProductSort;
   const page = Math.max(1, Number(firstParam(sp.page)) || 1);
 
-  const [collection, taxons] = await Promise.all([
-    getSyliusProductsCollection({
+  const [allProducts, taxons] = await Promise.all([
+    getAllSyliusProducts({
       taxonCode: taxon,
-      brandCode: brand,
-      page,
-      itemsPerPage: PAGE_SIZE,
-      sort: forceNew || sort === 'random' ? 'newest' : sort,
       audience,
     }),
     getSyliusTaxons(),
@@ -89,17 +85,18 @@ export default async function ProductCatalog({
     menuTaxons.find((item) => item.code === taxon) ||
     menuTaxons.flatMap((item) => item.children).find((item) => item.code === taxon);
   const currentBrand = getMenuBrand(brand);
-  let pageItems = collection.items;
-  if (brand) pageItems = pageItems.filter((item) => productMatchesBrand(item, brand));
+  const branded = brand ? allProducts.filter((item) => productMatchesBrand(item, brand)) : allProducts;
   const sorted = sortSyliusProducts(
-    pageItems,
+    branded,
     forceNew ? 'newest' : sort,
-    `${taxon || 'all'}:${brand || 'all'}:${page}:${pageItems.length}`
+    `${taxon || 'all'}:${brand || 'all'}:${branded.length}`
   );
-  const knownTotal = collection.total || sorted.length;
+  const knownTotal = sorted.length;
   const totalPages = Math.max(1, Math.ceil(knownTotal / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
-  const products = sorted.map((item) => toCatalogProduct(item, { forceNew }));
+  const products = sorted
+    .slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+    .map((item) => toCatalogProduct(item, { forceNew }));
   const countLabel = knownTotal;
   const title = currentBrand?.name || currentTaxon?.name || defaultTitle;
   const sortOptions: { value: ProductSort; label: string }[] = forceNew

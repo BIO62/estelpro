@@ -154,10 +154,7 @@ export function isRecentlyCreated(createdAt?: string): boolean {
 }
 
 export function filterNewProducts(products: SyliusProduct[]): SyliusProduct[] {
-  const ranked = [...products].sort((a, b) => productTime(b) - productTime(a));
-  const recent = ranked.filter((product) => isRecentlyCreated(product.createdAt));
-  if (recent.length >= 8) return recent;
-  return ranked.slice(0, Math.min(24, ranked.length));
+  return [...products].sort((a, b) => productTime(b) - productTime(a));
 }
 
 export function sortSyliusProducts(products: SyliusProduct[], sort: ProductSort, seed = ''): SyliusProduct[] {

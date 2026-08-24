@@ -23,7 +23,7 @@ export default function ClientLayout({
   taxons?: MenuTaxon[];
 }) {
   const pathname = usePathname();
-  const isAdmin = pathname?.startsWith('/admin');
+  const isAdmin = pathname?.startsWith('/admin') || pathname?.startsWith('/ad');
 
   // Admin хуудсанд зөвхөн children — Header/Footer/PromoBar байхгүй
   if (isAdmin) {
