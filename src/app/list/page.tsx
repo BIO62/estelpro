@@ -1,6 +1,6 @@
 import ProductCatalog from '@/components/catalog/ProductCatalog';
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
 
 export default function ListPage({
   searchParams,

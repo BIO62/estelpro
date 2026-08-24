@@ -2158,3 +2158,29 @@ body.qv-open {
   font-weight: 800;
   color: #111;
 }
+
+/* ==========================================================================
+   Admin Scope & Clean Light Mode CSS (Isolates Admin from Bootstrap)
+   ========================================================================== */
+.admin-scope a,
+.admin-scope a:hover,
+.admin-scope a:focus {
+  text-decoration: none !important;
+}
+
+.admin-scope aside a,
+.admin-scope nav a {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
+.admin-scope nav a:hover {
+  color: #1c1917 !important;
+}
+
+.admin-scope .table {
+  --bs-table-bg: transparent;
+  --bs-table-color: #292524;
+  color: var(--bs-table-color);
+}
+

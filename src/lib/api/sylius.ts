@@ -236,6 +236,7 @@ export function toCatalogProduct(product: SyliusProduct, opts?: { forceNew?: boo
 
 export async function getSyliusProductsCollection(options?: {
   taxonCode?: string;
+  brandCode?: string;
   page?: number;
   itemsPerPage?: number;
   sort?: ProductSort;
@@ -245,6 +246,9 @@ export async function getSyliusProductsCollection(options?: {
     const params = new URLSearchParams();
     if (options?.taxonCode) {
       params.append('productTaxons.taxon.code', options.taxonCode);
+    }
+    if (options?.brandCode) {
+      params.append('brand.code', options.brandCode);
     }
     params.append('page', String(options?.page || 1));
     params.append('itemsPerPage', String(options?.itemsPerPage || 12));
