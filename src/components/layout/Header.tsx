@@ -42,16 +42,10 @@ export default function Header() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={assetUrl('images/icons/heart.svg')} alt="" />
             </Link>
-            <button
-              type="button"
-              className="btn p-2"
-              data-bs-toggle="offcanvas"
-              data-bs-target="#loginCanvas"
-              aria-controls="loginCanvas"
-            >
+            <Link href="/login" className="btn p-2" aria-label="Нэвтрэх">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={assetUrl('images/icons/user.svg')} alt="" />
-            </button>
+            </Link>
             <button
               type="button"
               className="btn p-2 position-relative header-cart-btn"

@@ -1,22 +1,22 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Search,
   Bell,
   ChevronDown,
   Store,
-  ExternalLink,
   PlusCircle,
   Users,
-  LogOut,
   LayoutDashboard,
   Package,
-  ShoppingBag
+  ShoppingBag,
+  UserPlus
 } from 'lucide-react';
 import { assetUrl } from '@/lib/constants';
+import type { PublicUser } from '@/lib/auth/types';
 
 interface AdLayoutProps {
   children: React.ReactNode;
@@ -24,15 +24,43 @@ interface AdLayoutProps {
 
 export default function AdLayout({ children }: AdLayoutProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [user, setUser] = useState<PublicUser | null>(null);
 
-  const navTabs = [
-    { name: 'Overview', href: '/ad', label: 'Хянах самбар', icon: LayoutDashboard },
-    { name: 'Products', href: '/ad/products', label: 'Бүтээгдэхүүн', icon: Package, hasDropdown: true },
-    { name: 'Orders', href: '/ad/orders', label: 'Захиалгууд', icon: ShoppingBag, badge: '12', hasDropdown: true },
-    { name: 'POS', href: '/ad/create-order', label: 'Гараар захиалга (POS)', icon: PlusCircle },
-    { name: 'Customers', href: '/ad/customers', label: 'Харилцагчид & Салон', icon: Users },
-    { name: 'Store', href: '/', label: 'Дэлгүүрийн сайт үзэх', icon: Store, isExternal: true },
-  ];
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data: { user?: PublicUser | null }) => {
+        const next = data.user;
+        if (!next || (next.role !== 'manager' && next.role !== 'operator')) {
+          router.replace('/login/staff');
+          return;
+        }
+        setUser(next);
+      });
+  }, [router]);
+
+  useEffect(() => {
+    if (!user) return;
+    const blocked =
+      user.role === 'operator' &&
+      (pathname?.startsWith('/ad/products') || pathname?.startsWith('/ad/staff') || pathname?.startsWith('/ad/customers') || pathname?.startsWith('/ad/salons'));
+    if (blocked) router.replace('/ad/orders');
+  }, [user, pathname, router]);
+
+  const navTabs = useMemo(() => {
+    const all = [
+      { name: 'Overview', href: '/ad', label: 'Хянах самбар', icon: LayoutDashboard, roles: ['manager', 'operator'] },
+      { name: 'Products', href: '/ad/products', label: 'Бүтээгдэхүүн', icon: Package, hasDropdown: true, roles: ['manager'] },
+      { name: 'Orders', href: '/ad/orders', label: 'Захиалгууд', icon: ShoppingBag, badge: '12', hasDropdown: true, roles: ['manager', 'operator'] },
+      { name: 'POS', href: '/ad/create-order', label: 'Гараар захиалга (POS)', icon: PlusCircle, roles: ['manager', 'operator'] },
+      { name: 'Customers', href: '/ad/customers', label: 'Харилцагчид & Салон', icon: Users, roles: ['manager'] },
+      { name: 'Staff', href: '/ad/staff', label: 'Ажилтан', icon: UserPlus, roles: ['manager'] },
+      { name: 'Salons', href: '/ad/salons', label: 'Салоны код', icon: Store, roles: ['manager'] },
+      { name: 'Store', href: '/', label: 'Дэлгүүрийн сайт үзэх', icon: Store, isExternal: true, roles: ['manager', 'operator'] },
+    ];
+    return all.filter((tab) => !user || tab.roles.includes(user.role));
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans antialiased admin-scope text-sm">
@@ -89,12 +117,22 @@ export default function AdLayout({ children }: AdLayoutProps) {
             {/* User Profile */}
             <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
               <div className="w-9 h-9 rounded-full bg-slate-900 text-white font-bold text-sm flex items-center justify-center shadow-xs">
-                М
+                {(user?.name || 'A').slice(0, 1)}
               </div>
               <div className="hidden xl:block text-left">
-                <p className="text-sm font-bold text-slate-900 leading-none">Менежер</p>
-                <p className="text-xs text-slate-400 font-medium mt-1">estelpro.mn</p>
+                <p className="text-sm font-bold text-slate-900 leading-none">{user?.name || '...'}</p>
+                <p className="text-xs text-slate-400 font-medium mt-1">{user?.role === 'operator' ? 'Оператор' : 'Менежер'}</p>
               </div>
+              <button
+                type="button"
+                className="text-xs font-bold text-slate-500"
+                onClick={async () => {
+                  await fetch('/api/auth/logout', { method: 'POST' });
+                  router.replace('/login/staff');
+                }}
+              >
+                Гарах
+              </button>
             </div>
           </div>
         </div>
@@ -134,10 +172,13 @@ export default function AdLayout({ children }: AdLayoutProps) {
         </div>
       </header>
 
-      {/* 3. Main Content Container */}
+      {user ? (
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
+      ) : (
+        <div className="p-10 text-sm text-slate-500">Шалгаж байна...</div>
+      )}
     </div>
   );
 }

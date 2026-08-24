@@ -1,62 +1,95 @@
 'use client';
 
-import Link from 'next/link';
-import { assetUrl } from '@/lib/constants';
-import { useEffect } from 'react';
+import { FormEvent, Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import AuthSplit from '@/components/auth/AuthSplit';
+import { useLocalizedValidation } from '@/lib/useLocalizedValidation';
+import { Button } from '@/components/ui/button';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 
-export default function VerifyPage() {
+function VerifyForm() {
+  const router = useRouter();
+  const params = useSearchParams();
+  const formRef = useLocalizedValidation();
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    document.querySelectorAll('.otp-box').forEach((inp, idx, all) => {
-      inp.addEventListener('input', function (this: HTMLInputElement) {
-        this.value = this.value.replace(/\D/g, '');
-        if (this.value && idx < all.length - 1) (all[idx + 1] as HTMLInputElement).focus();
-      });
-      inp.addEventListener('keydown', function (this: HTMLInputElement, e) {
-        if ((e as KeyboardEvent).key === 'Backspace' && !this.value && idx > 0) (all[idx - 1] as HTMLInputElement).focus();
-      });
+    setEmail(params.get('email') || sessionStorage.getItem('estel_verify_email') || '');
+  }, [params]);
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    setError('');
+    setLoading(true);
+    const res = await fetch('/api/auth/otp/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, code, purpose: 'register' }),
     });
-    let t = 90;
-    const tEl = document.getElementById('otpTimer');
-    const ti = setInterval(() => {
-      t--;
-      if (t <= 0) { clearInterval(ti); if (tEl) tEl.textContent = '00:00'; return; }
-      if (tEl) tEl.textContent = (Math.floor(t / 60) < 10 ? '0' : '') + Math.floor(t / 60) + ':' + (t % 60 < 10 ? '0' : '') + (t % 60);
-    }, 1000);
-    return () => clearInterval(ti);
-  }, []);
+    const data = (await res.json()) as { error?: string; redirect?: string };
+    setLoading(false);
+    if (!res.ok) {
+      setError(data.error || 'Код буруу.');
+      return;
+    }
+    sessionStorage.removeItem('estel_register_draft');
+    router.push(data.redirect || '/');
+    router.refresh();
+  }
+
+  async function resend() {
+    const res = await fetch('/api/auth/otp/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, purpose: 'register' }),
+    });
+    const data = (await res.json()) as { error?: string };
+    if (data.error) setError(data.error);
+  }
 
   return (
-    <>
-      <section className="pt-4 pt-sm-5 pb-5 d-flex align-items-start" style={{minHeight:"calc(100vh - 120px)",background:"#fff"}}>
-            <div className="container">
-              <div className="row justify-content-center">
-                <div className="col-sm-9 col-md-6 col-lg-4">
-                  <div className="bg-white rounded-4 p-4" style={{boxShadow:"0 4px 32px rgba(0,0,0,.07)"}}>
-                    <Link href="/forgot-password" className="d-inline-flex align-items-center gap-1 text-decoration-none fc-secondary fs-13 mb-4">
-                      <img src={assetUrl('images/icons/chevronLeftSmall.svg')} alt="" className="w-16 h-16" />
-                      Буцах
-                    </Link>
-                    <h5 className="fw-bold mb-1">Баталгаажуулах</h5>
-                    <p className="fc-secondary fs-13 mb-4">99XXXXXX дугаарт 6 оронтой код илгээлээ</p>
-                    <div className="d-flex gap-2 justify-content-between mb-4" id="otpInputs">
-                      <input type="text" inputMode="numeric" maxLength={1} className="form-control text-center fw-bold fs-4 rounded-3 p-0 otp-box" style={{width:"48px",height:"56px"}} />
-                      <input type="text" inputMode="numeric" maxLength={1} className="form-control text-center fw-bold fs-4 rounded-3 p-0 otp-box" style={{width:"48px",height:"56px"}} />
-                      <input type="text" inputMode="numeric" maxLength={1} className="form-control text-center fw-bold fs-4 rounded-3 p-0 otp-box" style={{width:"48px",height:"56px"}} />
-                      <input type="text" inputMode="numeric" maxLength={1} className="form-control text-center fw-bold fs-4 rounded-3 p-0 otp-box" style={{width:"48px",height:"56px"}} />
-                      <input type="text" inputMode="numeric" maxLength={1} className="form-control text-center fw-bold fs-4 rounded-3 p-0 otp-box" style={{width:"48px",height:"56px"}} />
-                      <input type="text" inputMode="numeric" maxLength={1} className="form-control text-center fw-bold fs-4 rounded-3 p-0 otp-box" style={{width:"48px",height:"56px"}} />
-                    </div>
-                    <div className="text-center mb-4">
-                      <span className="fc-secondary fs-13">Дахин код авах: </span>
-                      <span className="fw-semibold fc-main fs-13" id="otpTimer">01:30</span>
-                    </div>
-                    <Link href="/new-password" className="btn btn-main p-3 rounded-3 fw-semibold w-100 text-decoration-none text-center d-block">Баталгаажуулах</Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-    </>
+    <form ref={formRef} className="flex flex-col gap-6" onSubmit={onSubmit}>
+      <FieldGroup>
+        <div className="flex flex-col items-center gap-1 text-center">
+          <h1 className="text-[28px] leading-tight font-semibold">Баталгаажуулах</h1>
+          <p className="text-sm text-balance text-neutral-500">{email || 'имэйл'} руу 6 оронтой код илгээлээ.</p>
+        </div>
+        {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
+        <Field>
+          <FieldLabel htmlFor="code">Код</FieldLabel>
+          <Input
+            id="code"
+            required
+            inputMode="numeric"
+            maxLength={6}
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="000000"
+          />
+        </Field>
+        <Field>
+          <Button type="submit" disabled={loading || code.length !== 6}>
+            {loading ? 'Шалгаж байна...' : 'Баталгаажуулах'}
+          </Button>
+          <Button type="button" variant="ghost" onClick={resend}>
+            Код дахин илгээх
+          </Button>
+        </Field>
+      </FieldGroup>
+    </form>
+  );
+}
+
+export default function VerifyPage() {
+  return (
+    <AuthSplit>
+      <Suspense>
+        <VerifyForm />
+      </Suspense>
+    </AuthSplit>
   );
 }

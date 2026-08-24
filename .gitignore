@@ -47,3 +47,7 @@ CLAUDE.md
 AGENTS.md
 ref-html/
 
+# temp auth db
+/data/auth.json
+/data/otp-mailbox.jsonl
+

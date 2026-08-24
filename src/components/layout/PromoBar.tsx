@@ -65,7 +65,7 @@ export default function PromoBar() {
             </>
           ) : (
             <Link
-              href="/login/dresser"
+              href="/login?kind=salon"
               className="btn px-2 py-1 d-flex align-items-center justify-content-center gap-1 border-0 rounded-0 ms-auto"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}

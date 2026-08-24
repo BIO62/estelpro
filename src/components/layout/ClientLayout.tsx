@@ -6,10 +6,8 @@ import Header from './Header';
 import Footer from './Footer';
 import MainMenuOffcanvas from './MainMenuOffcanvas';
 import CartOffcanvas from './CartOffcanvas';
-import LoginOffcanvas from './LoginOffcanvas';
 import BootstrapClient from '@/components/providers/BootstrapClient';
 import EstelScripts from '@/components/providers/EstelScripts';
-
 import CartProvider from '@/components/providers/CartProvider';
 import WishlistProvider from '@/components/providers/WishlistProvider';
 import QuickViewProvider from '@/components/providers/QuickViewProvider';
@@ -24,8 +22,23 @@ export default function ClientLayout({
 }) {
   const pathname = usePathname();
   const isAdmin = pathname?.startsWith('/admin') || pathname?.startsWith('/ad');
+  const isAuth =
+    pathname === '/login' ||
+    pathname?.startsWith('/login/') ||
+    pathname === '/register' ||
+    pathname === '/signup' ||
+    pathname === '/verify';
 
-  // Admin хуудсанд зөвхөн children — Header/Footer/PromoBar байхгүй
+  if (isAuth) {
+    return (
+      <QuickViewProvider>
+        {children}
+        <BootstrapClient />
+        <EstelScripts />
+      </QuickViewProvider>
+    );
+  }
+
   if (isAdmin) {
     return (
       <QuickViewProvider>
@@ -42,11 +55,10 @@ export default function ClientLayout({
         <QuickViewProvider>
           <PromoBar />
           <Header />
-          <main className="">{children}</main>
+          <main>{children}</main>
           <Footer />
           <MainMenuOffcanvas taxons={taxons} />
           <CartOffcanvas />
-          <LoginOffcanvas />
           <BootstrapClient />
           <EstelScripts />
         </QuickViewProvider>

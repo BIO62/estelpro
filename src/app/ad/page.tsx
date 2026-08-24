@@ -25,7 +25,7 @@ import {
   PlusCircle,
   Phone
 } from 'lucide-react';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice } from '@/lib/cart';
 
 interface OrderItem {
   id: string;
