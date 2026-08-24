@@ -2173,7 +2173,13 @@ body.qv-open {
 .admin-scope a:hover,
 .admin-scope a:focus {
   text-decoration: none !important;
-  color: inherit !important;
+}
+
+.admin-scope a.bg-slate-900,
+.admin-scope a.bg-slate-900 *,
+.admin-scope a[data-active="true"],
+.admin-scope a[data-active="true"] * {
+  color: #ffffff !important;
 }
 
 .admin-scope aside {

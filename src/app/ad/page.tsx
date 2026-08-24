@@ -103,18 +103,18 @@ export default function AdOverviewPage() {
   const [statusFilter, setStatusFilter] = useState('ALL');
 
   const monthlyData = [
-    { month: '1-р сар', inStore: 200, online: 150 },
-    { month: '2-р сар', inStore: 290, online: 230 },
-    { month: '3-р сар', inStore: 280, online: 380 },
-    { month: '4-р сар', inStore: 350, online: 200 },
-    { month: '5-р сар', inStore: 150, online: 170 },
-    { month: '6-р сар', inStore: 350, online: 290 },
-    { month: '7-р сар', inStore: 300, online: 160 },
-    { month: '8-р сар', inStore: 100, online: 110 },
-    { month: '9-р сар', inStore: 130, online: 300 },
-    { month: '10-р сар', inStore: 220, online: 230 },
-    { month: '11-р сар', inStore: 200, online: 120 },
-    { month: '12-р сар', inStore: 300, online: 150 },
+    { month: '1-р сар', inStore: 220, online: 180 },
+    { month: '2-р сар', inStore: 290, online: 240 },
+    { month: '3-р сар', inStore: 310, online: 380 },
+    { month: '4-р сар', inStore: 350, online: 260 },
+    { month: '5-р сар', inStore: 190, online: 220 },
+    { month: '6-р сар', inStore: 360, online: 310 },
+    { month: '7-р сар', inStore: 320, online: 240 },
+    { month: '8-р сар', inStore: 180, online: 190 },
+    { month: '9-р сар', inStore: 240, online: 320 },
+    { month: '10-р сар', inStore: 280, online: 290 },
+    { month: '11-р сар', inStore: 260, online: 210 },
+    { month: '12-р сар', inStore: 340, online: 280 },
   ];
 
   const handleStatusChange = (id: string, newStatus: OrderItem['orderStatus']) => {
@@ -149,21 +149,14 @@ export default function AdOverviewPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-2xs">
+          <div className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-2xs">
             <Calendar className="w-4 h-4 text-slate-400" />
             <span>2026.08.24 (Өнөөдөр)</span>
           </div>
-          <Link
-            href="/ad/create-order"
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition-all no-underline"
-          >
-            <PlusCircle className="w-4 h-4 text-amber-400" />
-            <span>+ Шинэ захиалга бүртгэх</span>
-          </Link>
         </div>
       </div>
 
-      {/* 2. Top 4 Metric KPI Cards (Large readable font) */}
+      {/* 2. Top 4 Metric KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Card 1 */}
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs flex flex-col justify-between space-y-4 hover:border-slate-300 transition-all">
@@ -239,12 +232,12 @@ export default function AdOverviewPage() {
         </div>
       </div>
 
-      {/* 3. Orders Chart & Progress Card */}
+      {/* 3. Orders Chart & Progress Card (Fixed Bar Heights) */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-xs p-6 sm:p-8 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
             <h2 className="text-lg font-bold text-slate-900">Борлуулалтын Сарын Харьцуулалт</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Салбарын болон Онлайн захиалгын өсөлтийн хөдөлгөөн</p>
+            <p className="text-xs text-slate-500 mt-0.5 font-medium">Салбарын болон Онлайн захиалгын өсөлтийн хөдөлгөөн</p>
           </div>
           <div className="flex items-center gap-2">
             <div className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center gap-2">
@@ -257,30 +250,30 @@ export default function AdOverviewPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pt-2">
           {/* Bar Chart (8 cols) */}
           <div className="lg:col-span-8 space-y-4">
-            <div className="h-64 flex items-end justify-between gap-2 sm:gap-4 px-2 pt-6 border-b border-slate-100">
+            <div className="h-56 flex items-end justify-between gap-2 sm:gap-4 px-2 pt-4 border-b border-slate-200 pb-2">
               {monthlyData.map((d) => (
                 <div key={d.month} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
-                  <div className="w-full flex items-end justify-center gap-1.5 h-full">
+                  <div className="w-full h-44 flex items-end justify-center gap-1.5">
                     {/* In-store Bar */}
                     <div
                       style={{ height: `${(d.inStore / 400) * 100}%` }}
-                      className="w-2.5 sm:w-3.5 bg-blue-600 rounded-t-sm group-hover:bg-blue-700 transition-all"
+                      className="w-2.5 sm:w-3.5 bg-blue-600 rounded-t-sm group-hover:bg-blue-700 transition-all min-h-[16px] shadow-xs"
                       title={`Салбар: ${d.inStore}`}
                     />
                     {/* Online Bar */}
                     <div
                       style={{ height: `${(d.online / 400) * 100}%` }}
-                      className="w-2.5 sm:w-3.5 bg-slate-200 rounded-t-sm group-hover:bg-slate-300 transition-all"
+                      className="w-2.5 sm:w-3.5 bg-slate-200 rounded-t-sm group-hover:bg-slate-300 transition-all min-h-[16px]"
                       title={`Онлайн: ${d.online}`}
                     />
                   </div>
-                  <span className="text-xs text-slate-500 font-bold">{d.month}</span>
+                  <span className="text-[11px] text-slate-500 font-bold tracking-tight">{d.month}</span>
                 </div>
               ))}
             </div>
 
             {/* Legend */}
-            <div className="flex items-center justify-center gap-6 text-xs text-slate-600 pt-2 font-semibold">
+            <div className="flex items-center justify-center gap-6 text-xs text-slate-600 pt-2 font-bold">
               <div className="flex items-center gap-2">
                 <span className="w-3.5 h-3.5 rounded-xs bg-blue-600" />
                 <span>Салбар (In-store)</span>
