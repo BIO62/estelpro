@@ -27,7 +27,8 @@ export default function ClientLayout({
     pathname?.startsWith('/login/') ||
     pathname === '/register' ||
     pathname === '/signup' ||
-    pathname === '/verify';
+    pathname === '/verify' ||
+    pathname === '/particles';
 
   if (isAuth) {
     return (
