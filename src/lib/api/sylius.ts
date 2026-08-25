@@ -98,7 +98,6 @@ function unwrapTotal(data: unknown, fallback: number): number {
 
 function fetchOpts(): RequestInit {
   return {
-    next: { revalidate: DATA_REVALIDATE },
     headers: { Accept: 'application/json' },
   };
 }
@@ -258,7 +257,6 @@ export async function getSyliusProductsCollection(options?: {
     const url = `${SYLIUS_BASE_URL}/api/v2/shop/products?${params.toString()}`;
     const res = await fetch(url, fetchOpts());
     if (!res.ok) {
-      console.error('Failed to fetch Sylius products:', res.statusText);
       return { items: [], total: 0 };
     }
 
@@ -295,36 +293,41 @@ export async function getSyliusProducts(options?: {
 }
 
 async function loadAllSyliusProducts(taxonCode: string, audience: 'consumer' | 'dresser'): Promise<SyliusProduct[]> {
-  const itemsPerPage = 100;
-  const collected: SyliusProduct[] = [];
+  try {
+    const itemsPerPage = 100;
+    const collected: SyliusProduct[] = [];
 
-  const first = await fetchShopProductsPage({
-    taxonCode: taxonCode || undefined,
-    page: 1,
-    itemsPerPage,
-  });
-  collected.push(...first.items);
+    const first = await fetchShopProductsPage({
+      taxonCode: taxonCode || undefined,
+      page: 1,
+      itemsPerPage,
+    });
+    collected.push(...first.items);
 
-  const totalPages = Math.min(15, Math.max(1, Math.ceil((first.total || first.items.length) / itemsPerPage)));
-  if (totalPages > 1) {
-    const rest = await Promise.all(
-      Array.from({ length: totalPages - 1 }, (_, index) =>
-        fetchShopProductsPage({
-          taxonCode: taxonCode || undefined,
-          page: index + 2,
-          itemsPerPage,
-        })
-      )
-    );
-    for (const page of rest) collected.push(...page.items);
+    const totalPages = Math.min(15, Math.max(1, Math.ceil((first.total || first.items.length) / itemsPerPage)));
+    if (totalPages > 1) {
+      const rest = await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, index) =>
+          fetchShopProductsPage({
+            taxonCode: taxonCode || undefined,
+            page: index + 2,
+            itemsPerPage,
+          })
+        )
+      );
+      for (const page of rest) collected.push(...page.items);
+    }
+
+    const seen = new Set<string>();
+    return collected.filter((product) => {
+      if (!product?.code || seen.has(product.code)) return false;
+      seen.add(product.code);
+      return audience === 'dresser' ? isDresserProduct(product) : !isDresserProduct(product);
+    });
+  } catch (error) {
+    console.error('loadAllSyliusProducts error:', error);
+    return [];
   }
-
-  const seen = new Set<string>();
-  return collected.filter((product) => {
-    if (!product?.code || seen.has(product.code)) return false;
-    seen.add(product.code);
-    return audience === 'dresser' ? isDresserProduct(product) : !isDresserProduct(product);
-  });
 }
 
 export async function getAllSyliusProducts(options?: {
@@ -345,15 +348,20 @@ async function fetchShopProductsPage(options: {
   page: number;
   itemsPerPage: number;
 }): Promise<SyliusProductCollection> {
-  const params = new URLSearchParams();
-  if (options.taxonCode) params.append('productTaxons.taxon.code', options.taxonCode);
-  params.append('page', String(options.page));
-  params.append('itemsPerPage', String(options.itemsPerPage));
-  params.append('order[createdAt]', 'desc');
-  const res = await fetch(`${SYLIUS_BASE_URL}/api/v2/shop/products?${params.toString()}`, fetchOpts());
-  if (!res.ok) return { items: [], total: 0 };
-  const data = await res.json();
-  return { items: unwrapList<SyliusProduct>(data), total: unwrapTotal(data, 0) };
+  try {
+    const params = new URLSearchParams();
+    if (options.taxonCode) params.append('productTaxons.taxon.code', options.taxonCode);
+    params.append('page', String(options.page));
+    params.append('itemsPerPage', String(options.itemsPerPage));
+    params.append('order[createdAt]', 'desc');
+    const res = await fetch(`${SYLIUS_BASE_URL}/api/v2/shop/products?${params.toString()}`, fetchOpts());
+    if (!res.ok) return { items: [], total: 0 };
+    const data = await res.json();
+    return { items: unwrapList<SyliusProduct>(data), total: unwrapTotal(data, 0) };
+  } catch (error) {
+    console.error('fetchShopProductsPage error:', error);
+    return { items: [], total: 0 };
+  }
 }
 
 export async function getSyliusProductByCode(code: string): Promise<SyliusProduct | null> {
