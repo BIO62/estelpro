@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
 import { randomInt } from 'crypto';
-import { findUserByEmail, saveOtp } from '@/lib/auth/store';
 import { findSalonByCode, saveSalonOtp } from '@/lib/salons/repo';
 import { maskEmail, sendOtpEmail } from '@/lib/auth/mail';
-import type { OtpRecord } from '@/lib/auth/types';
 
 function maskPhone(phone: string) {
   const digits = phone.replace(/\D/g, '');
@@ -12,8 +10,7 @@ function maskPhone(phone: string) {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as { email?: string; salonCode?: string; purpose?: OtpRecord['purpose'] };
-  const purpose: OtpRecord['purpose'] = body.purpose === 'login' ? 'login' : 'register';
+  const body = (await request.json()) as { email?: string; salonCode?: string; purpose?: string };
   const salonCode = body.salonCode?.trim();
 
   // Salon channel: the code is the identity. SMS Pro is not live yet, so the
@@ -33,16 +30,8 @@ export async function POST(request: Request) {
     });
   }
 
-  const user = findUserByEmail(body.email?.trim().toLowerCase() || '');
-  if (!user) {
-    return NextResponse.json({ error: 'Бүртгэл олдсонгүй.' }, { status: 404 });
-  }
-  if (purpose === 'register' && user.verified) {
-    return NextResponse.json({ error: 'OTP илгээх боломжгүй.' }, { status: 400 });
-  }
-
-  const code = String(randomInt(100000, 999999));
-  saveOtp({ email: user.email, code, purpose, expiresAt: Date.now() + 5 * 60 * 1000 });
-  await sendOtpEmail(user.email, code);
-  return NextResponse.json({ ok: true, emailHint: maskEmail(user.email), channel: 'email' });
+  return NextResponse.json(
+    { error: 'Хэрэглэгчийн имэйл OTP энэ урсгалд ашиглагдахгүй.' },
+    { status: 410 },
+  );
 }

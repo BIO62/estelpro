@@ -1,5 +1,8 @@
 import { isSupabaseConfigured, supabaseAdmin } from '@/lib/supabase/server';
-import { findUserByEmail, findUserByPhone, findUserBySalonCode, normalizeSalonCode, saveOtp, takeOtp } from '@/lib/auth/store';
+
+function normalizeSalonCode(code: string) {
+  return code.trim().toUpperCase().replace(/\s+/g, '');
+}
 
 export type Salon = {
   id: string;
@@ -48,21 +51,7 @@ export function salonsBackend() {
 export async function findSalonByCode(code: string): Promise<Salon | null> {
   const normalized = normalizeSalonCode(code);
   const db = supabaseAdmin();
-  if (!db) {
-    const user = findUserBySalonCode(normalized);
-    if (!user) return null;
-    return {
-      id: user.id,
-      salonCode: user.salonCode || normalized,
-      salonName: user.salonName || user.name,
-      contactName: user.name,
-      phone: user.phone || '',
-      email: user.email,
-      city: user.city || '',
-      district: user.district || null,
-      address: user.address || '',
-    };
-  }
+  if (!db) return null;
   const { data, error } = await db
     .from('salons')
     .select('*')
@@ -75,10 +64,7 @@ export async function findSalonByCode(code: string): Promise<Salon | null> {
 
 export async function findSalonByEmail(email: string): Promise<Salon | null> {
   const db = supabaseAdmin();
-  if (!db) {
-    const user = findUserByEmail(email);
-    return user?.salonCode ? findSalonByCode(user.salonCode) : null;
-  }
+  if (!db) return null;
   const { data, error } = await db
     .from('salons')
     .select('*')
@@ -92,10 +78,7 @@ export async function findSalonByPhone(phone: string): Promise<Salon | null> {
   const cleanPhone = phone.trim().replace(/\D/g, '');
   if (!cleanPhone) return null;
   const db = supabaseAdmin();
-  if (!db) {
-    const user = findUserByPhone(cleanPhone);
-    return user?.salonCode ? findSalonByCode(user.salonCode) : null;
-  }
+  if (!db) return null;
   const { data, error } = await db
     .from('salons')
     .select('*')
@@ -144,10 +127,7 @@ export async function saveSalonOtp(salon: Salon, code: string, channel: 'email' 
   const destination = channel === 'sms' ? salon.phone : salon.email;
   const expiresAt = Date.now() + OTP_TTL_MS;
   const db = supabaseAdmin();
-  if (!db) {
-    saveOtp({ email: salon.email, code, purpose: 'login', expiresAt });
-    return { destination, expiresAt };
-  }
+  if (!db) throw new Error('Supabase тохируулаагүй байна.');
   await db.from('salon_otps').update({ consumed_at: new Date().toISOString() }).match({
     salon_id: salon.id,
     purpose: 'login',
@@ -167,7 +147,7 @@ export async function saveSalonOtp(salon: Salon, code: string, channel: 'email' 
 
 export async function takeSalonOtp(salon: Salon, code: string) {
   const db = supabaseAdmin();
-  if (!db) return takeOtp(salon.email, 'login', code);
+  if (!db) return false;
   const { data, error } = await db
     .from('salon_otps')
     .select('id')

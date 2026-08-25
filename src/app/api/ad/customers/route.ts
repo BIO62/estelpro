@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 
 import { writeAudit } from '@/lib/audit/log';
-import { findUserByEmail, saveUser } from '@/lib/auth/store';
 import { getSessionUser } from '@/lib/auth/session';
 import { updateSalon } from '@/lib/salons/repo';
 import { updateAppUser } from '@/lib/users/repo';
@@ -70,17 +69,6 @@ export async function PATCH(req: Request) {
       notes: body.notes,
     });
     if (!updated) return NextResponse.json({ error: 'Олдсонгүй.' }, { status: 404 });
-
-    const local = findUserByEmail(updated.email);
-    if (local) {
-      if (body.name !== undefined) local.name = body.name;
-      if (body.lastName !== undefined) local.lastName = body.lastName || undefined;
-      if (body.phone !== undefined) local.phone = body.phone || undefined;
-      if (body.address !== undefined) local.address = body.address || undefined;
-      if (body.city !== undefined) local.city = body.city || undefined;
-      if (body.district !== undefined) local.district = body.district || undefined;
-      saveUser(local);
-    }
 
     await writeAudit({
       actorId: session!.id,

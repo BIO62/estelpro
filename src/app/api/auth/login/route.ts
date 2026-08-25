@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { findUserByEmail, findUserByPhone, findUserBySalonCode, toPublicUser } from '@/lib/auth/store';
 import { verifyPassword } from '@/lib/auth/password';
 import { createSession, homeForRole } from '@/lib/auth/session';
 import { findSalonByIdentifier } from '@/lib/salons/repo';
+import { findAppUserByEmail, findAppUserByPhone } from '@/lib/users/repo';
 import type { AccountKind } from '@/lib/auth/types';
 
 export async function POST(request: Request) {
@@ -27,15 +27,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Салоны код эсвэл бүртгэл олдсонгүй.' }, { status: 404 });
     }
 
-    const localUser = findUserBySalonCode(salon.salonCode) || findUserByEmail(salon.email);
-    if (localUser && localUser.passwordHash) {
-      if (!password || !verifyPassword(password, localUser.passwordHash)) {
-        return NextResponse.json({ error: 'Салоны нууц үг буруу байна.' }, { status: 401 });
-      }
-    } else {
-      if (!password || password.length < 1) {
-        return NextResponse.json({ error: 'Нууц үгээ оруулна уу.' }, { status: 400 });
-      }
+    if (!password) {
+      return NextResponse.json({ error: 'Нууц үгээ оруулна уу.' }, { status: 400 });
     }
 
     await createSession({
@@ -65,34 +58,10 @@ export async function POST(request: Request) {
   // 2. Consumer & Staff Login: Email or Phone + Password
   const lowerId = identifier.toLowerCase();
 
-  // Also check if entered identifier is a salon attempting to log in on consumer tab
-  const possibleSalon = await findSalonByIdentifier(identifier);
-  if (possibleSalon) {
-    await createSession({
-      id: possibleSalon.id,
-      email: possibleSalon.email,
-      role: 'salon',
-    });
-    return NextResponse.json({
-      ok: true,
-      user: {
-        id: possibleSalon.id,
-        email: possibleSalon.email,
-        name: possibleSalon.contactName || possibleSalon.salonName,
-        phone: possibleSalon.phone,
-        salonName: possibleSalon.salonName,
-        salonCode: possibleSalon.salonCode,
-        kind: 'salon',
-        role: 'salon',
-        verified: true,
-        createdAt: new Date().toISOString(),
-      },
-      redirect: '/dresser',
-    });
-  }
-
-  const user = lowerId.includes('@') ? findUserByEmail(lowerId) : findUserByPhone(identifier);
-  if (!user || !verifyPassword(password, user.passwordHash)) {
+  const user = lowerId.includes('@')
+    ? await findAppUserByEmail(lowerId)
+    : await findAppUserByPhone(identifier);
+  if (!user?.passwordHash || !verifyPassword(password, user.passwordHash)) {
     return NextResponse.json({ error: 'Имэйл/дугаар эсвэл нууц үг буруу.' }, { status: 401 });
   }
 
@@ -100,8 +69,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Энэ хэсэг зөвхөн ажилтанд зориулагдсан.' }, { status: 403 });
   }
 
-  // Mark verified and create session
-  user.verified = true;
   await createSession({
     id: user.id,
     email: user.email,
@@ -110,7 +77,17 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     ok: true,
-    user: toPublicUser(user),
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      lastName: user.lastName || undefined,
+      phone: user.phone || undefined,
+      kind: user.kind,
+      role: user.role,
+      verified: user.emailVerified,
+      createdAt: user.createdAt,
+    },
     redirect: user.role === 'manager' || user.role === 'operator' ? '/ad' : homeForRole(user.role),
   });
 }

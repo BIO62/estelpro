@@ -1,10 +1,13 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'fs';
+import os from 'os';
 import path from 'path';
 import { randomBytes } from 'crypto';
 import { hashPassword } from './password';
 import type { AuthDb, AuthUser, OtpRecord } from './types';
 
-const FILE = path.join(process.cwd(), 'data', 'auth.json');
+const FILE = process.env.VERCEL
+  ? path.join(os.tmpdir(), 'estel-auth.json')
+  : path.join(process.cwd(), 'data', 'auth.json');
 
 export function normalizeSalonCode(code: string) {
   return code.trim().toUpperCase().replace(/\s+/g, '');

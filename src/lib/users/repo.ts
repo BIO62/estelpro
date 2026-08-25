@@ -14,6 +14,7 @@ export type AppUser = {
   role: AppUserRole;
   status: AppUserStatus;
   emailVerified: boolean;
+  passwordHash: string | null;
   address: string | null;
   city: string | null;
   district: string | null;
@@ -32,6 +33,7 @@ type Row = {
   role: AppUserRole;
   status: AppUserStatus;
   email_verified: boolean;
+  password_hash: string | null;
   address: string | null;
   city: string | null;
   district: string | null;
@@ -51,6 +53,7 @@ function fromRow(row: Row): AppUser {
     role: row.role,
     status: row.status,
     emailVerified: row.email_verified,
+    passwordHash: row.password_hash,
     address: row.address,
     city: row.city,
     district: row.district,
@@ -111,6 +114,20 @@ export async function findAppUserByEmail(email: string) {
   return data ? fromRow(data as Row) : null;
 }
 
+export async function findAppUserByPhone(phone: string) {
+  const db = supabaseAdmin();
+  if (!db) return null;
+  const digits = phone.replace(/\D/g, '').slice(-8);
+  if (digits.length !== 8) return null;
+  const { data, error } = await db
+    .from('app_users')
+    .select('*')
+    .ilike('phone', `%${digits}`)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? fromRow(data as Row) : null;
+}
+
 export async function deleteUnverifiedAppUser(email: string) {
   const db = supabaseAdmin();
   if (!db) return;
@@ -163,6 +180,7 @@ export async function updateAppUser(
     notes: string | null;
     status: AppUserStatus;
     emailVerified: boolean;
+    passwordHash: string;
     role: AppUserRole;
   }>,
 ) {
@@ -178,6 +196,7 @@ export async function updateAppUser(
   if (patch.notes !== undefined) row.notes = patch.notes;
   if (patch.status !== undefined) row.status = patch.status;
   if (patch.emailVerified !== undefined) row.email_verified = patch.emailVerified;
+  if (patch.passwordHash !== undefined) row.password_hash = patch.passwordHash;
   if (patch.role !== undefined) row.role = patch.role;
   if (patch.status === 'active' || patch.status === 'rejected') {
     row.reviewed_at = new Date().toISOString();

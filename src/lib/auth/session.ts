@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import { cookies } from 'next/headers';
 import { DRESSER_COOKIE } from '@/lib/catalog-audience';
-import { findUserByEmail, toPublicUser } from './store';
+import { findAppUserByEmail } from '@/lib/users/repo';
 import type { PublicUser, UserRole } from './types';
 
 const COOKIE = 'estel_auth';
@@ -59,9 +59,6 @@ export async function getSessionUser(): Promise<PublicUser | null> {
   if (!token) return null;
   const payload = readToken(token);
   if (!payload) return null;
-  const user = findUserByEmail(payload.email);
-  if (user) return toPublicUser(user);
-  // Salons live in Supabase, not in the local auth store.
   if (payload.role === 'salon') {
     const { findSalonByEmail } = await import('@/lib/salons/repo');
     const salon = await findSalonByEmail(payload.email);
@@ -82,7 +79,22 @@ export async function getSessionUser(): Promise<PublicUser | null> {
       createdAt: new Date(0).toISOString(),
     };
   }
-  return null;
+  const user = await findAppUserByEmail(payload.email);
+  if (!user || user.status !== 'active') return null;
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    lastName: user.lastName || undefined,
+    phone: user.phone || undefined,
+    address: user.address || undefined,
+    city: user.city || undefined,
+    district: user.district || undefined,
+    kind: user.kind,
+    role: user.role,
+    verified: user.emailVerified,
+    createdAt: user.createdAt,
+  };
 }
 
 export function homeForRole(role: UserRole) {

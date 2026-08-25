@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { writeAudit } from '@/lib/audit/log';
 import { getSessionUser } from '@/lib/auth/session';
-import { findUserByEmail, saveUser, toPublicUser } from '@/lib/auth/store';
 import { hashPassword } from '@/lib/auth/password';
-import { createAppUser } from '@/lib/users/repo';
+import { createAppUser, findAppUserByEmail } from '@/lib/users/repo';
 import type { StaffRole } from '@/lib/auth/types';
 
 export async function POST(request: Request) {
@@ -16,34 +15,21 @@ export async function POST(request: Request) {
   const name = body.name?.trim() || 'Ажилтан';
   const role: StaffRole = body.role === 'operator' ? 'operator' : 'manager';
   if (!email) return NextResponse.json({ error: 'Имэйл шаардлагатай.' }, { status: 400 });
-  if (findUserByEmail(email)) return NextResponse.json({ error: 'Энэ имэйл бүртгэлтэй.' }, { status: 409 });
+  if (await findAppUserByEmail(email)) return NextResponse.json({ error: 'Энэ имэйл бүртгэлтэй.' }, { status: 409 });
   const temp = `Estel${Math.floor(1000 + Math.random() * 9000)}`;
   const id = crypto.randomUUID();
   const passwordHash = hashPassword(temp);
-  const user = saveUser({
+  const user = await createAppUser({
     id,
     email,
     name,
     kind: 'staff',
     role,
     passwordHash,
-    verified: true,
-    createdAt: new Date().toISOString(),
+    status: 'active',
+    emailVerified: true,
   });
-  try {
-    await createAppUser({
-      id,
-      email,
-      name,
-      passwordHash,
-      kind: 'staff',
-      role,
-      status: 'active',
-      emailVerified: true,
-    });
-  } catch {
-    /* table optional until SQL run */
-  }
+  if (!user) return NextResponse.json({ error: 'Бүртгэлийн сан холбогдсонгүй.' }, { status: 503 });
   await writeAudit({
     actorId: me.id,
     actorEmail: me.email,
@@ -53,5 +39,5 @@ export async function POST(request: Request) {
     entityId: id,
     summary: `${me.name} ажилтан бүртгэсэн: ${name} (${email}) · ${role}`,
   });
-  return NextResponse.json({ ok: true, user: toPublicUser(user), tempPassword: temp });
+  return NextResponse.json({ ok: true, user, tempPassword: temp });
 }

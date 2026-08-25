@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
-import { findUserByEmail, findUserByPhone, saveUser, toPublicUser } from '@/lib/auth/store';
 import { hashPassword } from '@/lib/auth/password';
 import { createSession } from '@/lib/auth/session';
-import { deleteUnverifiedAppUser, findAppUserByEmail } from '@/lib/users/repo';
+import {
+  createAppUser,
+  deleteUnverifiedAppUser,
+  findAppUserByEmail,
+  findAppUserByPhone,
+} from '@/lib/users/repo';
 
 type Field = 'lastName' | 'name' | 'phone' | 'email' | 'password';
 
@@ -31,8 +35,8 @@ export async function POST(request: Request) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail('email', 'Имэйл хаягаа зөв оруулна уу.');
   if (password.length < 6) return fail('password', 'Нууц үг хамгийн багадаа 6 тэмдэгт байна.');
 
-  const existingLocal = findUserByEmail(email);
-  if (existingLocal?.verified) {
+  const existingApp = await findAppUserByEmail(email);
+  if (existingApp?.emailVerified && existingApp.status === 'active') {
     return fail(
       'email',
       'Энэ имэйл аль хэдийн бүртгэлтэй. Нэвтрэх хэсэг рүү орно уу.',
@@ -40,47 +44,24 @@ export async function POST(request: Request) {
       { alreadyRegistered: true },
     );
   }
+  if (existingApp) await deleteUnverifiedAppUser(email);
 
-  const phoneOwner = findUserByPhone(phone);
-  if (phoneOwner && phoneOwner.email.toLowerCase() !== email && phoneOwner.verified) {
+  const phoneOwner = await findAppUserByPhone(phone);
+  if (phoneOwner && phoneOwner.email.toLowerCase() !== email) {
     return fail('phone', 'Энэ дугаар өөр бүртгэлд холбогдсон байна.', 409);
   }
 
-  try {
-    const existingApp = await findAppUserByEmail(email);
-    if (existingApp?.emailVerified && existingApp.status === 'active') {
-      return fail(
-        'email',
-        'Энэ имэйл аль хэдийн бүртгэлтэй. Нэвтрэх хэсэг рүү орно уу.',
-        409,
-        { alreadyRegistered: true },
-      );
-    }
-    if (existingApp && !existingApp.emailVerified) {
-      await deleteUnverifiedAppUser(email);
-    }
-  } catch {
-    /* optional */
-  }
-
-  const passwordHash = hashPassword(password);
-  const id = existingLocal ? existingLocal.id : crypto.randomUUID();
-
-  // Save as directly verified consumer user
-  const user = saveUser({
-    id,
+  const user = await createAppUser({
     email,
     name,
     lastName,
     phone,
-    kind: 'consumer',
-    role: 'consumer',
-    passwordHash,
-    verified: true,
-    createdAt: new Date().toISOString(),
+    passwordHash: hashPassword(password),
+    status: 'active',
+    emailVerified: true,
   });
+  if (!user) return fail('email', 'Бүртгэлийн сан холбогдсонгүй.', 503);
 
-  // Automatically create session and log the user in immediately
   await createSession({
     id: user.id,
     email: user.email,
@@ -89,7 +70,17 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     ok: true,
-    user: toPublicUser(user),
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      lastName: user.lastName || undefined,
+      phone: user.phone || undefined,
+      kind: user.kind,
+      role: user.role,
+      verified: user.emailVerified,
+      createdAt: user.createdAt,
+    },
     redirect: '/',
   });
 }
