@@ -37,7 +37,41 @@ create table if not exists public.salon_otps (
 create index if not exists salon_otps_lookup_idx
   on public.salon_otps (salon_id, purpose, consumed_at);
 
+-- Sylius catalog mirror (admin create-order uses this — not live Sylius).
+-- Images live in Storage bucket `product-images`; `image_url` is the public URL.
+create table if not exists public.products (
+  id uuid primary key default gen_random_uuid(),
+  sylius_id integer,
+  code text not null unique,
+  sku text,
+  name text not null,
+  slug text,
+  price numeric not null default 0,
+  original_price numeric,
+  stock integer not null default 0,
+  is_tax boolean not null default true,
+  brand text,
+  taxon text,
+  taxons jsonb not null default '[]'::jsonb,
+  image_url text,
+  gallery jsonb not null default '[]'::jsonb,
+  short_description text,
+  description text,
+  enabled boolean not null default true,
+  synced_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists products_sku_idx on public.products (sku);
+create index if not exists products_code_idx on public.products (code);
+create index if not exists products_name_idx on public.products (name);
+
 -- Only the server (service role) touches these tables, so RLS stays on with no
 -- policies: anon/authenticated keys get nothing.
 alter table public.salons enable row level security;
 alter table public.salon_otps enable row level security;
+alter table public.products enable row level security;
+
+-- If products table already exists without taxons:
+alter table public.products add column if not exists taxons jsonb not null default '[]'::jsonb;

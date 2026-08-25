@@ -1,333 +1,752 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Plus, X } from 'lucide-react';
+
 import {
-  Search,
-  Plus,
-  Minus,
-  Trash2,
-  User,
-  Phone,
-  MapPin,
-  CheckCircle,
-  Printer,
-  ShoppingBag
-} from 'lucide-react';
-import { DEMO_PRODUCTS } from '@/lib/constants';
-import { formatPrice } from '@/lib/utils';
+  CREATE_ORDER_CURRENCIES,
+  CREATE_ORDER_PAYMENTS,
+  searchMembers,
+  type CatalogProduct,
+  type DemoMember,
+} from '@/lib/ad/create-order';
+import {
+  AIMAGS,
+  BAGS_BY_DISTRICT,
+  DISTRICTS_BY_AIMAG,
+  getDeliveryPrice,
+} from '@/lib/ad/locations';
+
+type LineItem = {
+  key: number;
+  id: string;
+  sku: string;
+  name: string;
+  qty: number;
+  price: number;
+  sale: number;
+  saleType: 'perc' | 'curr';
+  taxed: boolean;
+  stock?: number;
+};
+
+function fmt(n: number) {
+  return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function lineTotal(row: LineItem) {
+  const raw = row.price * row.qty;
+  if (row.saleType === 'curr') return Math.max(0, raw - row.sale);
+  return Math.max(0, raw - (raw * row.sale) / 100);
+}
+
+function emptyRow(key: number): LineItem {
+  return {
+    key,
+    id: '',
+    sku: '',
+    name: '',
+    qty: 1,
+    price: 0,
+    sale: 0,
+    saleType: 'perc',
+    taxed: true,
+  };
+}
 
 export default function AdCreateOrderPage() {
-  const [selectedItems, setSelectedItems] = useState<{ id: string; name: string; price: number; qty: number; image: string }[]>([
-    { id: '1', name: DEMO_PRODUCTS[0].name, price: DEMO_PRODUCTS[0].price, qty: 2, image: DEMO_PRODUCTS[0].image },
-  ]);
-  const [search, setSearch] = useState('');
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
+  const router = useRouter();
+  const [memberQuery, setMemberQuery] = useState('');
+  const [memberOpen, setMemberOpen] = useState(false);
+  const [member, setMember] = useState<DemoMember | null>(null);
+  const [isCompany, setIsCompany] = useState(false);
+  const [companyRd, setCompanyRd] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [firstname, setFirstname] = useState('');
+  const [lastname, setLastname] = useState('');
+  const [company, setCompany] = useState('');
+  const [contractId, setContractId] = useState('');
   const [address, setAddress] = useState('');
-  const [orderType, setOrderType] = useState<'delivery' | 'pickup'>('delivery');
-  const [paymentMethod, setPaymentMethod] = useState<'qpay' | 'cash' | 'card' | 'bank'>('qpay');
-  const [discountPercent, setDiscountPercent] = useState<number>(0);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [syncCrm, setSyncCrm] = useState(true);
+  const [aimag, setAimag] = useState('Улаанбаатар хот');
+  const [district, setDistrict] = useState('');
+  const [bag, setBag] = useState('');
+  const [deliveryPrice, setDeliveryPrice] = useState('');
+  const [rows, setRows] = useState<LineItem[]>([]);
+  const [suggestKey, setSuggestKey] = useState<number | null>(null);
+  const [suggestQ, setSuggestQ] = useState('');
+  const [paymentId, setPaymentId] = useState('1');
+  const [currencyId, setCurrencyId] = useState('1');
+  const [sendEmail, setSendEmail] = useState(false);
+  const [sendSms, setSendSms] = useState(false);
+  const [note, setNote] = useState('');
+  const [flash, setFlash] = useState('');
+  const [newProductOpen, setNewProductOpen] = useState(false);
+  const [newProductKey, setNewProductKey] = useState<number | null>(null);
+  const [newProduct, setNewProduct] = useState({
+    type: 'product',
+    name: '',
+    price: '',
+    sku: '',
+    tax: '1',
+  });
+  const [productHits, setProductHits] = useState<CatalogProduct[]>([]);
+  const nextKey = useRef(1);
+  const memberBoxRef = useRef<HTMLDivElement>(null);
 
-  const handleAddProduct = (product: typeof DEMO_PRODUCTS[0]) => {
-    setSelectedItems((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
-      if (existing) {
-        return prev.map((item) => (item.id === product.id ? { ...item, qty: item.qty + 1 } : item));
-      }
-      return [...prev, { id: product.id, name: product.name, price: product.price, qty: 1, image: product.image }];
+  const districts = DISTRICTS_BY_AIMAG[aimag] ?? [];
+  const bags = BAGS_BY_DISTRICT[district] ?? [];
+  const memberHits = searchMembers(memberQuery);
+
+  useEffect(() => {
+    if (suggestKey == null) {
+      setProductHits([]);
+      return;
+    }
+    const ctrl = new AbortController();
+    const t = window.setTimeout(() => {
+      const q = suggestQ.trim();
+      fetch(`/api/ad/catalog?q=${encodeURIComponent(q)}`, { signal: ctrl.signal })
+        .then((r) => r.json())
+        .then((data: { results?: CatalogProduct[] }) => setProductHits(data.results ?? []))
+        .catch(() => setProductHits([]));
+    }, 200);
+    return () => {
+      ctrl.abort();
+      window.clearTimeout(t);
+    };
+  }, [suggestKey, suggestQ]);
+
+  const totals = useMemo(() => {
+    let price = 0;
+    let nuat = 0;
+    let discount = 0;
+    let qty = 0;
+    for (const row of rows) {
+      const raw = row.price * row.qty;
+      const total = lineTotal(row);
+      price += total;
+      discount += raw - total;
+      qty += row.qty;
+      if (row.taxed) nuat += total / 11;
+    }
+    return { price, nuat, discount, qty, withNuat: price };
+  }, [rows]);
+
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (!memberBoxRef.current?.contains(e.target as Node)) setMemberOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, []);
+
+  const pickMember = (m: DemoMember) => {
+    setMember(m);
+    setMemberQuery(`${m.lastname} ${m.firstname}`.trim() || m.company || m.phone);
+    setMemberOpen(false);
+    setFirstname(m.firstname);
+    setLastname(m.lastname);
+    setCompany(m.company);
+    setPhone(m.phone);
+    setEmail(m.email);
+    setAddress(m.address_1);
+  };
+
+  const updateRow = (key: number, patch: Partial<LineItem>) => {
+    setRows((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+  };
+
+  const pickProduct = (key: number, p: CatalogProduct) => {
+    updateRow(key, {
+      id: p.id,
+      sku: p.sku,
+      name: p.title,
+      price: p.price,
+      taxed: p.isTax,
+      stock: p.stock,
     });
+    setSuggestKey(null);
+    setSuggestQ('');
   };
 
-  const handleQtyChange = (id: string, delta: number) => {
-    setSelectedItems((prev) =>
-      prev
-        .map((item) => (item.id === id ? { ...item, qty: Math.max(1, item.qty + delta) } : item))
-        .filter((item) => item.qty > 0)
-    );
+  const addRow = () => {
+    const key = nextKey.current++;
+    setRows((prev) => [...prev, emptyRow(key)]);
   };
 
-  const handleRemove = (id: string) => {
-    setSelectedItems((prev) => prev.filter((item) => item.id !== id));
+  const removeRow = (key: number) => {
+    if (!window.confirm('Устгахдаа итгэлтэй байна уу ?')) return;
+    setRows((prev) => prev.filter((r) => r.key !== key));
   };
 
-  const subtotal = selectedItems.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const discountAmount = Math.round((subtotal * discountPercent) / 100);
-  const deliveryFee = orderType === 'delivery' && subtotal < 80000 ? 5000 : 0;
-  const total = subtotal - discountAmount + deliveryFee;
+  const openNewProduct = (key: number) => {
+    const row = rows.find((r) => r.key === key);
+    setNewProductKey(key);
+    setNewProduct({
+      type: 'product',
+      name: row?.name || suggestQ,
+      price: '',
+      sku: '',
+      tax: '1',
+    });
+    setSuggestKey(null);
+    setNewProductOpen(true);
+  };
 
-  const handleSubmitOrder = (e: React.FormEvent) => {
+  const saveNewProduct = (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedItems.length === 0) return;
-    setIsSuccess(true);
+    if (newProductKey == null) return;
+    const price = Number(String(newProduct.price).replace(/,/g, '')) || 0;
+    const id = `local-${Date.now()}`;
+    pickProduct(newProductKey, {
+      id,
+      sku: newProduct.sku || id,
+      title: newProduct.name,
+      price,
+      isTax: newProduct.tax === '1',
+      stock: 0,
+    });
+    setNewProductOpen(false);
+    setFlash('Бүтээгдэхүүн нэмэгдлээ');
+    window.setTimeout(() => setFlash(''), 1600);
+  };
+
+  const onAimagChange = (v: string) => {
+    setAimag(v);
+    setDistrict('');
+    setBag('');
+    setDeliveryPrice('');
+  };
+
+  const onDistrictChange = (v: string) => {
+    setDistrict(v);
+    setBag('');
+    setDeliveryPrice('');
+  };
+
+  const onBagChange = (v: string) => {
+    setBag(v);
+    setDeliveryPrice(String(getDeliveryPrice(district, v)));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!phone.trim()) {
+      setFlash('Утас заавал');
+      return;
+    }
+    if (!address.trim()) {
+      setFlash('Хаяг заавал');
+      return;
+    }
+    if (rows.length === 0 || rows.every((r) => !r.name)) {
+      setFlash('Бүтээгдэхүүн нэмнэ үү');
+      return;
+    }
+    setFlash('Захиалга хадгалагдлаа');
+    window.setTimeout(() => router.push('/ad/orders'), 900);
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5 text-amber-500" />
-            <span>Гараар захиалга үүсгэх (POS)</span>
-          </h1>
-          <p className="text-xs sm:text-sm text-gray-500 mt-1">
-            Утас, салон эсвэл салбар дээр ирсэн захиалгыг шууд бүртгэж баримт хэвлэх
-          </p>
-        </div>
+    <div className="ad-co">
+      <div className="ad-co-top">
+        <h1 className="ad-co-title">Шинэ захиалга үүсгэх</h1>
+        <Link href="/ad/orders" className="ad-order-btn ad-order-btn--default">
+          <ArrowLeft className="size-3.5" />
+          Захиалгын жагсаалт руу буцах
+        </Link>
       </div>
 
-      {isSuccess ? (
-        <div className="bg-white border border-gray-200 rounded-2xl p-8 sm:p-12 text-center max-w-lg mx-auto shadow-xs space-y-6">
-          <div className="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-200">
-            <CheckCircle className="w-7 h-7" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">Захиалга амжилттай бүртгэгдлээ!</h2>
-            <p className="text-xs text-gray-500 mt-1">
-              Захиалгын дугаар: <strong className="text-gray-900 font-mono">EST-9402</strong>
-            </p>
-            <p className="text-sm font-black text-gray-900 mt-2 font-mono">Нийт дүн: {formatPrice(total)}</p>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-xl text-xs flex items-center justify-center gap-2 border border-gray-200"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Баримт хэвлэх</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setIsSuccess(false);
-                setSelectedItems([]);
-                setCustomerName('');
-                setCustomerPhone('');
-                setAddress('');
-              }}
-              className="flex-1 py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-xl text-xs"
-            >
-              Дахин захиалга бүртгэх
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column: Product Picker (7 cols) */}
-          <div className="lg:col-span-7 bg-white border border-gray-200 rounded-2xl p-6 shadow-xs space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-gray-900">1. Бүтээгдэхүүн сонгох</h2>
-              <span className="text-xs text-gray-400 font-medium">{DEMO_PRODUCTS.length} бараа бэлэн байна</span>
-            </div>
+      {flash ? <div className="ad-co-flash">{flash}</div> : null}
 
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Барааны нэрээр хайх..."
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-gray-400 focus:bg-white"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-1">
-              {DEMO_PRODUCTS.filter((p) => p.name.toLowerCase().includes(search.toLowerCase())).map((product) => (
-                <div
-                  key={product.id}
-                  onClick={() => handleAddProduct(product)}
-                  className="bg-gray-50/60 border border-gray-200 hover:border-gray-400 rounded-xl p-3 cursor-pointer transition-all hover:bg-white flex flex-col justify-between group"
-                >
-                  <div>
-                    <div className="aspect-square bg-white rounded-lg overflow-hidden mb-2 border border-gray-100">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`https://alphalabs.mn/nextstore-html/estel/${product.image}`} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                    </div>
-                    <p className="text-xs font-bold text-gray-900 line-clamp-2 leading-snug">{product.name}</p>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between pt-2 border-t border-gray-200/80">
-                    <span className="text-xs font-black text-gray-900 font-mono">{formatPrice(product.price)}</span>
-                    <span className="p-1 rounded-md bg-gray-900 text-white group-hover:bg-amber-500 group-hover:text-gray-900 transition-colors">
-                      <Plus className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
+      <form onSubmit={handleSubmit}>
+        <section className="ad-co-panel">
+          <div className="ad-co-panel__head">Хэрэглэгч сонгох</div>
+          <div className="ad-co-panel__body">
+            <div className="ad-co-user-top">
+              <div className="ad-co-field" ref={memberBoxRef}>
+                <label>Харилцагч сонгох</label>
+                <div className="ad-co-suggest">
+                  <input
+                    className="ad-order-input"
+                    value={memberQuery}
+                    placeholder="Харилцагч сонгох"
+                    onFocus={() => setMemberOpen(true)}
+                    onChange={(e) => {
+                      setMemberQuery(e.target.value);
+                      setMemberOpen(true);
+                      setMember(null);
+                    }}
+                  />
+                  {memberOpen && (
+                    <ul className="ad-co-suggest__list">
+                      {memberQuery.trim().length < 3 ? (
+                        <li className="ad-co-suggest__hint">Хамгийн багадаа 3 үсэг шаардлагатай</li>
+                      ) : memberHits.length === 0 ? (
+                        <li className="ad-co-suggest__hint">Олдсонгүй</li>
+                      ) : (
+                        memberHits.map((m) => (
+                          <li key={m.id}>
+                            <button type="button" onClick={() => pickMember(m)}>
+                              <strong>
+                                {m.lastname} {m.firstname}
+                              </strong>
+                              {m.company ? ` · ${m.company}` : ''}
+                              <span>{m.phone}</span>
+                            </button>
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                  )}
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Right Column: Customer Info & Cart Ticket (5 cols) */}
-          <div className="lg:col-span-5 space-y-4">
-            <form onSubmit={handleSubmitOrder} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs space-y-5">
-              <h2 className="text-sm font-bold text-gray-900 flex items-center justify-between">
-                <span>2. Захиалгын хуудас & Тооцоо</span>
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
-                  {selectedItems.length} сонгосон
-                </span>
-              </h2>
-
-              {/* Items List */}
-              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                {selectedItems.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs">
-                    <div className="flex-1 overflow-hidden pr-2">
-                      <p className="font-bold text-gray-900 truncate">{item.name}</p>
-                      <p className="text-[11px] text-gray-600 font-mono font-bold">{formatPrice(item.price)}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button type="button" onClick={() => handleQtyChange(item.id, -1)} className="p-1 rounded-md bg-white border border-gray-200 hover:bg-gray-100 text-gray-700">
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <span className="font-bold text-gray-900 w-4 text-center">{item.qty}</span>
-                      <button type="button" onClick={() => handleQtyChange(item.id, 1)} className="p-1 rounded-md bg-white border border-gray-200 hover:bg-gray-100 text-gray-700">
-                        <Plus className="w-3 h-3" />
-                      </button>
-                      <button type="button" onClick={() => handleRemove(item.id)} className="p-1 text-gray-400 hover:text-rose-600 ml-1">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                {selectedItems.length === 0 && (
-                  <div className="text-center py-6 text-gray-400 text-xs border border-dashed border-gray-200 rounded-xl">
-                    Зүүн талаас бараа сонгоно уу
-                  </div>
-                )}
               </div>
 
-              {/* Customer Inputs */}
-              <div className="space-y-3 pt-2 border-t border-gray-100">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="relative">
-                    <User className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="text"
-                      required
-                      value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
-                      placeholder="Захиалагчийн нэр"
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-400 focus:bg-white"
-                    />
-                  </div>
-                  <div className="relative">
-                    <Phone className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="tel"
-                      required
-                      value={customerPhone}
-                      onChange={(e) => setCustomerPhone(e.target.value)}
-                      placeholder="Утасны дугаар"
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-400 focus:bg-white"
-                    />
-                  </div>
-                </div>
+              <div className="ad-co-tax-type">
+                <label className="ad-co-radio">
+                  <input
+                    type="radio"
+                    name="is_tax"
+                    checked={!isCompany}
+                    onChange={() => setIsCompany(false)}
+                  />
+                  Хувь хүн
+                </label>
+                <label className="ad-co-radio">
+                  <input
+                    type="radio"
+                    name="is_tax"
+                    checked={isCompany}
+                    onChange={() => setIsCompany(true)}
+                  />
+                  Байгууллага
+                </label>
+                {isCompany ? (
+                  <input
+                    className="ad-order-input"
+                    placeholder="Компанийн РД..."
+                    value={companyRd}
+                    onChange={(e) => setCompanyRd(e.target.value)}
+                  />
+                ) : null}
+              </div>
+            </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
-                  <button
-                    type="button"
-                    onClick={() => setOrderType('delivery')}
-                    className={`py-2 rounded-xl border transition-all ${orderType === 'delivery' ? 'bg-gray-900 text-white border-gray-900 font-bold' : 'border-gray-200 text-gray-600'}`}
-                  >
-                    Хүргэлтээр
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setOrderType('pickup')}
-                    className={`py-2 rounded-xl border transition-all ${orderType === 'pickup' ? 'bg-gray-900 text-white border-gray-900 font-bold' : 'border-gray-200 text-gray-600'}`}
-                  >
-                    Салбараас авах
-                  </button>
-                </div>
+            <hr className="ad-co-hr" />
 
-                {orderType === 'delivery' && (
-                  <div className="relative">
-                    <MapPin className="w-3.5 h-3.5 absolute left-3 top-3 text-gray-400" />
-                    <textarea
-                      rows={2}
-                      required
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      placeholder="Дэлгэрэнгүй хаяг (Дүүрэг, Хороо, Байр, Тоот)..."
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-400 focus:bg-white resize-none"
-                    />
-                  </div>
-                )}
+            <div className="ad-co-grid-4">
+              <div className="ad-co-field">
+                <label>
+                  Утас <span className="ad-co-req">(* заавал)</span>
+                </label>
+                <input className="ad-order-input" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+              </div>
+              <div className="ad-co-field">
+                <label>
+                  И-Мэйл <span className="ad-co-opt">(нэмэлт)</span>
+                </label>
+                <input className="ad-order-input" value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+              <div className="ad-co-field">
+                <label>
+                  Нэр <span className="ad-co-opt">(нэмэлт)</span>
+                </label>
+                <input className="ad-order-input" value={firstname} onChange={(e) => setFirstname(e.target.value)} />
+              </div>
+              <div className="ad-co-field">
+                <label>
+                  Овог <span className="ad-co-opt">(нэмэлт)</span>
+                </label>
+                <input className="ad-order-input" value={lastname} onChange={(e) => setLastname(e.target.value)} />
+              </div>
+            </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                    Төлбөрийн хэлбэр
-                  </label>
-                  <div className="grid grid-cols-4 gap-1.5 text-[11px] font-bold">
-                    {[
-                      { key: 'qpay', label: 'QPay' },
-                      { key: 'cash', label: 'Бэлнээр' },
-                      { key: 'card', label: 'Пос / Карт' },
-                      { key: 'bank', label: 'Дансаар' },
-                    ].map((m) => (
-                      <button
-                        key={m.key}
-                        type="button"
-                        onClick={() => setPaymentMethod(m.key as any)}
-                        className={`py-1.5 rounded-lg border text-center transition-all ${paymentMethod === m.key ? 'bg-gray-900 text-white font-bold border-gray-900' : 'border-gray-200 text-gray-600 bg-white'}`}
-                      >
-                        {m.label}
-                      </button>
+            <div className="ad-co-addr-row">
+              <div className="ad-co-addr-left">
+                <div className="ad-co-loc-grid">
+                  <select className="ad-order-select" value={aimag} onChange={(e) => onAimagChange(e.target.value)}>
+                    <option value="">Аймаг, хот сонгох</option>
+                    {AIMAGS.map((a) => (
+                      <option key={a} value={a}>
+                        {a}
+                      </option>
                     ))}
-                  </div>
+                  </select>
+                  <select
+                    className="ad-order-select"
+                    value={district}
+                    onChange={(e) => onDistrictChange(e.target.value)}
+                  >
+                    <option value="">Сум, дүүрэг сонгох</option>
+                    {districts.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                  <select className="ad-order-select" value={bag} onChange={(e) => onBagChange(e.target.value)}>
+                    <option value="">Баг, хороо сонгох</option>
+                    {bags.map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
-                <div className="flex items-center justify-between text-xs pt-1">
-                  <span className="text-gray-500 font-medium">Хөнгөлөлт (Салон / VIP %):</span>
+                <div className="ad-co-grid-3">
+                  <div className="ad-co-field">
+                    <label>
+                      Хүргэлтийн үнэ <span className="ad-co-req">(* заавал)</span>
+                    </label>
+                    <input
+                      className="ad-order-input"
+                      value={deliveryPrice}
+                      onChange={(e) => setDeliveryPrice(e.target.value)}
+                    />
+                  </div>
+                  <div className="ad-co-field">
+                    <label>
+                      Гэрээний дугаар <span className="ad-co-opt">(нэмэлт)</span>
+                    </label>
+                    <input
+                      className="ad-order-input"
+                      value={contractId}
+                      onChange={(e) => setContractId(e.target.value)}
+                    />
+                  </div>
+                  <div className="ad-co-field">
+                    <label>
+                      Байгууллагын нэр <span className="ad-co-opt">(нэмэлт)</span>
+                    </label>
+                    <input className="ad-order-input" value={company} onChange={(e) => setCompany(e.target.value)} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="ad-co-field">
+                <label>
+                  Хаяг <span className="ad-co-req">(* заавал)</span>
+                </label>
+                <textarea
+                  className="ad-order-textarea"
+                  rows={4}
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  required
+                />
+                <label className="ad-co-check">
+                  <input type="checkbox" checked={syncCrm} onChange={(e) => setSyncCrm(e.target.checked)} />
+                  CRM-д харилцагчийн мэдээллийг шинэчлэж хуулах
+                </label>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="ad-co-panel">
+          <div className="ad-co-panel__body">
+            <div className="ad-inv-products-wrap">
+              <table className="ad-inv-products ad-co-products">
+                <thead>
+                  <tr>
+                    <th style={{ width: 300 }}>Тайлбар</th>
+                    <th style={{ width: 70 }}>Ширхэг</th>
+                    <th>Нэгж</th>
+                    <th style={{ width: 160 }}>Хямдрал</th>
+                    <th>Нийт</th>
+                    <th>(НӨАТ)</th>
+                    <th className="text-center">−</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => (
+                    <tr key={row.key}>
+                      <td>
+                        <div className="ad-co-prod-cell">
+                          <input
+                            className="ad-order-input"
+                            value={row.name}
+                            placeholder="Нэр эсвэл sku кодоор хайх..."
+                            onFocus={() => {
+                              setSuggestKey(row.key);
+                              setSuggestQ(row.name);
+                            }}
+                            onChange={(e) => {
+                              updateRow(row.key, { name: e.target.value, id: '' });
+                              setSuggestKey(row.key);
+                              setSuggestQ(e.target.value);
+                            }}
+                          />
+                          {row.stock != null && row.id ? (
+                            <span className="ad-co-stock">нийт үлдэгдэл: {row.stock}</span>
+                          ) : null}
+                          {suggestKey === row.key ? (
+                            <ul className="ad-co-suggest__list ad-co-suggest__list--prod">
+                              {productHits.map((p) => (
+                                <li key={p.id}>
+                                  <button type="button" onClick={() => pickProduct(row.key, p)}>
+                                    {p.title}
+                                    <span>үнэ: {fmt(p.price)}</span>
+                                  </button>
+                                </li>
+                              ))}
+                              <li>
+                                <button type="button" className="ad-co-suggest__add" onClick={() => openNewProduct(row.key)}>
+                                  <Plus className="size-3.5" /> Шинээр нэмэх
+                                </button>
+                              </li>
+                            </ul>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td>
+                        <input
+                          className="ad-order-input"
+                          value={row.qty}
+                          onChange={(e) => updateRow(row.key, { qty: Number(e.target.value) || 0 })}
+                        />
+                      </td>
+                      <td>
+                        <div className="ad-inv-input-addon">
+                          <input
+                            className="ad-order-input"
+                            value={fmt(row.price)}
+                            onChange={(e) =>
+                              updateRow(row.key, {
+                                price: Number(String(e.target.value).replace(/,/g, '')) || 0,
+                              })
+                            }
+                          />
+                          <span>₮</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="ad-inv-input-addon">
+                          <input
+                            className="ad-order-input"
+                            value={row.sale.toFixed(2)}
+                            onChange={(e) =>
+                              updateRow(row.key, {
+                                sale: Number(String(e.target.value).replace(/,/g, '')) || 0,
+                              })
+                            }
+                          />
+                          <select
+                            value={row.saleType}
+                            onChange={(e) => updateRow(row.key, { saleType: e.target.value as 'perc' | 'curr' })}
+                          >
+                            <option value="perc">%</option>
+                            <option value="curr">₮</option>
+                          </select>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="ad-inv-input-addon">
+                          <input className="ad-order-input" readOnly value={fmt(lineTotal(row))} />
+                          <span>₮</span>
+                        </div>
+                      </td>
+                      <td className="text-center">
+                        <input
+                          type="checkbox"
+                          checked={row.taxed}
+                          onChange={(e) => updateRow(row.key, { taxed: e.target.checked })}
+                        />
+                        <div className="ad-inv-tax-label">НӨАТ</div>
+                      </td>
+                      <td className="text-center">
+                        <button type="button" className="ad-inv-rm" onClick={() => removeRow(row.key)} aria-label="Устгах">
+                          <X className="size-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colSpan={3}>
+                      <button type="button" className="ad-inv-add-row" onClick={addRow}>
+                        + Бүтээгдэхүүн, ажил үйлчилгээ нэмэх
+                      </button>
+                    </td>
+                    <td className="text-right font-bold">Нийт үнэ:</td>
+                    <td colSpan={3}>{fmt(totals.price)} ₮</td>
+                  </tr>
+                  <tr>
+                    <td colSpan={4} className="text-right font-bold">
+                      НӨАТ (10%)
+                    </td>
+                    <td colSpan={3}>{fmt(totals.nuat)} ₮</td>
+                  </tr>
+                  <tr>
+                    <td colSpan={4} className="text-right font-bold">
+                      Хямдрал:
+                    </td>
+                    <td colSpan={3}>{fmt(totals.discount)} ₮</td>
+                  </tr>
+                  <tr>
+                    <td colSpan={4} className="text-right font-bold">
+                      Тоо ширхэг:
+                    </td>
+                    <td colSpan={3}>{fmt(totals.qty)}</td>
+                  </tr>
+                  <tr>
+                    <td colSpan={4} className="text-right font-bold">
+                      Нийт дүн:
+                    </td>
+                    <td colSpan={3}>{fmt(totals.withNuat)} ₮</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <div className="ad-co-bottom">
+              <div>
+                <label className="ad-co-check">
+                  <input type="checkbox" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} />
+                  Захиалгын и-мэйл илгээх
+                </label>
+                <label className="ad-co-check">
+                  <input type="checkbox" checked={sendSms} onChange={(e) => setSendSms(e.target.checked)} />
+                  Захиалгын SMS илгээх
+                </label>
+                <div className="ad-co-field" style={{ marginTop: '0.5rem' }}>
+                  <label>Нэмэлт мэдээлэл</label>
+                  <textarea className="ad-order-textarea" rows={4} value={note} onChange={(e) => setNote(e.target.value)} />
+                </div>
+              </div>
+              <div className="ad-co-pay-grid">
+                <div className="ad-co-field">
+                  <label>Төлбөрийн хэлбэр</label>
+                  <select className="ad-order-select" value={paymentId} onChange={(e) => setPaymentId(e.target.value)}>
+                    {CREATE_ORDER_PAYMENTS.map((p) => (
+                      <option key={p.value} value={p.value}>
+                        {p.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="ad-co-field">
+                  <label>Төлбөрийн нэгж</label>
                   <select
-                    value={discountPercent}
-                    onChange={(e) => setDiscountPercent(Number(e.target.value))}
-                    className="bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1 text-xs text-gray-900 focus:outline-none focus:border-gray-400"
+                    className="ad-order-select"
+                    value={currencyId}
+                    onChange={(e) => setCurrencyId(e.target.value)}
                   >
-                    <option value={0}>0% (Хөнгөлөлтгүй)</option>
-                    <option value={5}>5% (VIP хэрэглэгч)</option>
-                    <option value={10}>10% (Мэргэжлийн үсчин)</option>
-                    <option value={20}>20% (Гэрээт Салон бөөний)</option>
+                    {CREATE_ORDER_CURRENCIES.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {c.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
+            </div>
 
-              {/* Total Calculation */}
-              <div className="space-y-1.5 pt-3 border-t border-gray-100 text-xs">
-                <div className="flex justify-between text-gray-500">
-                  <span>Барааны дүн:</span>
-                  <span className="font-mono">{formatPrice(subtotal)}</span>
+            <button type="submit" className="ad-order-btn ad-order-btn--success ad-co-submit">
+              Хадгалах
+            </button>
+          </div>
+        </section>
+      </form>
+
+      {newProductOpen ? (
+        <div className="admin-scope ad-modal-overlay" onClick={() => setNewProductOpen(false)} role="presentation">
+          <div className="ad-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+            <div className="ad-modal__header">
+              <h4>Шинэ бүтээгдэхүүн нэмэх</h4>
+              <button type="button" className="ad-modal__close" onClick={() => setNewProductOpen(false)} aria-label="Хаах">
+                <X className="size-4" />
+              </button>
+            </div>
+            <form onSubmit={saveNewProduct}>
+              <div className="ad-modal__body">
+                <div className="ad-co-tax-type">
+                  <label className="ad-co-radio">
+                    <input
+                      type="radio"
+                      checked={newProduct.type === 'product'}
+                      onChange={() => setNewProduct((p) => ({ ...p, type: 'product' }))}
+                    />
+                    Бараа
+                  </label>
+                  <label className="ad-co-radio">
+                    <input
+                      type="radio"
+                      checked={newProduct.type === 'service'}
+                      onChange={() => setNewProduct((p) => ({ ...p, type: 'service' }))}
+                    />
+                    Үйлчилгээ
+                  </label>
                 </div>
-                {discountAmount > 0 && (
-                  <div className="flex justify-between text-rose-600">
-                    <span>Хөнгөлөлт ({discountPercent}%):</span>
-                    <span className="font-mono">-{formatPrice(discountAmount)}</span>
+                <div className="ad-co-field">
+                  <label>Гарчиг</label>
+                  <input
+                    className="ad-order-input"
+                    required
+                    value={newProduct.name}
+                    onChange={(e) => setNewProduct((p) => ({ ...p, name: e.target.value }))}
+                    placeholder="Бүтээгдэхүүн нэр"
+                  />
+                </div>
+                <div className="ad-co-grid-2">
+                  <div className="ad-co-field">
+                    <label>Үнэ</label>
+                    <input
+                      className="ad-order-input"
+                      required
+                      value={newProduct.price}
+                      onChange={(e) => setNewProduct((p) => ({ ...p, price: e.target.value }))}
+                      placeholder="Бүтээгдэхүүн үнэ"
+                    />
                   </div>
-                )}
-                {deliveryFee > 0 && (
-                  <div className="flex justify-between text-gray-500">
-                    <span>Хүргэлт:</span>
-                    <span className="font-mono">{formatPrice(deliveryFee)}</span>
+                  <div className="ad-co-field">
+                    <label>SKU</label>
+                    <input
+                      className="ad-order-input"
+                      required
+                      value={newProduct.sku}
+                      onChange={(e) => setNewProduct((p) => ({ ...p, sku: e.target.value }))}
+                      placeholder="Бүтээгдэхүүн SKU"
+                    />
                   </div>
-                )}
-                <div className="flex justify-between items-center text-sm font-black text-gray-900 pt-2 border-t border-gray-100">
-                  <span>Нийт төлөх:</span>
-                  <span className="text-lg text-gray-900 font-mono">{formatPrice(total)}</span>
+                </div>
+                <div className="ad-co-tax-type">
+                  <label className="ad-co-radio">
+                    <input
+                      type="radio"
+                      checked={newProduct.tax === '1'}
+                      onChange={() => setNewProduct((p) => ({ ...p, tax: '1' }))}
+                    />
+                    НӨАТ орсон
+                  </label>
+                  <label className="ad-co-radio">
+                    <input
+                      type="radio"
+                      checked={newProduct.tax === '0'}
+                      onChange={() => setNewProduct((p) => ({ ...p, tax: '0' }))}
+                    />
+                    НӨАТ ороогүй
+                  </label>
                 </div>
               </div>
-
-              <button
-                type="submit"
-                disabled={selectedItems.length === 0}
-                className="w-full py-3 px-4 bg-gray-900 hover:bg-gray-800 disabled:opacity-50 text-white font-semibold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2"
-              >
-                <CheckCircle className="w-4 h-4 text-amber-400" />
-                <span>Захиалга баталгаажуулах</span>
-              </button>
+              <div className="ad-modal__footer">
+                <button type="button" className="ad-order-btn ad-order-btn--default" onClick={() => setNewProductOpen(false)}>
+                  Болих
+                </button>
+                <button type="submit" className="ad-order-btn ad-order-btn--success">
+                  Хадгалах
+                </button>
+              </div>
             </form>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

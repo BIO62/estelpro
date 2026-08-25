@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   }
 
   const code = String(randomInt(100000, 999999));
-  saveOtp({ email: user.email, code, purpose, expiresAt: Date.now() + 10 * 60 * 1000 });
+  saveOtp({ email: user.email, code, purpose, expiresAt: Date.now() + 5 * 60 * 1000 });
   await sendOtpEmail(user.email, code);
   return NextResponse.json({ ok: true, emailHint: maskEmail(user.email), channel: 'email' });
 }

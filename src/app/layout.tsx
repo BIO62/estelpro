@@ -10,7 +10,7 @@ import './wrap.css';
 import './globals.css';
 import ClientLayout from '@/components/layout/ClientLayout';
 import { ASSET_BASE } from '@/lib/constants';
-import { getSyliusTaxons, toMenuTaxons } from '@/lib/api/sylius';
+import { storefrontMenuTaxons } from '@/lib/storefront-products';
 
 const montserrat = Montserrat({
   subsets: ['latin', 'cyrillic'],
@@ -33,7 +33,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const taxons = toMenuTaxons(await getSyliusTaxons(), 'consumer');
+  const taxons = storefrontMenuTaxons('consumer');
   return (
     <html lang="mn">
       <head>

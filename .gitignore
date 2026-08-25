@@ -40,14 +40,15 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.vercel
-
 # AI & Reference files
 CLAUDE.md
 AGENTS.md
 ref-html/
 
-# temp auth db
+# temp auth db & seeds
 /data/auth.json
 /data/otp-mailbox.jsonl
-
+supabase/.temp/
+scripts/*.xlsx
+scripts/*.csv
+scripts/*.txt

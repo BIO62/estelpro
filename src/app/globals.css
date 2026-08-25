@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 @theme {
   --color-main: #1a1a1a;
   --color-main-hover: #333333;
@@ -26,6 +28,14 @@
   --color-border: #e5e5e5;
   --color-input: #e5e5e5;
   --color-ring: #1170b7;
+  --color-sidebar: hsl(0 0% 98%);
+  --color-sidebar-foreground: hsl(240 5.3% 26.1%);
+  --color-sidebar-primary: hsl(240 5.9% 10%);
+  --color-sidebar-primary-foreground: hsl(0 0% 98%);
+  --color-sidebar-accent: hsl(240 4.8% 95.9%);
+  --color-sidebar-accent-foreground: hsl(240 5.9% 10%);
+  --color-sidebar-border: hsl(220 13% 91%);
+  --color-sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
 
 /* Bootstrap ships !important utilities with the same names as Tailwind's
@@ -152,15 +162,15 @@
   height: 2.75rem !important;
   padding: 0 0.875rem !important;
   border-radius: 0.75rem !important;
-  border-color: #d2d2d7 !important;
+  border-color: #90caf9 !important;
   background-color: #fff;
   font-size: 0.9375rem;
   box-shadow: none;
 }
 
 .auth-scope input:focus-visible {
-  border-color: var(--color-primary) !important;
-  box-shadow: 0 0 0 3px rgb(17 112 183 / 0.18);
+  border-color: #2196f3 !important;
+  box-shadow: 0 0 0 3px rgb(33 150 243 / 0.18);
 }
 
 .auth-scope [data-slot='button']:not(.auth-tab) {
@@ -183,7 +193,7 @@
 }
 
 .auth-scope [data-slot='button'][data-variant='default']:hover {
-  background-color: #0d5c96 !important;
+  background-color: #0d47a1 !important;
 }
 
 .auth-scope .auth-tab {
@@ -193,8 +203,8 @@
 }
 
 .auth-scope [data-slot='button'][data-variant='ghost']:hover {
-  background-color: #f5f5f7 !important;
-  color: var(--color-primary) !important;
+  background-color: rgb(144 202 249 / 0.35) !important;
+  color: #0d47a1 !important;
 }
 
 button:focus,
@@ -2345,14 +2355,614 @@ body.qv-open {
   color: #111;
 }
 
-/* ===== Admin Light Luxury scope (Preline & Clean Isolation) ===== */
+/* ===== Admin — hover-expand sidebar (Framer Motion) ===== */
+.admin-scope .ad-hover-sidebar {
+  overflow: hidden;
+  box-shadow: 2px 0 12px rgb(0 0 0 / 0.04);
+  background-color: var(--sidebar) !important;
+  color: var(--sidebar-foreground) !important;
+  border-right: 1px solid var(--sidebar-border) !important;
+}
+
+.admin-scope.dark .ad-hover-sidebar {
+  box-shadow: 2px 0 16px rgb(0 0 0 / 0.35);
+}
+
+/* Brand / logo header */
+.admin-scope .ad-sidebar-brand {
+  display: flex !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+  height: 4rem !important;
+  min-height: 4rem !important;
+  max-height: 4rem !important;
+  margin: 0 !important;
+  text-decoration: none !important;
+  box-sizing: border-box !important;
+  position: static !important;
+  top: auto !important;
+  transform: none !important;
+}
+
+.admin-scope .ad-sidebar-brand--expanded {
+  gap: 0.75rem !important;
+  padding: 0 1rem !important;
+}
+
+.admin-scope .ad-sidebar-brand--collapsed {
+  justify-content: center !important;
+  padding: 0 !important;
+}
+
+.admin-scope .ad-sidebar-brand__logo {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  flex-shrink: 0 !important;
+  border-radius: 0.5rem !important;
+  background-color: var(--color-primary) !important;
+}
+
+.admin-scope .ad-sidebar-brand__title {
+  margin: 0 !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  line-height: 1.25rem !important;
+  color: hsl(240 5.9% 10%) !important;
+}
+
+.admin-scope .ad-sidebar-brand__subtitle {
+  margin: 0 !important;
+  font-size: 0.75rem !important;
+  line-height: 1rem !important;
+  color: hsl(240 3.8% 46.1%) !important;
+}
+
+.admin-scope.dark .ad-sidebar-brand__title {
+  color: var(--ad-dark-text) !important;
+}
+
+.admin-scope.dark .ad-sidebar-brand__subtitle {
+  color: rgb(238 238 238 / 0.62) !important;
+}
+
+/* Nav links — unified sizing */
+.admin-scope .ad-sidebar-link,
+.admin-scope .ad-sidebar-link:hover,
+.admin-scope .ad-sidebar-link:focus,
+.admin-scope .ad-sidebar-link:visited,
+.admin-scope .ad-sidebar-sublink,
+.admin-scope .ad-sidebar-sublink:hover,
+.admin-scope .ad-sidebar-sublink:focus,
+.admin-scope .ad-sidebar-sublink:visited {
+  color: hsl(240 5.9% 10%) !important;
+}
+
+.admin-scope .ad-sidebar-brand,
+.admin-scope .ad-sidebar-brand:hover,
+.admin-scope .ad-sidebar-brand:focus {
+  color: inherit !important;
+}
+
+.admin-scope .ad-sidebar-link--active,
+.admin-scope .ad-sidebar-link--active:hover,
+.admin-scope .ad-sidebar-link--active:focus,
+.admin-scope .ad-sidebar-link--active:visited {
+  color: hsl(240 5.9% 10%) !important;
+}
+
+.admin-scope .ad-sidebar-nav {
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
+}
+
+.admin-scope .ad-sidebar-section-label {
+  margin: 0 0 0.25rem !important;
+  padding: 0 0.75rem 0.25rem !important;
+  font-size: 0.6875rem !important;
+  font-weight: 600 !important;
+  line-height: 1rem !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  color: hsl(240 3.8% 46.1% / 0.85) !important;
+}
+
+.admin-scope .ad-sidebar-link,
+.admin-scope .ad-sidebar-sublink {
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  min-height: 2.5rem !important;
+  height: 2.5rem !important;
+  margin: 0 !important;
+  padding: 0 0.75rem !important;
+  gap: 0.75rem !important;
+  border: 1px solid transparent !important;
+  border-left-width: 3px !important;
+  border-left-color: transparent !important;
+  border-radius: 0.375rem !important;
+  background: transparent !important;
+  box-sizing: border-box !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+  font-size: 0.875rem !important;
+  font-weight: 400 !important;
+  line-height: 1.25rem !important;
+  color: hsl(240 5.9% 10%) !important;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease !important;
+  appearance: none !important;
+}
+
+.admin-scope .ad-sidebar-link--collapsed {
+  justify-content: center !important;
+  padding: 0 !important;
+  gap: 0 !important;
+}
+
+.admin-scope .ad-sidebar-sublink {
+  min-height: 2.25rem !important;
+  height: 2.25rem !important;
+}
+
+.admin-scope .ad-sidebar-link__icon {
+  width: 1.125rem !important;
+  height: 1.125rem !important;
+  flex-shrink: 0 !important;
+}
+
+.admin-scope .ad-sidebar-link__label {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+}
+
+.admin-scope .ad-sidebar-link:hover:not(.ad-sidebar-link--active),
+.admin-scope .ad-sidebar-sublink:hover:not(.ad-sidebar-link--active) {
+  background-color: hsl(240 4.8% 95.9%) !important;
+  color: hsl(240 5.9% 10%) !important;
+  border: 1px solid transparent !important;
+  border-left: 3px solid transparent !important;
+}
+
+.admin-scope .ad-sidebar-link--active {
+  background-color: hsl(240 4.8% 95.9%) !important;
+  color: hsl(240 5.9% 10%) !important;
+  font-weight: 500 !important;
+  border: 1px solid var(--sidebar-border) !important;
+  border-left: 3px solid var(--color-primary) !important;
+}
+
+.admin-scope.dark .ad-sidebar-link,
+.admin-scope.dark .ad-sidebar-sublink {
+  color: var(--ad-dark-text) !important;
+}
+
+.admin-scope.dark .ad-sidebar-link:hover:not(.ad-sidebar-link--active),
+.admin-scope.dark .ad-sidebar-sublink:hover:not(.ad-sidebar-link--active) {
+  background-color: var(--ad-dark-surface) !important;
+  color: var(--ad-dark-text) !important;
+}
+
+.admin-scope.dark .ad-sidebar-link--active {
+  background-color: var(--ad-dark-surface) !important;
+  color: var(--ad-dark-text) !important;
+  border: 1px solid var(--ad-dark-border) !important;
+  border-left: 3px solid var(--ad-dark-teal) !important;
+}
+
+/* Scrollable nav — hide scrollbar */
+.admin-scope .ad-sidebar-nav--scroll {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.admin-scope .ad-sidebar-nav--scroll::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Brand row — desktop + mobile drawer header */
+.admin-scope .ad-sidebar-brand-row {
+  display: flex !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+  height: 4rem !important;
+  min-height: 4rem !important;
+  max-height: 4rem !important;
+  border-bottom: 1px solid var(--sidebar-border) !important;
+  box-sizing: border-box !important;
+}
+
+.admin-scope .ad-sidebar-brand-row--mobile {
+  padding-right: 0.75rem !important;
+}
+
+.admin-scope .ad-sidebar-brand-row .ad-sidebar-brand {
+  flex: 1 !important;
+  min-width: 0 !important;
+  border-bottom: none !important;
+}
+
+.admin-scope .ad-mobile-nav__close {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0.375rem !important;
+  background: transparent !important;
+  color: hsl(240 5.9% 10%) !important;
+  cursor: pointer !important;
+}
+
+.admin-scope .ad-mobile-nav__close:hover {
+  background-color: hsl(240 4.8% 95.9%) !important;
+}
+
+.admin-scope .ad-mobile-nav {
+  background-color: var(--sidebar) !important;
+  border-right: 1px solid var(--sidebar-border) !important;
+  box-shadow: 4px 0 24px rgb(0 0 0 / 0.12) !important;
+}
+
+.admin-scope.dark .ad-mobile-nav__close {
+  color: var(--ad-dark-text) !important;
+}
+
+.admin-scope.dark .ad-mobile-nav__close:hover {
+  background-color: var(--ad-dark-surface) !important;
+}
+
+/* Header — user menu (dark mode-ийн баруун тал) */
+.admin-scope .ad-header-user {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  max-width: 100% !important;
+  height: 2.25rem !important;
+  padding: 0 0.375rem 0 0.125rem !important;
+  margin: 0 !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 9999px !important;
+  background: var(--color-background) !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+  appearance: none !important;
+  transition: background-color 0.18s ease, border-color 0.18s ease !important;
+}
+
+.admin-scope .ad-header-user:hover {
+  background-color: var(--color-accent) !important;
+  border-color: var(--color-border) !important;
+}
+
+.admin-scope .ad-header-user__name {
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  line-height: 1.25rem !important;
+  color: hsl(240 5.9% 10%) !important;
+}
+
+.admin-scope .ad-header-user:focus,
+.admin-scope .ad-header-user:focus-visible,
+.admin-scope .ad-header-user:active,
+.admin-scope .ad-header-user[data-state='open'] {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: var(--color-border) !important;
+}
+
+/* Theme toggle — pill icon button */
+.admin-scope .ad-theme-toggle {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  flex-shrink: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 9999px !important;
+  background: var(--color-background) !important;
+  color: hsl(240 3.8% 46.1%) !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+  appearance: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease !important;
+}
+
+.admin-scope .ad-theme-toggle:hover {
+  background-color: hsl(240 4.8% 95.9%) !important;
+  color: hsl(240 5.9% 10%) !important;
+  border-color: var(--color-border) !important;
+}
+
+.admin-scope .ad-theme-toggle:focus,
+.admin-scope .ad-theme-toggle:focus-visible,
+.admin-scope .ad-theme-toggle:active {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: var(--color-border) !important;
+}
+
+.admin-scope.dark .ad-theme-toggle {
+  background: var(--ad-dark-surface) !important;
+  border-color: var(--ad-dark-border) !important;
+  color: rgb(238 238 238 / 0.62) !important;
+}
+
+.admin-scope.dark .ad-theme-toggle:hover {
+  background: rgb(57 62 70 / 0.85) !important;
+  color: var(--ad-dark-teal) !important;
+  border-color: var(--ad-dark-border) !important;
+}
+
+/* Header dropdown menu */
+.admin-scope .ad-header-user-menu {
+  min-width: 15rem !important;
+}
+
+.admin-scope .ad-header-user-menu [data-slot='dropdown-menu-item'],
+.admin-scope .ad-header-user-menu [data-slot='dropdown-menu-item'] a {
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+}
+
+.admin-scope .ad-header-menu-item,
+.admin-scope .ad-header-menu-item a {
+  color: hsl(240 5.9% 10%) !important;
+}
+
+.admin-scope .ad-header-menu-item:hover,
+.admin-scope .ad-header-menu-item:focus,
+.admin-scope .ad-header-menu-item a:hover,
+.admin-scope .ad-header-menu-item a:focus {
+  color: hsl(240 5.9% 10%) !important;
+}
+
+.admin-scope .ad-header-logout-item {
+  margin-top: 0.125rem !important;
+  min-height: 2.25rem !important;
+  border-radius: 0.5rem !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+  color: hsl(0 72% 45%) !important;
+}
+
+.admin-scope .ad-header-logout-item:hover,
+.admin-scope .ad-header-logout-item:focus {
+  background-color: hsl(0 86% 97%) !important;
+  color: hsl(0 72% 40%) !important;
+}
+
+.admin-scope.dark .ad-header-menu-item,
+.admin-scope.dark .ad-header-menu-item a {
+  color: var(--ad-dark-text) !important;
+}
+
+.admin-scope.dark .ad-header-logout-item {
+  color: hsl(0 84% 72%) !important;
+}
+
+.admin-scope.dark .ad-header-logout-item:hover,
+.admin-scope.dark .ad-header-logout-item:focus {
+  background-color: rgb(127 29 29 / 0.28) !important;
+  color: hsl(0 84% 80%) !important;
+}
+
+.admin-scope.dark .ad-header-user {
+  background: var(--ad-dark-surface) !important;
+  border-color: var(--ad-dark-border) !important;
+}
+
+.admin-scope.dark .ad-header-user:hover {
+  background: rgb(57 62 70 / 0.85) !important;
+}
+
+.admin-scope.dark .ad-header-user__name {
+  color: var(--ad-dark-text) !important;
+}
+
+.admin-scope .ad-sidebar-inset {
+  flex: 1 1 0%;
+  min-width: 0;
+  width: auto;
+  background-color: var(--color-background) !important;
+}
+
+.admin-scope.dark .ad-sidebar-inset,
+.admin-scope.dark .ad-main-content {
+  background-color: var(--color-background) !important;
+  color: var(--color-foreground) !important;
+}
+
+.admin-scope .ad-sidebar-toggle {
+  appearance: none !important;
+  border: none !important;
+  background: transparent !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+}
+
+.admin-scope .ad-sidebar-toggle:hover {
+  background-color: var(--color-accent) !important;
+  color: var(--color-accent-foreground) !important;
+}
+
+/* ===== Admin — shadcn sidebar-07 shell (legacy /dashboard) ===== */
+.admin-scope [data-slot='sidebar-wrapper'] {
+  display: flex !important;
+  min-height: 100svh !important;
+  width: 100% !important;
+}
+
+.admin-scope [data-slot='sidebar-container'] {
+  height: 100svh !important;
+}
+
+.admin-scope [data-slot='sidebar-inset'] {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.admin-scope [data-sidebar='sidebar'] {
+  height: 100% !important;
+  background-color: var(--sidebar) !important;
+  color: var(--sidebar-foreground) !important;
+}
+
+/* sidebar-07 өнгө — admin scope */
 .admin-scope {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
-  font-size: 14px !important;
-  line-height: 1.5 !important;
-  color: #0f172a !important;
-  background-color: #f8fafc !important;
-  -webkit-font-smoothing: antialiased !important;
+  --sidebar: hsl(0 0% 98%);
+  --sidebar-foreground: hsl(240 5.3% 26.1%);
+  --sidebar-primary: hsl(240 5.9% 10%);
+  --sidebar-primary-foreground: hsl(0 0% 98%);
+  --sidebar-accent: hsl(240 4.8% 95.9%);
+  --sidebar-accent-foreground: hsl(240 5.9% 10%);
+  --sidebar-border: hsl(220 13% 91%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+}
+
+.admin-scope [data-sidebar='menu-button']:not([data-size='lg']),
+.admin-scope [data-sidebar='menu-sub-button'] {
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease !important;
+}
+
+.admin-scope [data-sidebar='menu-button']:not([data-size='lg']) {
+  width: 100% !important;
+  height: 39.56px !important;
+  min-height: 39.56px !important;
+  padding: 0.5rem !important;
+  line-height: 1.25 !important;
+  font-size: 0.875rem !important;
+  font-weight: 400 !important;
+  border: 1px solid transparent !important;
+  border-left-width: 3px !important;
+  border-left-color: transparent !important;
+  border-radius: 0.375rem !important;
+  box-shadow: none !important;
+  text-align: left !important;
+  color: var(--sidebar-foreground) !important;
+  background-color: transparent !important;
+}
+
+.admin-scope [data-sidebar='menu-button'][data-active='true']:not([data-size='lg']),
+.admin-scope [data-sidebar='menu-sub-button'][data-active='true'] {
+  background-color: var(--sidebar-accent) !important;
+  color: var(--sidebar-accent-foreground) !important;
+  font-weight: 500 !important;
+  border: 1px solid var(--sidebar-border) !important;
+  border-left: 3px solid var(--color-primary) !important;
+  box-shadow: none !important;
+}
+
+.admin-scope [data-sidebar='menu-button']:not([data-size='lg']):hover:not([data-active='true']) {
+  background-color: var(--sidebar-accent) !important;
+  color: var(--sidebar-accent-foreground) !important;
+  border: 1px solid transparent !important;
+  border-left: 3px solid transparent !important;
+}
+
+.admin-scope [data-sidebar='group-label'] {
+  color: hsl(240 5.3% 26.1% / 0.7) !important;
+}
+
+.admin-scope [data-sidebar='menu-sub'] {
+  margin-left: 0.875rem !important;
+  border-left: 1px solid var(--sidebar-border) !important;
+  padding-left: 0.625rem !important;
+}
+
+.admin-scope [data-sidebar='menu-sub-button'] {
+  color: var(--sidebar-foreground) !important;
+  background-color: transparent !important;
+  border: 1px solid transparent !important;
+  border-left-width: 3px !important;
+  border-left-color: transparent !important;
+  border-radius: 0.375rem !important;
+  box-shadow: none !important;
+}
+
+.admin-scope [data-sidebar='menu-sub-button']:hover:not([data-active='true']) {
+  background-color: var(--sidebar-accent) !important;
+  color: var(--sidebar-accent-foreground) !important;
+  border: 1px solid transparent !important;
+  border-left: 3px solid transparent !important;
+}
+
+.admin-scope [data-slot='collapsible-content'] {
+  overflow: hidden !important;
+}
+
+.admin-scope [data-slot='collapsible-content'][data-state='open'] {
+  animation: admin-collapsible-down 0.22s ease-out;
+}
+
+.admin-scope [data-slot='collapsible-content'][data-state='closed'] {
+  animation: admin-collapsible-up 0.18s ease-out;
+}
+
+@keyframes admin-collapsible-down {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+
+  to {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes admin-collapsible-up {
+  from {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+  }
+
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
+.admin-scope [data-sidebar='menu-button'][data-size='lg'] {
+  height: 3rem !important;
+  min-height: 3rem !important;
+  padding: 0.5rem !important;
+}
+
+.admin-scope [data-sidebar='menu'],
+.admin-scope [data-sidebar='menu-sub'],
+.admin-scope [data-sidebar='menu-item'],
+.admin-scope [data-sidebar='menu-sub-item'] {
+  list-style: none !important;
+  padding-left: 0 !important;
+  margin: 0 !important;
 }
 
 .admin-scope a,
@@ -2361,83 +2971,2340 @@ body.qv-open {
   text-decoration: none !important;
 }
 
-.admin-scope a.bg-slate-900,
-.admin-scope a.bg-slate-900 *,
-.admin-scope a[data-active="true"],
-.admin-scope a[data-active="true"] * {
-  color: #ffffff !important;
+.admin-scope .bg-primary {
+  background-color: var(--color-primary) !important;
 }
 
-.admin-scope aside {
-  width: 256px !important;
-  min-width: 256px !important;
-  max-width: 256px !important;
-  flex: 0 0 256px !important;
-  position: fixed !important;
-  top: 0 !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  z-index: 50 !important;
-  background-color: #ffffff !important;
-  border-right: 1px solid #e5e7eb !important;
-  display: flex !important;
-  flex-direction: column !important;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+.admin-scope .text-primary {
+  color: var(--color-primary) !important;
 }
 
-@media (min-width: 1024px) {
-  .admin-scope .admin-main-wrap {
-    margin-left: 256px !important;
-    width: calc(100% - 256px) !important;
-    min-width: 0 !important;
-  }
-}
-
-.admin-scope aside nav a {
+/* Header — Bootstrap reboot-ийг дарна */
+.admin-scope .ad-shell-header {
   display: flex !important;
   align-items: center !important;
   width: 100% !important;
-  color: #4b5563 !important;
+  height: 4rem !important;
+  min-height: 4rem !important;
+  max-height: 4rem !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background-color: var(--color-background) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  box-sizing: border-box !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+}
+
+.admin-scope .ad-shell-header button {
+  appearance: none !important;
+  box-sizing: border-box !important;
+}
+
+.admin-scope [data-slot='sidebar-trigger'] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0.375rem !important;
+  background: transparent !important;
+  color: var(--color-foreground) !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+}
+
+.admin-scope [data-slot='sidebar-trigger']:hover {
+  background-color: var(--color-accent) !important;
+  color: var(--color-accent-foreground) !important;
+}
+
+.admin-scope [data-slot='sidebar-trigger'] svg {
+  width: 1rem !important;
+  height: 1rem !important;
+}
+
+.admin-scope [data-slot='breadcrumb'] {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.admin-scope [data-slot='breadcrumb-list'] {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 0.375rem !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+
+.admin-scope [data-slot='breadcrumb-item'] {
+  display: inline-flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+
+.admin-scope [data-slot='breadcrumb-link'] {
+  color: var(--color-muted-foreground) !important;
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
   text-decoration: none !important;
 }
 
-.admin-scope aside nav a:hover {
-  color: #111827 !important;
-  background-color: #f3f4f6 !important;
+.admin-scope [data-slot='breadcrumb-link']:hover {
+  color: var(--color-foreground) !important;
 }
 
-/* Table — Bootstrap дарах */
-.admin-scope .table,
-.admin-scope table {
-  --bs-table-bg: transparent;
-  --bs-table-color: #1e293b;
-  --bs-table-striped-bg: #fafaf9;
-  margin-bottom: 0 !important;
-  color: var(--bs-table-color) !important;
-  width: 100% !important;
-  border-collapse: collapse !important;
+.admin-scope [data-slot='breadcrumb-page'] {
+  color: var(--color-foreground) !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  line-height: 1.25rem !important;
 }
 
-.admin-scope th,
-.admin-scope td {
-  background: transparent !important;
-  vertical-align: middle !important;
-  border-color: #f3f4f6 !important;
+.admin-scope [data-slot='breadcrumb-separator'] {
+  display: inline-flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+  color: var(--color-muted-foreground) !important;
 }
 
-/* Form элементүүд */
-.admin-scope input,
-.admin-scope select,
-.admin-scope textarea {
-  background-image: none !important;
-  font-family: inherit !important;
+.admin-scope [data-slot='breadcrumb-separator'] svg {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
 }
 
-.admin-scope select:focus,
-.admin-scope input:focus {
+/* ===== Admin dark mode — darkspace + teal palette ===== */
+.admin-scope.dark {
+  --ad-dark-bg: #222831;
+  --ad-dark-surface: #393e46;
+  --ad-dark-teal: #00adb5;
+  --ad-dark-text: #eeeeee;
+  --ad-dark-border: #4a5058;
+
+  --color-background: var(--ad-dark-bg);
+  --color-foreground: var(--ad-dark-text);
+  --color-card: var(--ad-dark-surface);
+  --color-card-foreground: var(--ad-dark-text);
+  --color-popover: var(--ad-dark-surface);
+  --color-popover-foreground: var(--ad-dark-text);
+  --color-muted: var(--ad-dark-surface);
+  --color-muted-foreground: rgb(238 238 238 / 0.62);
+  --color-accent: var(--ad-dark-surface);
+  --color-accent-foreground: var(--ad-dark-text);
+  --color-secondary: var(--ad-dark-surface);
+  --color-secondary-foreground: var(--ad-dark-text);
+  --color-primary: var(--ad-dark-teal);
+  --color-primary-foreground: var(--ad-dark-bg);
+  --color-border: var(--ad-dark-border);
+  --color-input: var(--ad-dark-border);
+  --color-ring: var(--ad-dark-teal);
+
+  --sidebar: var(--ad-dark-bg);
+  --sidebar-foreground: var(--ad-dark-text);
+  --sidebar-primary: var(--ad-dark-teal);
+  --sidebar-primary-foreground: var(--ad-dark-bg);
+  --sidebar-accent: var(--ad-dark-surface);
+  --sidebar-accent-foreground: var(--ad-dark-text);
+  --sidebar-border: var(--ad-dark-border);
+  --sidebar-ring: var(--ad-dark-teal);
+}
+
+.admin-scope.dark [data-sidebar='group-label'] {
+  color: rgb(238 238 238 / 0.55) !important;
+}
+
+.admin-scope.dark .ad-shell-header {
+  background-color: var(--ad-dark-bg) !important;
+  border-bottom-color: var(--ad-dark-border) !important;
+}
+
+.admin-scope.dark [data-slot='breadcrumb-link'] {
+  color: var(--color-muted-foreground) !important;
+}
+
+.admin-scope.dark [data-slot='breadcrumb-link']:hover {
+  color: var(--ad-dark-teal) !important;
+}
+
+.admin-scope.dark [data-slot='breadcrumb-page'] {
+  color: var(--ad-dark-text) !important;
+}
+
+.admin-scope.dark .bg-primary {
+  background-color: var(--ad-dark-teal) !important;
+}
+
+.admin-scope.dark .text-primary {
+  color: var(--ad-dark-teal) !important;
+}
+
+.admin-scope.dark .hover\:bg-primary\/90:hover {
+  background-color: rgb(0 173 181 / 0.88) !important;
+}
+
+.admin-scope.dark .border-l-primary {
+  border-left-color: var(--ad-dark-teal) !important;
+}
+
+/* Hardcoded gray class-уудыг palette-д тааруулна */
+.admin-scope.dark .bg-white {
+  background-color: var(--ad-dark-surface) !important;
+}
+
+.admin-scope.dark .bg-gray-50,
+.admin-scope.dark .bg-gray-50\/50,
+.admin-scope.dark .bg-gray-50\/60 {
+  background-color: var(--ad-dark-bg) !important;
+}
+
+.admin-scope.dark .bg-gray-100 {
+  background-color: var(--ad-dark-surface) !important;
+}
+
+.admin-scope.dark .bg-gray-900\/50 {
+  background-color: rgb(34 40 49 / 0.82) !important;
+}
+
+.admin-scope.dark .text-gray-900,
+.admin-scope.dark .text-gray-800 {
+  color: var(--ad-dark-text) !important;
+}
+
+.admin-scope.dark .text-gray-700,
+.admin-scope.dark .text-gray-600 {
+  color: rgb(238 238 238 / 0.78) !important;
+}
+
+.admin-scope.dark .text-gray-500,
+.admin-scope.dark .text-gray-400 {
+  color: var(--color-muted-foreground) !important;
+}
+
+.admin-scope.dark .border-gray-100,
+.admin-scope.dark .border-gray-200,
+.admin-scope.dark .border-gray-200\/80,
+.admin-scope.dark .border-gray-300,
+.admin-scope.dark .border-slate-200 {
+  border-color: var(--ad-dark-border) !important;
+}
+
+.admin-scope.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--ad-dark-border) !important;
+}
+
+.admin-scope.dark .hover\:bg-gray-50:hover,
+.admin-scope.dark .hover\:bg-gray-50\/80:hover {
+  background-color: var(--ad-dark-surface) !important;
+}
+
+.admin-scope.dark .hover\:bg-gray-100:hover {
+  background-color: rgb(57 62 70 / 0.88) !important;
+}
+
+.admin-scope.dark .hover\:bg-white:hover {
+  background-color: var(--ad-dark-surface) !important;
+}
+
+.admin-scope.dark .hover\:text-gray-800:hover,
+.admin-scope.dark .hover\:text-gray-900:hover,
+.admin-scope.dark .hover\:text-gray-600:hover {
+  color: var(--ad-dark-text) !important;
+}
+
+.admin-scope.dark input,
+.admin-scope.dark textarea,
+.admin-scope.dark select {
+  background-color: var(--ad-dark-bg) !important;
+  color: var(--ad-dark-text) !important;
+  border-color: var(--ad-dark-border) !important;
+}
+
+.admin-scope.dark input::placeholder,
+.admin-scope.dark textarea::placeholder {
+  color: var(--color-muted-foreground) !important;
+}
+
+.admin-scope.dark input:focus,
+.admin-scope.dark textarea:focus,
+.admin-scope.dark select:focus {
+  background-color: var(--ad-dark-bg) !important;
+  border-color: var(--ad-dark-teal) !important;
   outline: none !important;
-  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.08) !important;
+  box-shadow: 0 0 0 1px rgb(0 173 181 / 0.35) !important;
 }
 
+.admin-scope.dark [data-sidebar='menu-button'][data-active='true']:not([data-size='lg']),
+.admin-scope.dark [data-sidebar='menu-sub-button'][data-active='true'] {
+  border-left-color: var(--ad-dark-teal) !important;
+}
 
+.admin-scope.dark a.text-primary,
+.admin-scope.dark .font-mono.text-primary {
+  color: var(--ad-dark-teal) !important;
+}
+
+/* Shell + semantic Tailwind class-ууд — Bootstrap-ийг дарна */
+.admin-scope.dark,
+.admin-scope.dark [data-slot='sidebar-wrapper'],
+.admin-scope.dark [data-slot='sidebar-inset'],
+.admin-scope.dark .ad-main-content {
+  background-color: var(--ad-dark-bg) !important;
+  color: var(--ad-dark-text) !important;
+}
+
+.admin-scope.dark .bg-background {
+  background-color: var(--ad-dark-bg) !important;
+}
+
+.admin-scope.dark .bg-card {
+  background-color: var(--ad-dark-surface) !important;
+}
+
+.admin-scope.dark .bg-muted {
+  background-color: var(--ad-dark-surface) !important;
+}
+
+.admin-scope.dark .bg-muted\/50 {
+  background-color: rgb(57 62 70 / 0.72) !important;
+}
+
+.admin-scope.dark .bg-muted\/40 {
+  background-color: rgb(57 62 70 / 0.55) !important;
+}
+
+.admin-scope.dark .text-foreground {
+  color: var(--ad-dark-text) !important;
+}
+
+.admin-scope.dark .text-muted-foreground {
+  color: rgb(238 238 238 / 0.62) !important;
+}
+
+.admin-scope.dark .text-card-foreground {
+  color: var(--ad-dark-text) !important;
+}
+
+.admin-scope.dark .border-border {
+  border-color: var(--ad-dark-border) !important;
+}
+
+.admin-scope.dark .hover\:bg-muted:hover {
+  background-color: rgb(57 62 70 / 0.88) !important;
+}
+
+.admin-scope.dark .hover\:bg-muted\/40:hover {
+  background-color: rgb(57 62 70 / 0.65) !important;
+}
+
+.admin-scope.dark .focus\:bg-white:focus {
+  background-color: var(--ad-dark-bg) !important;
+}
+
+.admin-scope.dark .shadow-xs,
+.admin-scope.dark .shadow-lg {
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.35) !important;
+}
+
+.admin-scope.dark .bg-emerald-50 {
+  background-color: rgb(0 173 181 / 0.14) !important;
+}
+
+.admin-scope.dark .bg-amber-50 {
+  background-color: rgb(245 158 11 / 0.14) !important;
+}
+
+.admin-scope.dark .bg-blue-50 {
+  background-color: rgb(0 173 181 / 0.12) !important;
+}
+
+.admin-scope.dark .bg-purple-50 {
+  background-color: rgb(168 85 247 / 0.14) !important;
+}
+
+.admin-scope.dark .bg-emerald-600 {
+  background-color: rgb(0 173 181 / 0.85) !important;
+}
+
+.admin-scope.dark .bg-amber-400 {
+  background-color: rgb(245 158 11 / 0.85) !important;
+}
+
+.admin-scope.dark .bg-amber-500 {
+  background-color: rgb(245 158 11 / 0.9) !important;
+}
+
+.admin-scope.dark .bg-foreground {
+  background-color: var(--ad-dark-teal) !important;
+}
+
+.admin-scope.dark .text-background {
+  color: var(--ad-dark-bg) !important;
+}
+
+body.ad-dark-body {
+  background-color: #222831 !important;
+}
+
+/* Dashboard stat cards — GreenSoft зүүн accent border */
+.admin-scope .ad-stat-card {
+  border-left-width: 4px !important;
+  border-left-style: solid !important;
+}
+
+.admin-scope .ad-stat-card--primary {
+  border-left-color: #1170b7 !important;
+}
+
+.admin-scope .ad-stat-card--success {
+  border-left-color: #10b981 !important;
+}
+
+.admin-scope .ad-stat-card--warning {
+  border-left-color: #f59e0b !important;
+}
+
+.admin-scope .ad-stat-card--info {
+  border-left-color: #38bdf8 !important;
+}
+
+.admin-scope.dark .ad-stat-card--primary {
+  border-left-color: #00adb5 !important;
+}
+
+.admin-scope.dark .ad-stat-card--success {
+  border-left-color: #34d399 !important;
+}
+
+.admin-scope.dark .ad-stat-card--warning {
+  border-left-color: #fbbf24 !important;
+}
+
+.admin-scope.dark .ad-stat-card--info {
+  border-left-color: #00adb5 !important;
+}
+
+/* ── AD Orders page ── */
+.admin-scope .ad-orders-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-scope .ad-orders-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.admin-scope .ad-orders-page__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0;
+}
+
+.admin-scope .ad-orders-panel {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--card);
+  overflow: hidden;
+}
+
+.admin-scope .ad-order-search {
+  background: #f6f6f6;
+  padding: 10px;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-scope.dark .ad-order-search {
+  background: hsl(220 14% 12%);
+}
+
+.admin-scope .ad-order-search__main,
+.admin-scope .ad-order-search__advanced {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.75rem 0.625rem;
+}
+
+.admin-scope .ad-order-search__advanced {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  margin-top: 0;
+  transition: max-height 0.3s ease, opacity 0.25s ease, margin-top 0.25s ease;
+}
+
+.admin-scope .ad-order-search__advanced--open {
+  max-height: 1200px;
+  opacity: 1;
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 1024px) {
+  .admin-scope .ad-order-search__main,
+  .admin-scope .ad-order-search__advanced {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-scope .ad-order-search__main,
+  .admin-scope .ad-order-search__advanced {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-scope .ad-order-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.admin-scope .ad-order-filter-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--foreground);
+  line-height: 1.2;
+  min-height: 1rem;
+}
+
+.admin-scope .ad-order-filter-spacer {
+  height: 0.625rem;
+}
+
+.admin-scope .ad-order-input,
+.admin-scope .ad-order-select,
+.admin-scope .ad-order-textarea {
+  width: 100%;
+  height: 2.125rem;
+  padding: 0.375rem 0.625rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--foreground);
+  background: var(--background);
+  border: 1px solid hsl(0 0% 87%);
+  border-radius: 0.25rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.admin-scope .ad-order-textarea {
+  height: auto;
+  min-height: 4rem;
+  resize: vertical;
+}
+
+.admin-scope .ad-order-input:focus,
+.admin-scope .ad-order-select:focus,
+.admin-scope .ad-order-textarea:focus {
+  border-color: hsl(210 100% 50%);
+}
+
+.admin-scope.dark .ad-order-input,
+.admin-scope.dark .ad-order-select,
+.admin-scope.dark .ad-order-textarea {
+  border-color: hsl(220 10% 25%);
+  background: hsl(220 14% 10%);
+}
+
+.admin-scope .ad-order-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  height: 2.125rem;
+  padding: 0 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1;
+  border-radius: 0.25rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.admin-scope .ad-order-btn:focus,
+.admin-scope .ad-order-btn:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.admin-scope .ad-order-btn--block {
+  width: 100%;
+}
+
+.admin-scope .ad-order-btn--default {
+  background: var(--background);
+  border-color: hsl(0 0% 87%);
+  color: var(--foreground);
+}
+
+.admin-scope .ad-order-btn--default:hover {
+  background: hsl(0 0% 96%);
+}
+
+.admin-scope .ad-order-btn--primary {
+  background: hsl(210 100% 50%);
+  border-color: hsl(210 100% 45%);
+  color: #fff;
+}
+
+.admin-scope .ad-order-btn--primary:hover {
+  background: hsl(210 100% 45%);
+}
+
+.admin-scope .ad-order-btn--success {
+  background: hsl(145 63% 42%);
+  border-color: hsl(145 63% 38%);
+  color: #fff;
+}
+
+.admin-scope .ad-order-btn--success:hover {
+  background: hsl(145 63% 38%);
+}
+
+.admin-scope .ad-order-btn--add {
+  background: hsl(145 63% 42%);
+  border-color: hsl(145 63% 38%);
+  color: #fff;
+  height: 2.375rem;
+  padding: 0 1rem;
+  font-size: 0.875rem;
+}
+
+.admin-scope .ad-order-btn--add:hover {
+  background: hsl(145 63% 38%);
+  color: #fff;
+}
+
+.admin-scope .ad-order-btn--sm {
+  height: 1.875rem;
+  padding: 0 0.625rem;
+  font-size: 0.75rem;
+  border-radius: 9999px;
+}
+
+.admin-scope .ad-order-btn--info {
+  background: hsl(199 89% 48%);
+  border-color: hsl(199 89% 42%);
+  color: #fff;
+}
+
+.admin-scope .ad-order-btn--info:hover {
+  background: hsl(199 89% 42%);
+  color: #fff;
+}
+
+.admin-scope .ad-order-btn--warning {
+  background: hsl(38 92% 50%);
+  border-color: hsl(38 92% 45%);
+  color: #fff;
+}
+
+.admin-scope .ad-order-btn--warning:hover {
+  background: hsl(38 92% 45%);
+  color: #fff;
+}
+
+.admin-scope .ad-order-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.admin-scope .ad-order-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 1.25rem;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.admin-scope .ad-order-clear:hover {
+  color: var(--foreground);
+}
+
+.admin-scope .ad-order-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-scope .ad-order-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.admin-scope .ad-order-table thead th {
+  padding: 0.625rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  color: var(--foreground);
+  background: hsl(0 0% 98%);
+  border-bottom: 1px solid hsl(0 0% 90%);
+  white-space: nowrap;
+}
+
+.admin-scope.dark .ad-order-table thead th {
+  background: hsl(220 14% 14%);
+  border-bottom-color: hsl(220 10% 22%);
+}
+
+.admin-scope .ad-order-row {
+  border-bottom: 1px solid hsl(0 0% 92%);
+}
+
+.admin-scope .ad-order-row--striped {
+  background: hsl(0 0% 99%);
+}
+
+.admin-scope .ad-order-row:hover {
+  background: hsl(210 40% 98%);
+}
+
+.admin-scope.dark .ad-order-row {
+  border-bottom-color: hsl(220 10% 20%);
+}
+
+.admin-scope.dark .ad-order-row--striped {
+  background: hsl(220 14% 11%);
+}
+
+.admin-scope.dark .ad-order-row:hover {
+  background: hsl(220 14% 14%);
+}
+
+.admin-scope .ad-order-cell {
+  padding: 0.75rem;
+  vertical-align: top;
+  color: var(--foreground);
+}
+
+.admin-scope .ad-order-cell--id {
+  width: 8.125rem;
+}
+
+.admin-scope .ad-order-cell--amount,
+.admin-scope .ad-order-cell--date {
+  width: 6.25rem;
+  white-space: nowrap;
+}
+
+.admin-scope .ad-order-cell--actions {
+  width: 8.75rem;
+  min-width: 8.75rem;
+}
+
+.admin-scope .ad-order-cell--menu {
+  width: 2rem;
+  padding-left: 0.25rem;
+  padding-right: 0.5rem;
+}
+
+.admin-scope .ad-order-id {
+  font-size: 1.25rem;
+  line-height: 1.625rem;
+  font-weight: 600;
+  color: var(--foreground);
+  text-decoration: none;
+}
+
+.admin-scope .ad-order-id:hover {
+  color: hsl(210 100% 45%);
+}
+
+.admin-scope .ad-order-customer-list {
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+}
+
+.admin-scope .ad-order-customer-list li {
+  font-size: 0.75rem;
+  margin-bottom: 0.25rem;
+  line-height: 1.4;
+}
+
+.admin-scope .ad-order-customer-name {
+  font-weight: 600;
+  color: var(--foreground);
+  text-decoration: none;
+}
+
+.admin-scope .ad-order-customer-name:hover {
+  color: hsl(210 100% 45%);
+}
+
+.admin-scope .ad-order-meta-label {
+  font-weight: 600;
+}
+
+.admin-scope .ad-order-source-badge {
+  display: inline-block;
+  padding: 0.125rem 0.3125rem;
+  border-radius: 0.3125rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  background: hsl(210 100% 50%);
+  color: #fff;
+}
+
+.admin-scope .ad-order-customer-extra {
+  font-size: 0.75rem;
+  margin-top: 0.375rem;
+  line-height: 1.4;
+}
+
+.admin-scope .ad-order-status {
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.admin-scope .ad-order-status--success {
+  color: hsl(145 63% 35%);
+}
+
+.admin-scope .ad-order-status--warning {
+  color: hsl(38 92% 45%);
+}
+
+.admin-scope .ad-order-status--info {
+  color: hsl(210 100% 45%);
+}
+
+.admin-scope .ad-order-status--danger {
+  color: hsl(0 72% 51%);
+}
+
+.admin-scope .ad-order-status--muted {
+  color: var(--muted-foreground);
+}
+
+.admin-scope .ad-order-cell--actions .ad-order-btn + .ad-order-btn,
+.admin-scope .ad-order-cell--actions .ad-order-quick-edit-toggle {
+  margin-top: 0.3125rem;
+}
+
+.admin-scope .ad-order-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  background: transparent;
+  border-radius: 0.25rem;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.admin-scope .ad-order-icon-btn:hover {
+  background: hsl(0 0% 94%);
+  color: var(--foreground);
+}
+
+.admin-scope.dark .ad-order-icon-btn:hover {
+  background: hsl(220 10% 20%);
+}
+
+.admin-scope .ad-order-dropdown [data-slot='dropdown-menu-item'] {
+  font-size: 0.75rem;
+  gap: 0.5rem;
+}
+
+.admin-scope .ad-order-status--click {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.admin-scope .ad-order-quick-edit {
+  background: hsl(0 0% 97%);
+}
+
+.admin-scope.dark .ad-order-quick-edit {
+  background: hsl(220 14% 12%);
+}
+
+.admin-scope .ad-order-quick-edit > td {
+  padding: 0.75rem 0.75rem 1rem;
+  border-bottom: 1px solid hsl(0 0% 90%);
+}
+
+.admin-scope .ad-order-quick-edit__inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.admin-scope .ad-order-quick-edit__form {
+  background: var(--background);
+  border: 1px solid hsl(0 0% 90%);
+  border-radius: 0.375rem;
+  padding: 0.875rem;
+}
+
+.admin-scope .ad-order-quick-edit__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.admin-scope .ad-order-quick-edit__field--wide {
+  grid-column: 1 / -1;
+}
+
+.admin-scope .ad-order-quick-edit__field label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.admin-scope .ad-order-quick-edit__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.admin-scope .ad-order-quick-edit__saved {
+  margin-right: auto;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: hsl(145 63% 35%);
+}
+
+@media (max-width: 900px) {
+  .admin-scope .ad-order-quick-edit__inner {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-scope .ad-order-quick-edit__spacer {
+    display: none;
+  }
+}
+
+.admin-scope .ad-order-empty {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+/* Portal: both classes on same node — use .admin-scope.ad-modal-overlay */
+.admin-scope.ad-modal-overlay,
+.admin-scope .ad-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 4rem 1rem 2rem;
+  background: rgba(0, 0, 0, 0.45);
+  overflow-y: auto;
+}
+
+.admin-scope .ad-modal {
+  width: 100%;
+  max-width: 36rem;
+  max-height: calc(100vh - 6rem);
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  color: #0a0a0a;
+  border-radius: 0.375rem;
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+
+.admin-scope .ad-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: #ffffff;
+  border-bottom: 1px solid hsl(0 0% 90%);
+}
+
+.admin-scope .ad-modal__header h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0a0a0a;
+}
+
+.admin-scope .ad-modal__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  background: transparent;
+  color: #737373;
+  cursor: pointer;
+  border-radius: 0.25rem;
+}
+
+.admin-scope .ad-modal__close:hover {
+  background: hsl(0 0% 94%);
+}
+
+.admin-scope .ad-modal__body {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: #ffffff;
+  color: #0a0a0a;
+}
+
+.admin-scope .ad-modal-radios {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.admin-scope .ad-modal-radio,
+.admin-scope .ad-modal-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  cursor: pointer;
+  width: 100%;
+  color: #0a0a0a;
+}
+
+.admin-scope .ad-modal-radio input,
+.admin-scope .ad-modal-check input {
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.admin-scope .ad-modal-hint {
+  margin: 0 0 0.25rem 1.5rem;
+  font-size: 0.625rem;
+  color: #9d9d9d;
+}
+
+.admin-scope .ad-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid hsl(0 0% 90%);
+  background: hsl(0 0% 98%);
+}
+
+.admin-scope.dark .ad-modal,
+.admin-scope.dark .ad-modal__header,
+.admin-scope.dark .ad-modal__body {
+  background: hsl(220 14% 12%);
+  color: #f3f4f6;
+}
+
+.admin-scope.dark .ad-modal__header h4,
+.admin-scope.dark .ad-modal-radio,
+.admin-scope.dark .ad-modal-check {
+  color: #f3f4f6;
+}
+
+.admin-scope.dark .ad-modal__header,
+.admin-scope.dark .ad-modal__footer {
+  border-color: hsl(220 10% 22%);
+}
+
+.admin-scope.dark .ad-modal__footer {
+  background: hsl(220 14% 10%);
+}
+
+.admin-scope.dark .ad-modal__close {
+  color: #9ca3af;
+}
+
+.admin-scope.dark .ad-modal__close:hover {
+  background: hsl(220 10% 20%);
+}
+
+.admin-scope .ad-od {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-scope .ad-od-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.admin-scope .ad-od-title {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 600;
+}
+
+.admin-scope .ad-od-top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.admin-scope .ad-od-progress-wrap {
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  background: var(--card);
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  padding: 1.25rem 0.75rem 0.75rem;
+  overflow-x: auto;
+}
+
+.admin-scope .ad-od-progress {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  min-width: 52rem;
+  counter-reset: step;
+}
+
+.admin-scope .ad-od-progress li {
+  position: relative;
+  width: 14.28%;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #7d7d7d;
+  padding: 0 0.25rem;
+}
+
+.admin-scope .ad-od-progress li span {
+  display: block;
+  font-size: 0.6875rem;
+  color: rgba(0, 0, 0, 0.54);
+  font-weight: 500;
+}
+
+.admin-scope.dark .ad-od-progress li span {
+  color: hsl(0 0% 70%);
+}
+
+.admin-scope .ad-od-progress li::before {
+  width: 30px;
+  height: 30px;
+  content: counter(step);
+  counter-increment: step;
+  line-height: 30px;
+  border: 1px solid #7d7d7d;
+  display: block;
+  text-align: center;
+  margin: 0 auto 10px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.admin-scope .ad-od-progress li::after {
+  width: 50%;
+  border-bottom: 3px dotted #ddd;
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: -25%;
+  z-index: 0;
+}
+
+.admin-scope .ad-od-progress li:first-child::after {
+  content: none;
+}
+
+.admin-scope .ad-od-progress li.active {
+  color: green;
+  font-weight: 700;
+}
+
+.admin-scope .ad-od-progress li.active::before {
+  border-color: #55b776;
+  background: #55b776;
+  color: #fff;
+}
+
+.admin-scope .ad-od-progress li.active + li::after {
+  border-color: #55b776;
+}
+
+.admin-scope .ad-od-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .admin-scope .ad-od-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-scope .ad-od-main,
+.admin-scope .ad-od-side {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.admin-scope .ad-od-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 800px) {
+  .admin-scope .ad-od-two {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-scope .ad-od-panel {
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  background: var(--card);
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  overflow: hidden;
+}
+
+.admin-scope .ad-od-panel__head {
+  background: #1b4d80;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.875rem;
+  padding: 0.625rem 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-scope .ad-od-panel__head--navy {
+  background: #1c4d80;
+}
+
+.admin-scope .ad-od-panel__body {
+  padding: 0.75rem;
+}
+
+.admin-scope .ad-od-kv {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  margin: 0;
+}
+
+.admin-scope .ad-od-kv th,
+.admin-scope .ad-od-kv td {
+  border: 1px solid hsl(0 0% 88%);
+  padding: 0.5rem 0.625rem;
+  vertical-align: top;
+}
+
+.admin-scope .ad-od-kv th {
+  width: 42%;
+  font-weight: 600;
+  background: hsl(0 0% 98%);
+}
+
+.admin-scope.dark .ad-od-kv th {
+  background: hsl(220 14% 14%);
+}
+
+.admin-scope.dark .ad-od-kv th,
+.admin-scope.dark .ad-od-kv td {
+  border-color: hsl(220 10% 22%);
+}
+
+.admin-scope .ad-od-name-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.admin-scope .ad-od-link {
+  color: hsl(210 100% 40%);
+  font-size: 0.75rem;
+  text-decoration: none;
+}
+
+.admin-scope .ad-od-link:hover {
+  text-decoration: underline;
+}
+
+.admin-scope .ad-od-badge {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.admin-scope .ad-od-badge--paid {
+  background: hsl(145 63% 42%);
+  color: #fff;
+}
+
+.admin-scope .ad-od-badge--unpaid {
+  background: hsl(0 0% 70%);
+  color: #fff;
+}
+
+.admin-scope .ad-od-invoice-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.admin-scope .ad-od-invoice-toolbar__left,
+.admin-scope .ad-od-invoice-toolbar__mail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+.admin-scope .ad-od-invoice-toolbar__mail .ad-order-select {
+  width: 13rem;
+  height: 1.875rem;
+  font-size: 0.75rem;
+}
+
+.admin-scope .ad-od-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.admin-scope .ad-od-table th,
+.admin-scope .ad-od-table td {
+  border: 1px solid hsl(0 0% 88%);
+  padding: 0.5rem 0.625rem;
+  vertical-align: top;
+}
+
+.admin-scope .ad-od-table thead th {
+  background: rgba(0, 77, 128, 0.04);
+}
+
+.admin-scope .ad-od-table .text-right {
+  text-align: right;
+}
+
+.admin-scope .ad-od-table .text-center {
+  text-align: center;
+}
+
+.admin-scope .ad-od-discount {
+  font-size: 9px;
+}
+
+.admin-scope .ad-od-sum {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.admin-scope .ad-od-remain {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.admin-scope .ad-od-pay-label {
+  display: inline-block;
+  padding: 0.125rem 0.375rem;
+  background: hsl(0 0% 92%);
+  border-radius: 0.25rem;
+  font-size: 0.6875rem;
+}
+
+.admin-scope .ad-od-manage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-scope .ad-od-manage strong {
+  font-size: 0.8125rem;
+}
+
+.admin-scope .ad-od-help {
+  font-size: 0.6875rem;
+  font-style: italic;
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+.admin-scope .ad-od-title-action {
+  color: #666;
+  font-size: 0.75rem;
+  margin: 0.5rem 0 0.25rem;
+}
+
+.admin-scope .ad-od-inline-send {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.375rem;
+}
+
+.admin-scope .ad-od-tabs {
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  background: var(--card);
+  overflow: hidden;
+}
+
+.admin-scope .ad-od-tabs__list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.admin-scope .ad-od-tabs__tab {
+  height: 2.5rem;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: hsl(0 0% 96%);
+  font-size: 0.75rem;
+  cursor: pointer;
+  color: var(--foreground);
+}
+
+.admin-scope .ad-od-tabs__tab--active {
+  background: #fff;
+  color: #1c4d80;
+  font-weight: 700;
+  border-top: 1px solid #ddd;
+  border-left: 1px solid #ddd;
+  border-right: 1px solid #ddd;
+  border-bottom-color: transparent;
+}
+
+.admin-scope.dark .ad-od-tabs__tab--active {
+  background: hsl(220 14% 12%);
+  color: #93c5fd;
+}
+
+.admin-scope .ad-od-tabs__panel {
+  padding: 0.75rem;
+}
+
+.admin-scope .ad-od-timeline {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  max-height: 22rem;
+  overflow: auto;
+}
+
+.admin-scope .ad-od-bubble {
+  display: inline-block;
+  padding: 0.9375rem;
+  background: #efefef;
+  border-radius: 20px;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  position: relative;
+  word-wrap: break-word;
+  margin-bottom: 0.75rem;
+}
+
+.admin-scope .ad-od-bubble::after {
+  content: '';
+  display: block;
+  position: absolute;
+  bottom: -10px;
+  left: 20px;
+  width: 0;
+  height: 0;
+  border-width: 10px 10px 0 0;
+  border-style: solid;
+  border-color: #efefef transparent;
+}
+
+.admin-scope.dark .ad-od-bubble {
+  background: hsl(220 14% 18%);
+}
+
+.admin-scope.dark .ad-od-bubble::after {
+  border-color: hsl(220 14% 18%) transparent;
+}
+
+.admin-scope .ad-od-exact {
+  padding: 10px;
+  color: #999;
+  margin: 0;
+  font-size: 11px;
+}
+
+.admin-scope .ad-od-sms-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-top: 0.75rem;
+}
+
+.admin-scope .ad-od-sms-tpl {
+  background: #ddd;
+  padding: 5px;
+  cursor: pointer;
+  font-size: 11px;
+  border: none;
+  text-align: left;
+}
+
+.admin-scope .ad-od-sms-tpl:hover {
+  background: #cecece;
+}
+
+.admin-scope .ad-od-extra {
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.admin-scope .ad-od-extra__head {
+  background: #ffe373;
+  color: #1b4d80;
+  font-weight: 700;
+  font-size: 0.875rem;
+  padding: 0.625rem 0.875rem;
+}
+
+.admin-scope .ad-od-extra__body {
+  padding: 0.75rem;
+  background: var(--card);
+}
+
+.admin-scope .ad-od-missing {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.admin-scope .ad-od-caret {
+  display: inline-block;
+  margin-left: 0.25rem;
+  border: 4px solid transparent;
+  border-top-color: currentColor;
+  transform: translateY(2px);
+}
+
+/* ===== Invoice (GreenSoft) ===== */
+.admin-scope .ad-inv {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-bottom: 2rem;
+}
+
+.admin-scope .ad-inv-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.admin-scope .ad-inv-title {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.admin-scope .ad-inv-top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.admin-scope .ad-inv-flash {
+  padding: 0.5rem 0.75rem;
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  border-radius: 0.25rem;
+  font-size: 0.8125rem;
+}
+
+.admin-scope .ad-inv-panel {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.admin-scope .ad-inv-panel__head {
+  padding: 0.625rem 0.875rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  background: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+  color: #333;
+}
+
+.admin-scope .ad-inv-panel__head--yellow {
+  background: #ffe373 !important;
+  color: #000 !important;
+}
+
+.admin-scope .ad-inv-panel__body {
+  padding: 0.875rem;
+}
+
+.admin-scope .ad-inv-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: #1b4d7f;
+  border: none;
+}
+
+.admin-scope .ad-inv-tabs > li {
+  margin: 0;
+}
+
+.admin-scope .ad-inv-tabs > li > button {
+  display: block;
+  padding: 0.625rem 1rem;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.admin-scope .ad-inv-tabs > li > button:hover {
+  color: #000;
+  background: rgba(255, 227, 115, 0.35);
+}
+
+.admin-scope .ad-inv-tabs > li.active > button {
+  color: #000;
+  font-weight: 700;
+  background: #ffe373;
+}
+
+.admin-scope .ad-inv-tab-content {
+  padding-top: 1rem;
+}
+
+.admin-scope .ad-inv-home {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .admin-scope .ad-inv-home {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.admin-scope .ad-inv-home__right {
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.admin-scope .ad-inv-status {
+  color: #777;
+  font-weight: 700;
+  font-size: 2em;
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+}
+
+.admin-scope .ad-inv-status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.375rem;
+  margin-top: 0.625rem;
+}
+
+.admin-scope .ad-inv-mail {
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
+  padding: 1.25rem 0.5rem 0;
+}
+
+.admin-scope .ad-inv-mail .ad-order-select {
+  flex: 1;
+  min-width: 0;
+  height: 1.875rem;
+  font-size: 0.75rem;
+  border-radius: 0;
+}
+
+.admin-scope .ad-inv-mail .ad-order-btn {
+  width: 20%;
+  min-width: 4.5rem;
+  flex-shrink: 0;
+}
+
+.admin-scope .ad-inv-kv {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.admin-scope .ad-inv-kv th,
+.admin-scope .ad-inv-kv td {
+  padding: 0.5rem 0.625rem;
+  border-top: 1px solid #ddd;
+  vertical-align: middle;
+  text-align: left;
+}
+
+.admin-scope .ad-inv-kv th {
+  width: 40%;
+  font-weight: 600;
+  color: #333;
+}
+
+.admin-scope .ad-inv-kv tr.ad-inv-kv--noborder th,
+.admin-scope .ad-inv-kv tr.ad-inv-kv--noborder td {
+  border-top: none;
+}
+
+.admin-scope .ad-inv-kv--wide th {
+  width: 30%;
+}
+
+.admin-scope .ad-inv-remain {
+  color: #3c763d;
+  font-weight: 700;
+}
+
+.admin-scope .ad-inv-link {
+  color: #337ab7;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.admin-scope .ad-inv-link:hover {
+  text-decoration: underline;
+}
+
+.admin-scope .ad-inv-pay-grid,
+.admin-scope .ad-inv-options-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .admin-scope .ad-inv-pay-grid,
+  .admin-scope .ad-inv-options-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.admin-scope .ad-inv-date-selects {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.admin-scope .ad-inv-date-selects select {
+  height: 34px;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  background: #fff;
+  font-size: 0.8125rem;
+}
+
+.admin-scope .ad-inv-full {
+  width: 100%;
+}
+
+.admin-scope .ad-inv-center {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.admin-scope .ad-inv-tax-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.admin-scope .ad-inv-tax-input {
+  width: 70px !important;
+  display: inline-block;
+}
+
+.admin-scope .ad-inv-note-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin-bottom: 0.375rem;
+}
+
+.admin-scope .ad-inv-note-hint {
+  margin: 0.375rem 0 0.75rem;
+  font-size: 0.8125rem;
+  color: #777;
+}
+
+.admin-scope .ad-inv-note-left {
+  color: #3c763d;
+  font-weight: 600;
+}
+
+.admin-scope .ad-inv-products-wrap {
+  overflow-x: auto;
+}
+
+.admin-scope .ad-inv-products {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.admin-scope .ad-inv-products th,
+.admin-scope .ad-inv-products td {
+  border: 1px solid #ddd;
+  padding: 0.375rem;
+  vertical-align: middle;
+  background: #fff;
+}
+
+.admin-scope .ad-inv-products thead th {
+  background: #5bc0de;
+  color: #fff;
+  font-weight: 600;
+}
+
+.admin-scope .ad-inv-products tbody tr:nth-child(even) td {
+  background: #f9f9f9;
+}
+
+.admin-scope .ad-inv-products tfoot td {
+  background: #fff;
+}
+
+.admin-scope .ad-inv-products .text-right {
+  text-align: right;
+}
+
+.admin-scope .ad-inv-products .text-center {
+  text-align: center;
+}
+
+.admin-scope .ad-inv-products .font-bold {
+  font-weight: 700;
+}
+
+.admin-scope .ad-inv-row-num {
+  display: inline-block;
+  margin-right: 0.25rem;
+  color: #666;
+}
+
+.admin-scope .ad-inv-input-addon {
+  display: flex;
+  align-items: stretch;
+}
+
+.admin-scope .ad-inv-input-addon .ad-order-input {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.admin-scope .ad-inv-input-addon > span,
+.admin-scope .ad-inv-input-addon > select {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.5rem;
+  border: 1px solid #ccc;
+  border-left: none;
+  background: #eee;
+  color: #555;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.admin-scope .ad-inv-input-addon > select {
+  background: transparent;
+  cursor: pointer;
+}
+
+.admin-scope .ad-inv-tax-label {
+  font-size: 9px;
+  color: #6c6b5a;
+  margin-top: 0.125rem;
+}
+
+.admin-scope .ad-inv-rm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 0.25rem;
+  background: #d9534f;
+  color: #fff;
+  cursor: pointer;
+}
+
+.admin-scope .ad-inv-rm:hover {
+  background: #c9302c;
+}
+
+.admin-scope .ad-inv-add-row {
+  border: none;
+  background: #eee;
+  color: #212529;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  font-size: 0.8125rem;
+}
+
+.admin-scope .ad-inv-add-row:hover {
+  color: #188dfa;
+}
+
+.admin-scope .ad-inv-tiny {
+  font-size: 9px;
+  font-weight: 400;
+  color: #777;
+}
+
+.admin-scope .ad-inv-save-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.admin-scope .ad-inv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.admin-scope .ad-inv-table th,
+.admin-scope .ad-inv-table td {
+  padding: 0.5rem 0.625rem;
+  border-top: 1px solid #ddd;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.admin-scope .ad-inv-table thead th {
+  border-bottom: 2px solid #ddd;
+  font-weight: 600;
+}
+
+.admin-scope .ad-inv-missing {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.admin-scope .ad-order-btn--lg {
+  padding: 0.625rem 1.25rem;
+  font-size: 1.05rem;
+}
+
+.admin-scope .ad-order-btn--xs {
+  padding: 0.125rem 0.375rem;
+  font-size: 0.6875rem;
+  line-height: 1.2;
+}
+
+.admin-scope .ad-order-btn--danger {
+  background: #d9534f;
+  border-color: #d43f3a;
+  color: #fff;
+}
+
+.admin-scope .ad-order-btn--danger:hover {
+  background: #c9302c;
+}
+
+.admin-scope .ad-order-btn.is-disabled,
+.admin-scope .ad-order-btn:disabled {
+  opacity: 0.55;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.admin-scope.dark .ad-inv-title {
+  color: #f3f4f6;
+}
+
+.admin-scope.dark .ad-inv-panel {
+  background: hsl(220 14% 12%);
+  border-color: hsl(220 10% 22%);
+}
+
+.admin-scope.dark .ad-inv-panel__body,
+.admin-scope.dark .ad-inv-products th,
+.admin-scope.dark .ad-inv-products td,
+.admin-scope.dark .ad-inv-products tfoot td {
+  background: hsl(220 14% 12%);
+  color: #e5e7eb;
+}
+
+.admin-scope.dark .ad-inv-products tbody tr:nth-child(even) td {
+  background: hsl(220 14% 14%);
+}
+
+.admin-scope.dark .ad-inv-kv th,
+.admin-scope.dark .ad-inv-kv td,
+.admin-scope.dark .ad-inv-table th,
+.admin-scope.dark .ad-inv-table td {
+  border-color: hsl(220 10% 22%);
+  color: #e5e7eb;
+}
+
+/* ===== Create order (GreenSoft) ===== */
+.admin-scope .ad-co {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-bottom: 2rem;
+}
+
+.admin-scope .ad-co-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.admin-scope .ad-co-title {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.admin-scope .ad-co-flash {
+  padding: 0.5rem 0.75rem;
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  border-radius: 0.25rem;
+  font-size: 0.8125rem;
+}
+
+.admin-scope .ad-co-panel {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 0.25rem;
+  overflow: visible;
+}
+
+.admin-scope .ad-co-panel__head {
+  padding: 0.625rem 0.875rem;
+  background: #1b4d80 !important;
+  color: #fff !important;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.admin-scope .ad-co-panel__body {
+  padding: 1rem;
+}
+
+.admin-scope .ad-co-user-top {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .admin-scope .ad-co-user-top {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.admin-scope .ad-co-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.625rem;
+}
+
+.admin-scope .ad-co-field > label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.admin-scope .ad-co-req {
+  color: red;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.admin-scope .ad-co-opt {
+  color: #666;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.admin-scope .ad-co-hr {
+  margin: 0 0 0.75rem;
+  border: none;
+  border-top: 1px solid #eee;
+}
+
+.admin-scope .ad-co-tax-type {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-scope .ad-co-radio,
+.admin-scope .ad-co-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.admin-scope .ad-co-grid-4 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .admin-scope .ad-co-grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.admin-scope .ad-co-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .admin-scope .ad-co-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.admin-scope .ad-co-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.admin-scope .ad-co-addr-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+@media (min-width: 992px) {
+  .admin-scope .ad-co-addr-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.admin-scope .ad-co-loc-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .admin-scope .ad-co-loc-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.admin-scope .ad-co-loc-grid .ad-order-select {
+  font-size: 12px;
+  height: 2.25rem;
+}
+
+.admin-scope .ad-co-suggest {
+  position: relative;
+}
+
+.admin-scope .ad-co-suggest__list {
+  position: absolute;
+  z-index: 40;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: #fbfafa;
+  border: 1px solid #ddd;
+  max-height: 16rem;
+  overflow: auto;
+}
+
+.admin-scope .ad-co-suggest__list li {
+  border-bottom: 1px solid #ddd;
+}
+
+.admin-scope .ad-co-suggest__list button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  color: #333;
+}
+
+.admin-scope .ad-co-suggest__list button span {
+  display: block;
+  color: #b3b3b3;
+  font-size: 12px;
+  margin-top: 0.125rem;
+}
+
+.admin-scope .ad-co-suggest__list button:hover,
+.admin-scope .ad-co-suggest__list li:hover > button {
+  background: #3588e2;
+  color: #fff;
+}
+
+.admin-scope .ad-co-suggest__list button:hover span,
+.admin-scope .ad-co-suggest__list li:hover > button span {
+  color: #e8e8e8;
+}
+
+.admin-scope .ad-co-suggest__hint {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.admin-scope .ad-co-suggest__add {
+  color: #188dfa !important;
+  font-weight: 700;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.admin-scope .ad-co-prod-cell {
+  position: relative;
+}
+
+.admin-scope .ad-co-suggest__list--prod {
+  top: auto;
+}
+
+.admin-scope .ad-co-stock {
+  display: block;
+  color: #9d9d9d;
+  font-size: 11px;
+  margin-top: 0.2rem;
+}
+
+.admin-scope .ad-co-bottom {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .admin-scope .ad-co-bottom {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.admin-scope .ad-co-pay-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  align-content: start;
+}
+
+.admin-scope .ad-co-submit {
+  width: 100%;
+  margin-top: 1rem;
+  height: 2.75rem;
+  font-size: 1rem;
+}
+
+.admin-scope.dark .ad-co-title {
+  color: #f3f4f6;
+}
+
+.admin-scope.dark .ad-co-panel {
+  background: hsl(220 14% 12%);
+  border-color: hsl(220 10% 22%);
+}
+
+.admin-scope.dark .ad-co-field > label {
+  color: #e5e7eb;
+}
 

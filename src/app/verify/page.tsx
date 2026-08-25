@@ -30,14 +30,14 @@ function VerifyForm() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, code, purpose: 'register' }),
     });
-    const data = (await res.json()) as { error?: string; redirect?: string };
+    const data = (await res.json()) as { error?: string; redirect?: string; pendingReview?: boolean };
     setLoading(false);
     if (!res.ok) {
       setError(data.error || 'Код буруу.');
       return;
     }
     sessionStorage.removeItem('estel_register_draft');
-    router.push(data.redirect || '/');
+    router.push(data.redirect || '/list');
     router.refresh();
   }
 
@@ -57,6 +57,7 @@ function VerifyForm() {
         <div className="flex flex-col items-center gap-1 text-center">
           <h1 className="text-[28px] leading-tight font-semibold">Баталгаажуулах</h1>
           <p className="text-sm text-balance text-neutral-500">{email || 'имэйл'} руу 6 оронтой код илгээлээ.</p>
+          <p className="text-xs text-neutral-400">Код 5 минутын хугацаанд хүчинтэй.</p>
         </div>
         {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
         <Field>

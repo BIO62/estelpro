@@ -21,11 +21,12 @@ export async function sendOtpEmail(to: string, code: string) {
         from,
         to,
         subject: 'ESTEL нэвтрэх код',
-        text: `Таны OTP код: ${code}\n10 минутын дотор оруулна уу.`,
+        text: `Таны OTP код: ${code}\n5 минутын дотор оруулна уу.`,
       }),
     });
-    if (!res.ok) throw new Error('OTP имэйл илгээж чадсангүй.');
-    return;
+    if (res.ok) return;
+    const detail = await res.text().catch(() => '');
+    console.error('Resend OTP failed', res.status, detail);
   }
 
   mkdirSync(path.join(process.cwd(), 'data'), { recursive: true });

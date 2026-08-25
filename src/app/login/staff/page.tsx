@@ -18,6 +18,9 @@ export default function StaffLoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Progressive disclosure: show password once email is typed
+  const showPasswordInput = email.trim().length >= 1;
+
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     setError('');
@@ -45,12 +48,17 @@ export default function StaffLoginPage() {
             <h1 className="text-[28px] leading-tight font-semibold">Ажилтан</h1>
             <p className="text-sm text-balance text-neutral-500">Бүртгэлийг зөвхөн менежер үүсгэнэ.</p>
           </div>
+
+          {/* Role Tabs */}
           <div className="flex w-full gap-1 rounded-xl bg-neutral-100 p-1">
             <Button
               type="button"
               variant={hint === 'manager' ? 'default' : 'ghost'}
               className="auth-tab flex-1 whitespace-nowrap px-2.5"
-              onClick={() => setHint('manager')}
+              onClick={() => {
+                setHint('manager');
+                setError('');
+              }}
             >
               Менежер
             </Button>
@@ -58,12 +66,18 @@ export default function StaffLoginPage() {
               type="button"
               variant={hint === 'operator' ? 'default' : 'ghost'}
               className="auth-tab flex-1 whitespace-nowrap px-2.5"
-              onClick={() => setHint('operator')}
+              onClick={() => {
+                setHint('operator');
+                setError('');
+              }}
             >
               Оператор
             </Button>
           </div>
-          {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
+
+          {error ? <p className="text-sm font-medium text-destructive text-center">{error}</p> : null}
+
+          {/* Step 1: Email Input */}
           <Field>
             <FieldLabel htmlFor="email">Имэйл</FieldLabel>
             <Input
@@ -71,19 +85,45 @@ export default function StaffLoginPage() {
               type="email"
               required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setError('');
+              }}
               placeholder={hint === 'manager' ? 'manager@estel.mn' : 'operator@estel.mn'}
             />
           </Field>
+
+          {/* Step 2: Smoothly animated password field */}
+          <div
+            className={`transition-all duration-300 ease-out overflow-hidden ${
+              showPasswordInput
+                ? 'max-h-40 opacity-100 transform translate-y-0'
+                : 'max-h-0 opacity-0 pointer-events-none transform -translate-y-2'
+            }`}
+          >
+            <Field>
+              <FieldLabel htmlFor="password">Нууц үг</FieldLabel>
+              <Input
+                id="password"
+                type="password"
+                required={showPasswordInput}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError('');
+                }}
+                placeholder="••••••••"
+              />
+            </Field>
+          </div>
+
+          {/* Step 3: Login Button */}
           <Field>
-            <FieldLabel htmlFor="password">Нууц үг</FieldLabel>
-            <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-          </Field>
-          <Field>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || !showPasswordInput}>
               {loading ? 'Шалгаж байна...' : 'Нэвтрэх'}
             </Button>
           </Field>
+
           <FieldDescription className="text-center">
             <Link href="/login" className="underline underline-offset-4">
               Хувь хэрэглэгч / Салон

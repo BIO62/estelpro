@@ -11,6 +11,8 @@ interface ParticleProps {
   density?: number;
   particlesScale?: number;
   interactive?: boolean;
+  colors?: [string, string, string];
+  opacity?: number;
   className?: string;
 }
 
@@ -89,6 +91,8 @@ export function ThreeParticlesSection({
   density = 230,
   particlesScale = 0.59,
   interactive = true,
+  colors,
+  opacity = 1.0,
   className = '',
 }: ParticleProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -135,12 +139,10 @@ export function ThreeParticlesSection({
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geometry.setAttribute('seeds', new THREE.Float32BufferAttribute(seeds, 4));
 
-    // Colors matching Google Antigravity:
-    // Light: Google Blue #2c64ed, Google Red #f84242, Google Yellow #ffcf03
-    // Dark: Vibrant Blue #7189ff, Cyan #3074f9, Purple/Dark #a855f7
-    const color1 = new THREE.Color(theme === 'dark' ? '#7189ff' : '#2c64ed');
-    const color2 = new THREE.Color(theme === 'dark' ? '#3074f9' : '#f84242');
-    const color3 = new THREE.Color(theme === 'dark' ? '#a855f7' : '#ffcf03');
+    // Custom colors or Google Antigravity default colors
+    const color1 = new THREE.Color(colors?.[0] || (theme === 'dark' ? '#7189ff' : '#2c64ed'));
+    const color2 = new THREE.Color(colors?.[1] || (theme === 'dark' ? '#3074f9' : '#f84242'));
+    const color3 = new THREE.Color(colors?.[2] || (theme === 'dark' ? '#a855f7' : '#ffcf03'));
 
     // 3. Custom GLSL Shader Material
     const material = new THREE.ShaderMaterial({
@@ -156,7 +158,7 @@ export function ThreeParticlesSection({
         uColor1: { value: color1 },
         uColor2: { value: color2 },
         uColor3: { value: color3 },
-        uAlpha: { value: 1.0 },
+        uAlpha: { value: opacity },
         uRez: { value: new THREE.Vector2(width, height) },
         uColorScheme: { value: theme === 'dark' ? 0 : 1 },
       },

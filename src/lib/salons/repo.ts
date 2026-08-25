@@ -1,5 +1,5 @@
 import { isSupabaseConfigured, supabaseAdmin } from '@/lib/supabase/server';
-import { findUserByEmail, findUserBySalonCode, normalizeSalonCode, saveOtp, takeOtp } from '@/lib/auth/store';
+import { findUserByEmail, findUserByPhone, findUserBySalonCode, normalizeSalonCode, saveOtp, takeOtp } from '@/lib/auth/store';
 
 export type Salon = {
   id: string;
@@ -25,7 +25,7 @@ export type SalonRow = {
   address: string;
 };
 
-const OTP_TTL_MS = 10 * 60 * 1000;
+const OTP_TTL_MS = 5 * 60 * 1000;
 
 function fromRow(row: SalonRow & { id: string }): Salon {
   return {
@@ -86,6 +86,45 @@ export async function findSalonByEmail(email: string): Promise<Salon | null> {
     .maybeSingle();
   if (error) throw new Error(error.message);
   return data ? fromRow(data as SalonRow & { id: string }) : null;
+}
+
+export async function findSalonByPhone(phone: string): Promise<Salon | null> {
+  const cleanPhone = phone.trim().replace(/\D/g, '');
+  if (!cleanPhone) return null;
+  const db = supabaseAdmin();
+  if (!db) {
+    const user = findUserByPhone(cleanPhone);
+    return user?.salonCode ? findSalonByCode(user.salonCode) : null;
+  }
+  const { data, error } = await db
+    .from('salons')
+    .select('*')
+    .ilike('phone', `%${cleanPhone}%`)
+    .eq('is_active', true)
+    .limit(1);
+  if (error) throw new Error(error.message);
+  return data && data.length > 0 ? fromRow(data[0] as SalonRow & { id: string }) : null;
+}
+
+export async function findSalonByIdentifier(identifier: string): Promise<Salon | null> {
+  const clean = identifier.trim();
+  if (!clean) return null;
+
+  // 1. Try by code
+  const byCode = await findSalonByCode(clean);
+  if (byCode) return byCode;
+
+  // 2. Try by email
+  if (clean.includes('@')) {
+    const byEmail = await findSalonByEmail(clean);
+    if (byEmail) return byEmail;
+  }
+
+  // 3. Try by phone
+  const byPhone = await findSalonByPhone(clean);
+  if (byPhone) return byPhone;
+
+  return null;
 }
 
 export async function listSalons({ limit = 50, offset = 0, search = '' } = {}) {
@@ -152,4 +191,60 @@ export async function upsertSalons(rows: SalonRow[]) {
   const { error, count } = await db.from('salons').upsert(rows, { onConflict: 'salon_code', count: 'exact' });
   if (error) throw new Error(error.message);
   return count ?? rows.length;
+}
+
+export async function updateSalon(
+  id: string,
+  patch: Partial<{
+    salonName: string;
+    contactName: string;
+    phone: string;
+    email: string;
+    city: string;
+    district: string | null;
+    address: string;
+  }>,
+) {
+  const db = supabaseAdmin();
+  if (!db) throw new Error('Supabase тохируулаагүй байна.');
+  const row: Record<string, unknown> = {};
+  if (patch.salonName !== undefined) row.salon_name = patch.salonName;
+  if (patch.contactName !== undefined) row.contact_name = patch.contactName;
+  if (patch.phone !== undefined) row.phone = patch.phone;
+  if (patch.email !== undefined) row.email = patch.email.trim().toLowerCase();
+  if (patch.city !== undefined) row.city = patch.city;
+  if (patch.district !== undefined) row.district = patch.district;
+  if (patch.address !== undefined) row.address = patch.address;
+  const { data, error } = await db.from('salons').update(row).eq('id', id).select('*').single();
+  if (error) throw new Error(error.message);
+  return fromRow(data as SalonRow & { id: string });
+}
+
+export async function createSalon(input: {
+  salonCode: string;
+  salonName: string;
+  contactName: string;
+  email: string;
+  phone?: string;
+  city?: string;
+  district?: string;
+  address?: string;
+}) {
+  const db = supabaseAdmin();
+  if (!db) throw new Error('Supabase тохируулаагүй байна.');
+  const code = normalizeSalonCode(input.salonCode);
+  const row = {
+    salon_code: code,
+    salon_name: input.salonName.trim(),
+    contact_name: input.contactName.trim(),
+    email: input.email.trim().toLowerCase(),
+    phone: (input.phone || '').trim() || '00000000',
+    city: (input.city || 'Улаанбаатар').trim(),
+    district: input.district?.trim() || null,
+    address: (input.address || '').trim() || '—',
+    is_active: true,
+  };
+  const { data, error } = await db.from('salons').insert(row).select('*').single();
+  if (error) throw new Error(error.message);
+  return fromRow(data as SalonRow & { id: string });
 }

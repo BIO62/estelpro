@@ -1,166 +1,287 @@
 'use client';
 
-import { useState } from 'react';
-import { Users, Search, Phone, Mail, MapPin, Building, Star, CheckCircle, ArrowUpDown } from 'lucide-react';
-import { formatPrice } from '@/lib/utils';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { CheckCircle, Mail, MapPin, Pencil, Phone, Search } from 'lucide-react';
+
+import type { AppUser } from '@/lib/users/repo';
+
+type SalonItem = {
+  id: string;
+  salonCode: string;
+  salonName: string;
+  contactName: string;
+  phone: string;
+  email: string;
+  city: string;
+  district: string | null;
+  address: string;
+};
+
+type Tab = 'ALL' | 'SALON' | 'CONSUMER';
 
 export default function AdCustomersPage() {
+  const [tab, setTab] = useState<Tab>('ALL');
+  const [salons, setSalons] = useState<SalonItem[]>([]);
+  const [consumers, setConsumers] = useState<AppUser[]>([]);
+  const [salonTotal, setSalonTotal] = useState(0);
+  const [consumerTotal, setConsumerTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [tab, setTab] = useState<'ALL' | 'SALON' | 'RETAIL'>('ALL');
+  const [loading, setLoading] = useState(true);
+  const [editSalon, setEditSalon] = useState<SalonItem | null>(null);
+  const [editUser, setEditUser] = useState<AppUser | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
-  const customers = [
-    {
-      id: '1',
-      name: 'Г. Бат-Ирээдүй',
-      type: 'SALON',
-      businessName: 'Beauty Lab Salon',
-      phone: '8800-5566',
-      email: 'beautylab@gmail.com',
-      totalSpent: 4850000,
-      ordersCount: 14,
-      tier: 'Гэрээт Салон (20%)',
-      address: 'СБД, 5-р хороо, Сөүлийн гудамж',
-    },
-    {
-      id: '2',
-      name: 'Э. Сарнай',
-      type: 'RETAIL',
-      businessName: 'Хувь хэрэглэгч',
-      phone: '9911-2233',
-      email: 'sarnai.e@gmail.com',
-      totalSpent: 720000,
-      ordersCount: 5,
-      tier: 'VIP Хэрэглэгч (5%)',
-      address: 'БЗД, 1-р хороо, 12-р хороолол',
-    },
-    {
-      id: '3',
-      name: 'Д. Цэцэгмаа',
-      type: 'SALON',
-      businessName: 'Glamour Hair Studio',
-      phone: '9909-8877',
-      email: 'glamourstudio@gmail.com',
-      totalSpent: 8900000,
-      ordersCount: 28,
-      tier: 'Алтан Салон (20%)',
-      address: 'ХУД, 11-р хороо, Зайсан',
-    },
-  ];
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const [salonRes, userRes] = await Promise.all([
+        fetch(`/api/auth/salon?search=${encodeURIComponent(search)}&page=${page}&limit=24`),
+        fetch(`/api/ad/users?status=ALL&q=${encodeURIComponent(search)}&page=${page}&limit=24`),
+      ]);
+      const salonData = await salonRes.json();
+      const userData = await userRes.json();
+      setSalons(salonData.salons || []);
+      setSalonTotal(salonData.total || 0);
+      setConsumers(userData.users || []);
+      setConsumerTotal(userData.total || 0);
+      if (userData.error && !userData.users?.length) setError(userData.error);
+    } catch {
+      setError('Ачаалж чадсангүй');
+    }
+    setLoading(false);
+  }, [search, page]);
 
-  const filtered = customers.filter((c) => {
-    const matchesTab = tab === 'ALL' || c.type === tab;
-    const matchesSearch =
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.businessName.toLowerCase().includes(search.toLowerCase()) ||
-      c.phone.includes(search);
-    return matchesTab && matchesSearch;
-  });
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('tab') as Tab | null;
+    if (q === 'SALON' || q === 'CONSUMER' || q === 'ALL') setTab(q);
+  }, []);
+
+  useEffect(() => {
+    const t = window.setTimeout(load, 200);
+    return () => window.clearTimeout(t);
+  }, [load]);
+
+  const isSalonRow = (c: SalonItem) => c.salonName.startsWith('1.') || c.email.includes('@salon.');
+
+  const visibleSalons = useMemo(() => {
+    if (tab === 'CONSUMER') return [];
+    return salons.filter((c) => (tab === 'SALON' ? isSalonRow(c) : true));
+  }, [salons, tab]);
+
+  const visibleConsumers = tab === 'SALON' ? [] : consumers;
+
+  const totalShown =
+    tab === 'ALL' ? salonTotal + consumerTotal : tab === 'SALON' ? salonTotal : consumerTotal;
+
+  async function saveSalon(e: FormEvent) {
+    e.preventDefault();
+    if (!editSalon) return;
+    setSaving(true);
+    const res = await fetch('/api/ad/customers', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'salon',
+        id: editSalon.id,
+        salonName: editSalon.salonName,
+        contactName: editSalon.contactName,
+        phone: editSalon.phone,
+        email: editSalon.email,
+        city: editSalon.city,
+        district: editSalon.district,
+        address: editSalon.address,
+      }),
+    });
+    setSaving(false);
+    if (!res.ok) {
+      const data = await res.json();
+      setError(data.error || 'Хадгалж чадсангүй');
+      return;
+    }
+    setEditSalon(null);
+    load();
+  }
+
+  async function saveUser(e: FormEvent) {
+    e.preventDefault();
+    if (!editUser) return;
+    setSaving(true);
+    const res = await fetch('/api/ad/customers', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'consumer',
+        id: editUser.id,
+        name: editUser.name,
+        lastName: editUser.lastName,
+        phone: editUser.phone,
+        address: editUser.address,
+        city: editUser.city,
+        district: editUser.district,
+        notes: editUser.notes,
+      }),
+    });
+    setSaving(false);
+    if (!res.ok) {
+      const data = await res.json();
+      setError(data.error || 'Хадгалж чадсангүй');
+      return;
+    }
+    setEditUser(null);
+    load();
+  }
+
+  const tabClass = (active: boolean) =>
+    active ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground';
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5 text-foreground">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
-            Хэрэглэгчид & Салоны Бүртгэл
-          </h1>
-          <p className="text-xs sm:text-sm text-gray-500 mt-1">
-            Хувь худалдан авагчид болон гэрээт мэргэжлийн үсчний салонуудын мэдээлэл
+          <h1 className="text-2xl font-bold tracking-tight">Харилцагч & Салоны бүртгэл</h1>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Салон {salonTotal.toLocaleString()} · Сайтын хэрэглэгч {consumerTotal.toLocaleString()}
           </p>
         </div>
+        <Link
+          href="/ad/salons"
+          className="self-start rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground sm:self-auto"
+        >
+          + Салоны код өгөх
+        </Link>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-xs p-6 space-y-6">
-        {/* Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Нэр, утас, салоноор хайх..."
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-gray-400 focus:bg-white"
-            />
-          </div>
+      <div className="flex flex-wrap items-center gap-1 rounded-lg border border-border bg-card p-1 text-xs font-semibold shadow-xs">
+        <button type="button" onClick={() => { setTab('ALL'); setPage(1); }} className={`rounded px-3 py-1.5 ${tabClass(tab === 'ALL')}`}>
+          Бүгд
+        </button>
+        <button type="button" onClick={() => { setTab('SALON'); setPage(1); }} className={`rounded px-3 py-1.5 ${tabClass(tab === 'SALON')}`}>
+          Салонууд ({salonTotal})
+        </button>
+        <button type="button" onClick={() => { setTab('CONSUMER'); setPage(1); }} className={`rounded px-3 py-1.5 ${tabClass(tab === 'CONSUMER')}`}>
+          Сайтын хэрэглэгч ({consumerTotal})
+        </button>
+      </div>
 
-          <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl text-xs font-semibold">
-            {[
-              { key: 'ALL', label: 'Бүгд' },
-              { key: 'SALON', label: 'Гэрээт Салонууд' },
-              { key: 'RETAIL', label: 'Хувь Хэрэглэгчид' },
-            ].map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key as any)}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  tab === t.key
-                    ? 'bg-white text-gray-900 font-bold shadow-xs'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
+      <div className="relative">
+        <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          placeholder="Нэр, код, имэйл, утас..."
+          className="w-full rounded-lg border border-border bg-card py-2.5 pl-10 pr-4 text-sm shadow-xs focus:border-primary focus:outline-none"
+        />
+      </div>
 
-        {/* Grid View */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((c) => (
-            <div
-              key={c.id}
-              className="p-5 rounded-xl bg-gray-50/50 border border-gray-200 hover:border-gray-300 transition-all flex flex-col justify-between space-y-4"
-            >
-              <div>
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-sm">{c.name}</h3>
-                    <p className="text-xs text-gray-600 font-medium flex items-center gap-1 mt-0.5">
-                      <Building className="w-3 h-3 text-amber-500" />
-                      <span>{c.businessName}</span>
-                    </p>
-                  </div>
-                  <span
-                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                      c.type === 'SALON'
-                        ? 'bg-amber-50 text-amber-800 border-amber-200'
-                        : 'bg-blue-50 text-blue-800 border-blue-200'
-                    }`}
-                  >
-                    {c.type === 'SALON' ? 'Салон' : 'Хувь хүн'}
-                  </span>
-                </div>
+      {error ? <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
 
-                <div className="space-y-1.5 pt-3 text-xs text-gray-600 border-t border-gray-200/80 mt-3">
-                  <p className="flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5 text-gray-400" />
-                    <span>{c.phone}</span>
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <Mail className="w-3.5 h-3.5 text-gray-400" />
-                    <span>{c.email}</span>
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                    <span className="truncate">{c.address}</span>
-                  </p>
-                </div>
+      {loading ? (
+        <p className="py-20 text-center text-sm text-muted-foreground">Ачаалж байна...</p>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {visibleSalons.map((c) => (
+            <article key={`s-${c.id}`} className="rounded-xl border border-border bg-card p-4 shadow-xs">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="rounded bg-foreground px-2 py-0.5 font-mono text-xs font-bold text-background">{c.salonCode}</span>
+                <span className="rounded border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+                  {isSalonRow(c) ? 'САЛОН' : 'ХАРИЛЦАГЧ'}
+                </span>
               </div>
-
-              <div className="p-3 rounded-lg bg-white border border-gray-200 flex items-center justify-between text-xs">
-                <div>
-                  <span className="text-[10px] text-gray-400 block">Нийт худалдан авалт:</span>
-                  <span className="font-mono font-black text-gray-900 text-sm">{formatPrice(c.totalSpent)}</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-[10px] text-gray-400 block">Захиалга:</span>
-                  <span className="font-bold text-gray-900">{c.ordersCount} удаа</span>
-                </div>
+              <h3 className="line-clamp-2 text-sm font-bold">{c.salonName}</h3>
+              <p className="mt-1 text-xs text-muted-foreground">{c.contactName}</p>
+              <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5" />{c.phone}</div>
+                <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" /><span className="truncate">{c.email}</span></div>
+                <div className="flex items-start gap-2"><MapPin className="mt-0.5 h-3.5 w-3.5" /><span className="line-clamp-1">{c.address || c.city}</span></div>
               </div>
-            </div>
+              <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+                <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600"><CheckCircle className="h-3 w-3" />Идэвхтэй</span>
+                <button type="button" onClick={() => setEditSalon({ ...c })} className="inline-flex items-center gap-1 text-xs font-bold text-primary">
+                  <Pencil className="h-3.5 w-3.5" />Засах
+                </button>
+              </div>
+            </article>
+          ))}
+
+          {visibleConsumers.map((u) => (
+            <article key={`u-${u.id}`} className="rounded-xl border border-border bg-card p-4 shadow-xs">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="rounded border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">САЙТ</span>
+                <span className="text-[10px] text-muted-foreground">{u.emailVerified ? 'OTP ✓' : 'OTP хүлээж байна'}</span>
+              </div>
+              <h3 className="text-sm font-bold">{u.lastName ? `${u.lastName} ` : ''}{u.name}</h3>
+              <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" /><span className="truncate">{u.email}</span></div>
+                <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5" />{u.phone || '—'}</div>
+              </div>
+              <div className="mt-4 flex justify-end border-t border-border pt-3">
+                <button type="button" onClick={() => setEditUser({ ...u })} className="inline-flex items-center gap-1 text-xs font-bold text-primary">
+                  <Pencil className="h-3.5 w-3.5" />Засах
+                </button>
+              </div>
+            </article>
           ))}
         </div>
-      </div>
+      )}
+
+      {!loading && visibleSalons.length === 0 && visibleConsumers.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">Олдсонгүй</p>
+      ) : null}
+
+      {totalShown > 24 ? (
+        <div className="flex justify-between border-t border-border pt-4 text-xs">
+          <button type="button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="rounded border px-3 py-1.5 disabled:opacity-40">Өмнөх</button>
+          <span>{page}</span>
+          <button type="button" disabled={page * 24 >= totalShown} onClick={() => setPage((p) => p + 1)} className="rounded border px-3 py-1.5 disabled:opacity-40">Дараах</button>
+        </div>
+      ) : null}
+
+      {editSalon ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <form onSubmit={saveSalon} className="max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto rounded-2xl bg-white p-5">
+            <h3 className="text-lg font-bold">Салон засах</h3>
+            {(['salonName', 'contactName', 'phone', 'email', 'city', 'district', 'address'] as const).map((field) => (
+              <input
+                key={field}
+                required={field === 'salonName' || field === 'contactName' || field === 'email'}
+                value={(editSalon[field] as string) || ''}
+                onChange={(e) => setEditSalon({ ...editSalon, [field]: e.target.value })}
+                placeholder={field}
+                className="w-full rounded-xl border px-3 py-2 text-sm"
+              />
+            ))}
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setEditSalon(null)}>Болих</button>
+              <button type="submit" disabled={saving} className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">Хадгалах</button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+
+      {editUser ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <form onSubmit={saveUser} className="max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto rounded-2xl bg-white p-5">
+            <h3 className="text-lg font-bold">Хэрэглэгч засах</h3>
+            <input required value={editUser.name} onChange={(e) => setEditUser({ ...editUser, name: e.target.value })} placeholder="Нэр" className="w-full rounded-xl border px-3 py-2 text-sm" />
+            <input value={editUser.lastName || ''} onChange={(e) => setEditUser({ ...editUser, lastName: e.target.value })} placeholder="Овог" className="w-full rounded-xl border px-3 py-2 text-sm" />
+            <input value={editUser.phone || ''} onChange={(e) => setEditUser({ ...editUser, phone: e.target.value })} placeholder="Утас" className="w-full rounded-xl border px-3 py-2 text-sm" />
+            <input value={editUser.email} disabled className="w-full rounded-xl border bg-muted px-3 py-2 text-sm" />
+            <input value={editUser.city || ''} onChange={(e) => setEditUser({ ...editUser, city: e.target.value })} placeholder="Хот" className="w-full rounded-xl border px-3 py-2 text-sm" />
+            <input value={editUser.district || ''} onChange={(e) => setEditUser({ ...editUser, district: e.target.value })} placeholder="Дүүрэг" className="w-full rounded-xl border px-3 py-2 text-sm" />
+            <input value={editUser.address || ''} onChange={(e) => setEditUser({ ...editUser, address: e.target.value })} placeholder="Хаяг" className="w-full rounded-xl border px-3 py-2 text-sm" />
+            <textarea value={editUser.notes || ''} onChange={(e) => setEditUser({ ...editUser, notes: e.target.value })} placeholder="Тэмдэглэл" rows={2} className="w-full rounded-xl border px-3 py-2 text-sm" />
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setEditUser(null)}>Болих</button>
+              <button type="submit" disabled={saving} className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">Хадгалах</button>
+            </div>
+          </form>
+        </div>
+      ) : null}
     </div>
   );
 }

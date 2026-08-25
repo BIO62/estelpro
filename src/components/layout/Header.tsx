@@ -1,12 +1,47 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { assetUrl } from '@/lib/constants';
 import CartBagIcon from '@/components/ui/CartBagIcon';
 import { useCart } from '@/components/providers/CartProvider';
+import type { PublicUser } from '@/lib/auth/types';
 
 export default function Header() {
+  const router = useRouter();
   const { count } = useCart();
+  const [user, setUser] = useState<PublicUser | null>(null);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((response) => response.json())
+      .then((data: { user?: PublicUser | null }) => setUser(data.user || null))
+      .catch(() => setUser(null));
+
+    const close = (event: MouseEvent) => {
+      if (!accountRef.current?.contains(event.target as Node)) setAccountOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, []);
+
+  const isConsumer = user?.role === 'consumer';
+  const isSalon = user?.role === 'salon' || user?.kind === 'salon';
+  const isStaff = user?.role === 'manager' || user?.role === 'operator';
+  const accountHref = isSalon ? '/dresser' : isStaff ? '/ad' : '/account/profile';
+  const accountLabel = isSalon ? 'Салоны хэсэг' : isStaff ? 'Админ хэсэг' : 'Хувийн мэдээлэл';
+
+  async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    setUser(null);
+    setAccountOpen(false);
+    router.push('/');
+    router.refresh();
+  }
+
   return (
     <header className="position-sticky top-0 zindex-6">
       <div className="container-fluid">
@@ -42,10 +77,89 @@ export default function Header() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={assetUrl('images/icons/heart.svg')} alt="" />
             </Link>
-            <Link href="/login" className="btn p-2" aria-label="Нэвтрэх">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={assetUrl('images/icons/user.svg')} alt="" />
-            </Link>
+            <div ref={accountRef} className="position-relative">
+              {user ? (
+                <button
+                  type="button"
+                  className="btn p-2"
+                  aria-label={isConsumer ? 'Миний бүртгэл' : isSalon ? 'Салоны бүртгэл' : 'Админ бүртгэл'}
+                  aria-expanded={accountOpen}
+                  onClick={() => setAccountOpen((open) => !open)}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={assetUrl('images/icons/user.svg')} alt="" />
+                </button>
+              ) : (
+                <Link href="/login" className="btn p-2" aria-label="Нэвтрэх">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={assetUrl('images/icons/user.svg')} alt="" />
+                </Link>
+              )}
+
+              {user && accountOpen ? (
+                <div
+                  className="position-absolute end-0 bg-white border rounded-4 p-3"
+                  style={{
+                    top: 'calc(100% + 8px)',
+                    width: 'min(320px, calc(100vw - 24px))',
+                    boxShadow: '0 16px 48px rgba(0,0,0,.14)',
+                  }}
+                >
+                  <div className="d-flex align-items-center gap-3 pb-3 mb-2 border-bottom">
+                    <div
+                      className="d-flex align-items-center justify-content-center bg-main fc-white fw-bold rounded-circle flex-shrink-0"
+                      style={{ width: 42, height: 42 }}
+                    >
+                      {(user.name || user.email).slice(0, 1).toUpperCase()}
+                    </div>
+                    <div className="overflow-hidden">
+                      <strong className="d-block fs-14 text-truncate">{user.name || 'Хэрэглэгч'}</strong>
+                      <span className="d-block fs-12 fc-secondary text-truncate">{user.email}</span>
+                    </div>
+                  </div>
+
+                  <Link
+                    href={accountHref}
+                    className="d-block rounded-3 px-3 py-2 text-decoration-none fc-dark fs-13"
+                    onClick={() => setAccountOpen(false)}
+                  >
+                    {accountLabel}
+                  </Link>
+                  {isConsumer ? (
+                    <>
+                      <Link
+                        href="/account/address"
+                        className="d-block rounded-3 px-3 py-2 text-decoration-none fc-dark fs-13"
+                        onClick={() => setAccountOpen(false)}
+                      >
+                        Хүргэлтийн хаяг
+                      </Link>
+                      <Link
+                        href="/account/orders"
+                        className="d-block rounded-3 px-3 py-2 text-decoration-none fc-dark fs-13"
+                        onClick={() => setAccountOpen(false)}
+                      >
+                        Миний захиалгууд
+                      </Link>
+                      <Link
+                        href="/wishlist"
+                        className="d-block rounded-3 px-3 py-2 text-decoration-none fc-dark fs-13"
+                        onClick={() => setAccountOpen(false)}
+                      >
+                        Хадгалсан бараа
+                      </Link>
+                    </>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="btn w-100 text-start px-3 py-2 mt-2 border-top rounded-0 fs-13 text-danger"
+                    onClick={logout}
+                  >
+                    Системээс гарах
+                  </button>
+                </div>
+              ) : null}
+            </div>
             <button
               type="button"
               className="btn p-2 position-relative header-cart-btn"

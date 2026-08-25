@@ -41,13 +41,7 @@ export default function ClientLayout({
   }
 
   if (isAdmin) {
-    return (
-      <QuickViewProvider>
-        <div className="admin-scope">{children}</div>
-        <BootstrapClient />
-        <EstelScripts />
-      </QuickViewProvider>
-    );
+    return <QuickViewProvider>{children}</QuickViewProvider>;
   }
 
   return (

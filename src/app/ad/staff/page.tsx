@@ -58,7 +58,7 @@ export default function StaffInvitePage() {
           <option value="operator">Оператор</option>
           <option value="manager">Менежер</option>
         </select>
-        <button type="submit" className="px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-bold">
+        <button type="submit" className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">
           Үүсгэх
         </button>
       </form>
