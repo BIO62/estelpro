@@ -1,6 +1,6 @@
 export type AccountKind = 'consumer' | 'salon' | 'staff';
-export type StaffRole = 'manager' | 'operator';
-export type UserRole = 'consumer' | 'salon' | 'manager' | 'operator';
+export type StaffRole = 'director' | 'manager' | 'operator';
+export type UserRole = 'consumer' | 'salon' | StaffRole;
 
 export type AuthUser = {
   id: string;
@@ -25,7 +25,7 @@ export type PublicUser = Omit<AuthUser, 'passwordHash'>;
 export type OtpRecord = {
   email: string;
   code: string;
-  purpose: 'register' | 'login';
+  purpose: 'register' | 'login' | 'reset_password';
   expiresAt: number;
 };
 
@@ -33,4 +33,3 @@ export type AuthDb = {
   users: AuthUser[];
   otps: OtpRecord[];
 };
-
