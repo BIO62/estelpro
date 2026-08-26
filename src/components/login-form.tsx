@@ -31,7 +31,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
       kind === 'salon'
         ? {
             title: 'Салон нэвтрэх',
-            hint: 'Код + нууц үг (утасны дугаар). Дараа нь нууц үгээ солих боломжтой.',
+            hint: 'Салоны код болон нууц үгээ оруулан нэвтэрнэ үү.',
           }
         : {
             title: 'Нэвтрэх',
@@ -156,7 +156,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
                   setSalonIdentifier(e.target.value);
                   setError('');
                 }}
-                placeholder="Жишээ: 20002, 20105 эсвэл 91109293"
+                placeholder="Салоны код эсвэл утас"
               />
             </Field>
 
@@ -190,7 +190,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
                     setSalonPassword(e.target.value);
                     setError('');
                   }}
-                  placeholder="Утасны дугаар (ж: 91109293)"
+                  placeholder="Нууц үг"
                 />
               </Field>
             </div>

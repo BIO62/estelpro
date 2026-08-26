@@ -17,10 +17,9 @@ export async function GET(request: Request) {
   const offset = (page - 1) * limit;
   const discountTier = searchParams.get('discountTier') || '';
   const discountPercent = searchParams.get('discountPercent') || '';
-  const sort = searchParams.get('sort') || 'code';
 
   try {
-    const { salons, total } = await listSalons({ limit, offset, search, discountTier, discountPercent, sort });
+    const { salons, total } = await listSalons({ limit, offset, search, discountTier, discountPercent });
     return NextResponse.json({ salons, users: salons, total, page, limit });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Алдаа';

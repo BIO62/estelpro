@@ -1,12 +1,12 @@
 'use client';
 
 import { FormEvent, useCallback, useEffect, useState, type ReactNode } from 'react';
-import { CheckCircle, Mail, MapPin, Pencil, Phone, Plus, Search, Trash2, X } from 'lucide-react';
+import { Plus, Search, SquarePen, Trash2 } from 'lucide-react';
 
 import type { AppUser } from '@/lib/users/repo';
 import type { PublicUser } from '@/lib/auth/types';
 import { isLeadershipRole } from '@/lib/auth/roles';
-import { SALON_DISCOUNT_PERCENTS, salonDefaultPassword, tierIdForPercent } from '@/lib/auth/salon-discount';
+import { SALON_DISCOUNT_PERCENTS, salonDefaultPassword, tierBadgeLabel, tierIdForPercent } from '@/lib/auth/salon-discount';
 
 type SalonItem = {
   id: string;
@@ -42,8 +42,56 @@ const emptyCreateSalon = (): CreateSalonForm => ({
   city: 'Улаанбаатар',
   district: '',
   address: '',
-  discountPercent: 15,
+  discountPercent: 0,
 });
+
+function placeLine(...parts: Array<string | null | undefined>) {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const part of parts) {
+    const t = (part || '').trim();
+    if (!t || seen.has(t)) continue;
+    seen.add(t);
+    out.push(t);
+  }
+  return out.join(', ') || '—';
+}
+
+function RowActions({
+  onEdit,
+  onDelete,
+}: {
+  onEdit: () => void;
+  onDelete?: () => void;
+}) {
+  return (
+    <div
+      className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-slate-300 bg-white p-1.5 shadow-sm"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        onClick={onEdit}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-blue-600 transition hover:bg-blue-50"
+        aria-label="Засах"
+        title="Засах"
+      >
+        <SquarePen size={18} strokeWidth={2} className="shrink-0" />
+      </button>
+      {onDelete ? (
+        <button
+          type="button"
+          onClick={onDelete}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-rose-600 transition hover:bg-rose-50"
+          aria-label="Устгах"
+          title="Устгах"
+        >
+          <Trash2 size={18} strokeWidth={2} className="shrink-0" />
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 function fieldLabel(el: ReactNode, text: string) {
   return (
@@ -72,14 +120,14 @@ function modalActions({
       <button
         type="button"
         onClick={onCancel}
-        className="rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+        className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
       >
         Болих
       </button>
       <button
         type="submit"
         disabled={saving}
-        className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
+        className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
       >
         {saving ? 'Хадгалж байна...' : submitLabel}
       </button>
@@ -101,7 +149,6 @@ export default function AdCustomersPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [isDirector, setIsDirector] = useState(false);
-  const [sort, setSort] = useState<'code' | 'discount'>('discount');
   const [discountFilter, setDiscountFilter] = useState('');
   const [createSalon, setCreateSalon] = useState<CreateSalonForm | null>(null);
   const [createUser, setCreateUser] = useState(false);
@@ -131,7 +178,7 @@ export default function AdCustomersPage() {
     setError('');
     try {
       const [salonRes, userRes] = await Promise.all([
-        fetch(`/api/auth/salon?search=${encodeURIComponent(search)}&page=${page}&limit=24&sort=${sort}&discountPercent=${encodeURIComponent(discountFilter)}`),
+        fetch(`/api/auth/salon?search=${encodeURIComponent(search)}&page=${page}&limit=24&discountPercent=${encodeURIComponent(discountFilter)}`),
         fetch(`/api/ad/users?status=ALL&q=${encodeURIComponent(search)}&page=${page}&limit=24`),
       ]);
       const salonData = await salonRes.json();
@@ -145,7 +192,7 @@ export default function AdCustomersPage() {
       setError('Ачаалж чадсангүй');
     }
     setLoading(false);
-  }, [search, page, sort, discountFilter]);
+  }, [search, page, discountFilter]);
 
   useEffect(() => {
     const q = (new URLSearchParams(window.location.search).get('tab') || '').toUpperCase();
@@ -184,7 +231,7 @@ export default function AdCustomersPage() {
         city: editSalon.city,
         district: editSalon.district,
         address: editSalon.address,
-        discountTier: tierIdForPercent(editSalon.discountPercent || 15),
+        discountTier: tierIdForPercent(editSalon.discountPercent || 0, editSalon.discountTier),
       }),
     });
     setSaving(false);
@@ -324,25 +371,25 @@ export default function AdCustomersPage() {
           <button
             type="button"
             onClick={() => setCreateSalon(emptyCreateSalon())}
-            className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90"
           >
             <Plus className="h-3.5 w-3.5" /> Харилцагч нэмэх
           </button>
           <button
             type="button"
             onClick={() => setCreateUser(true)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-5 py-2.5 text-xs font-semibold transition hover:bg-muted"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold transition hover:bg-muted"
           >
             <Plus className="h-3.5 w-3.5" /> Сайтын хэрэглэгч нэмэх
           </button>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1 rounded-full border border-border bg-card p-1 text-xs font-semibold shadow-xs">
-        <button type="button" onClick={() => { setTab('CLIENT'); setPage(1); }} className={`rounded-full px-4 py-1.5 ${tabClass(tab === 'CLIENT')}`}>
+      <div className="flex flex-wrap items-center gap-1 rounded-lg border border-border bg-card p-1 text-xs font-semibold">
+        <button type="button" onClick={() => { setTab('CLIENT'); setPage(1); }} className={`rounded-md px-3 py-1.5 ${tabClass(tab === 'CLIENT')}`}>
           Харилцагч ({salonTotal})
         </button>
-        <button type="button" onClick={() => { setTab('CONSUMER'); setPage(1); }} className={`rounded-full px-4 py-1.5 ${tabClass(tab === 'CONSUMER')}`}>
+        <button type="button" onClick={() => { setTab('CONSUMER'); setPage(1); }} className={`rounded-md px-3 py-1.5 ${tabClass(tab === 'CONSUMER')}`}>
           Сайтын хэрэглэгч ({consumerTotal})
         </button>
       </div>
@@ -352,32 +399,24 @@ export default function AdCustomersPage() {
         <select
           value={discountFilter}
           onChange={(e) => { setDiscountFilter(e.target.value); setPage(1); }}
-          className="rounded-full border border-border bg-card px-4 py-2 text-xs font-semibold"
+          className="rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold"
         >
           <option value="">Хөнгөлөлт: бүгд</option>
           {SALON_DISCOUNT_PERCENTS.map((percent) => (
             <option key={percent} value={String(percent)}>{percent}%</option>
           ))}
         </select>
-        <select
-          value={sort}
-          onChange={(e) => { setSort(e.target.value as 'code' | 'discount'); setPage(1); }}
-          className="rounded-full border border-border bg-card px-4 py-2 text-xs font-semibold"
-        >
-          <option value="discount">Эрэмбэ: хөнгөлөлт %</option>
-          <option value="code">Эрэмбэ: код</option>
-        </select>
       </div>
       ) : null}
 
       <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           type="text"
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           placeholder="Нэр, код, имэйл, утас..."
-          className="w-full rounded-full border border-border bg-card py-2.5 pl-10 pr-4 text-sm shadow-xs focus:border-primary focus:outline-none"
+          className="w-full rounded-lg border border-border bg-card py-2.5 pl-9 pr-3 text-sm focus:border-primary focus:outline-none"
         />
       </div>
 
@@ -388,14 +427,8 @@ export default function AdCustomersPage() {
       ) : null}
 
       {createdSalonHint ? (
-        <div className="flex items-start justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          <p className="flex items-center gap-2">
-            <CheckCircle className="h-4 w-4 shrink-0" />
-            <span>{createdSalonHint}</span>
-          </p>
-          <button type="button" onClick={() => setCreatedSalonHint('')} className="rounded-full p-1 text-emerald-700/70 hover:bg-emerald-100" aria-label="Хаах">
-            <X className="h-4 w-4" />
-          </button>
+        <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-900">
+          {createdSalonHint}
         </div>
       ) : null}
 
@@ -403,61 +436,94 @@ export default function AdCustomersPage() {
 
       {loading ? (
         <p className="py-20 text-center text-sm text-muted-foreground">Ачаалж байна...</p>
+      ) : tab === 'CLIENT' ? (
+        <div className="overflow-hidden rounded-xl border border-border bg-white">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] border-collapse text-left text-[13px]">
+              <thead className="border-b border-border bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Код</th>
+                  <th className="px-4 py-3 font-semibold">Нэр</th>
+                  <th className="px-4 py-3 font-semibold">Утас</th>
+                  <th className="px-4 py-3 font-semibold">Хөнгөлөлт</th>
+                  <th className="px-4 py-3 font-semibold">Байршил</th>
+                  <th className="sticky right-0 z-[1] bg-slate-50 px-4 py-3 text-right font-semibold">Үйлдэл</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white">
+                {visibleSalons.map((c) => (
+                  <tr
+                    key={c.id}
+                    className="cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50"
+                    onClick={() => setEditSalon({ ...c })}
+                  >
+                    <td className="px-4 py-3.5 font-mono text-[12px] font-semibold text-slate-700">{c.salonCode}</td>
+                    <td className="max-w-[240px] px-4 py-3.5">
+                      <span className="line-clamp-1 font-medium text-slate-900">{c.salonName}</span>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3.5 text-slate-700">{c.phone || '—'}</td>
+                    <td className="px-4 py-3.5">
+                      <span className="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-[12px] font-semibold tabular-nums text-slate-800">
+                        {tierBadgeLabel(c.discountTier, c.discountPercent)}
+                      </span>
+                    </td>
+                    <td className="max-w-[200px] px-4 py-3.5 text-slate-600">
+                      <span className="line-clamp-1">{placeLine(c.city, c.district)}</span>
+                    </td>
+                    <td className="sticky right-0 z-[1] bg-white px-4 py-3.5 text-right hover:bg-slate-50">
+                      <RowActions
+                        onEdit={() => setEditSalon({ ...c })}
+                        onDelete={isDirector ? () => removeSalon(c) : undefined}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {visibleSalons.map((c) => (
-            <article key={`s-${c.id}`} className="rounded-xl border border-border bg-card p-4 shadow-xs">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <span className="rounded-full bg-foreground px-2.5 py-0.5 font-mono text-xs font-bold text-background">{c.salonCode}</span>
-                <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-700">
-                  {c.discountPercent ?? 0}%
-                </span>
-              </div>
-              <h3 className="line-clamp-2 text-sm font-bold">{c.salonName}</h3>
-              <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5" />{c.phone}</div>
-                <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" /><span className="truncate">{c.email}</span></div>
-                <div className="flex items-start gap-2"><MapPin className="mt-0.5 h-3.5 w-3.5" /><span className="line-clamp-1">{c.address || c.city}</span></div>
-              </div>
-              <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
-                <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600"><CheckCircle className="h-3 w-3" />Идэвхтэй</span>
-                <div className="flex items-center gap-2">
-                  <button type="button" onClick={() => setEditSalon({ ...c })} className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/10">
-                    <Pencil className="h-3.5 w-3.5" />Засах
-                  </button>
-                  {isDirector ? (
-                    <button type="button" onClick={() => removeSalon(c)} className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-50">
-                      <Trash2 className="h-3.5 w-3.5" />Устгах
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            </article>
-          ))}
-
-          {visibleConsumers.map((u) => (
-            <article key={`u-${u.id}`} className="rounded-xl border border-border bg-card p-4 shadow-xs">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold text-primary">САЙТ</span>
-                <span className="text-[10px] text-muted-foreground">{u.emailVerified ? 'OTP ✓' : 'OTP хүлээж байна'}</span>
-              </div>
-              <h3 className="text-sm font-bold">{u.lastName ? `${u.lastName} ` : ''}{u.name}</h3>
-              <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" /><span className="truncate">{u.email}</span></div>
-                <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5" />{u.phone || '—'}</div>
-              </div>
-              <div className="mt-4 flex justify-end gap-2 border-t border-border pt-3">
-                <button type="button" onClick={() => setEditUser({ ...u })} className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/10">
-                  <Pencil className="h-3.5 w-3.5" />Засах
-                </button>
-                {isDirector ? (
-                  <button type="button" onClick={() => removeUser(u)} className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-50">
-                    <Trash2 className="h-3.5 w-3.5" />Устгах
-                  </button>
-                ) : null}
-              </div>
-            </article>
-          ))}
+        <div className="overflow-hidden rounded-xl border border-border bg-white">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[680px] border-collapse text-left text-[13px]">
+              <thead className="border-b border-border bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Нэр</th>
+                  <th className="px-4 py-3 font-semibold">Имэйл</th>
+                  <th className="px-4 py-3 font-semibold">Утас</th>
+                  <th className="px-4 py-3 font-semibold">Төлөв</th>
+                  <th className="sticky right-0 z-[1] bg-slate-50 px-4 py-3 text-right font-semibold">Үйлдэл</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white">
+                {visibleConsumers.map((u) => {
+                  const fullName = `${u.lastName ? `${u.lastName} ` : ''}${u.name}`.trim();
+                  return (
+                    <tr
+                      key={u.id}
+                      className="cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50"
+                      onClick={() => setEditUser({ ...u })}
+                    >
+                      <td className="px-4 py-3.5 font-medium text-slate-900">{fullName}</td>
+                      <td className="max-w-[220px] truncate px-4 py-3.5 text-slate-700">{u.email}</td>
+                      <td className="whitespace-nowrap px-4 py-3.5 text-slate-700">{u.phone || '—'}</td>
+                      <td className="px-4 py-3.5">
+                        <span className={`inline-flex rounded-md px-2 py-0.5 text-[12px] font-medium ${u.emailVerified ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                          {u.emailVerified ? 'Баталгаажсан' : 'OTP хүлээж байна'}
+                        </span>
+                      </td>
+                      <td className="sticky right-0 z-[1] bg-white px-4 py-3.5 text-right hover:bg-slate-50">
+                        <RowActions
+                          onEdit={() => setEditUser({ ...u })}
+                          onDelete={isDirector ? () => removeUser(u) : undefined}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -481,10 +547,7 @@ export default function AdCustomersPage() {
           }}
         >
           <form onSubmit={saveSalon} className="relative max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto rounded-3xl bg-white p-6 shadow-xl">
-            <button type="button" onClick={closeModals} className="absolute right-4 top-4 rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Хаах">
-              <X className="h-4 w-4" />
-            </button>
-            <h3 className="pr-8 text-lg font-bold">Харилцагч засах</h3>
+            <h3 className="text-lg font-bold">Харилцагч засах</h3>
             {fieldLabel(
               <input required value={editSalon.salonName} onChange={(e) => setEditSalon({ ...editSalon, salonName: e.target.value })} className={inputClass()} />,
               'Салон болон харилцагч',
@@ -534,11 +597,7 @@ export default function AdCustomersPage() {
           }}
         >
           <form onSubmit={addSalon} className="relative max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto rounded-3xl bg-white p-6 shadow-xl">
-            <button type="button" onClick={closeModals} className="absolute right-4 top-4 rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Хаах">
-              <X className="h-4 w-4" />
-            </button>
-            <h3 className="pr-8 text-lg font-bold">Харилцагч нэмэх</h3>
-            <p className="text-xs text-muted-foreground">Нэвтрэх нууц үг = утасны дугаар (сүүлийн 8 орон).</p>
+            <h3 className="text-lg font-bold">Харилцагч нэмэх</h3>
             {fieldLabel(<input required value={createSalon.salonCode} onChange={(e) => setCreateSalon({ ...createSalon, salonCode: e.target.value.toUpperCase() })} className={inputClass()} />, 'Салоны код')}
             {fieldLabel(<input required value={createSalon.salonName} onChange={(e) => setCreateSalon({ ...createSalon, salonName: e.target.value })} className={inputClass()} />, 'Салон болон харилцагч')}
             {fieldLabel(<input required type="email" value={createSalon.email} onChange={(e) => setCreateSalon({ ...createSalon, email: e.target.value })} className={inputClass()} />, 'Имэйл')}
@@ -567,10 +626,7 @@ export default function AdCustomersPage() {
           }}
         >
           <form onSubmit={addUser} className="relative max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto rounded-3xl bg-white p-6 shadow-xl">
-            <button type="button" onClick={closeModals} className="absolute right-4 top-4 rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Хаах">
-              <X className="h-4 w-4" />
-            </button>
-            <h3 className="pr-8 text-lg font-bold">Сайтын хэрэглэгч нэмэх</h3>
+            <h3 className="text-lg font-bold">Сайтын хэрэглэгч нэмэх</h3>
             {fieldLabel(<input required value={newUser.name} onChange={(e) => setNewUser({ ...newUser, name: e.target.value })} className={inputClass()} />, 'Нэр')}
             {fieldLabel(<input value={newUser.lastName} onChange={(e) => setNewUser({ ...newUser, lastName: e.target.value })} className={inputClass()} />, 'Овог')}
             {fieldLabel(<input required type="email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} className={inputClass()} />, 'Имэйл')}
@@ -589,10 +645,7 @@ export default function AdCustomersPage() {
           }}
         >
           <form onSubmit={saveUser} className="relative max-h-[90vh] w-full max-w-md space-y-3 overflow-y-auto rounded-3xl bg-white p-6 shadow-xl">
-            <button type="button" onClick={closeModals} className="absolute right-4 top-4 rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Хаах">
-              <X className="h-4 w-4" />
-            </button>
-            <h3 className="pr-8 text-lg font-bold">Хэрэглэгч засах</h3>
+            <h3 className="text-lg font-bold">Хэрэглэгч засах</h3>
             {fieldLabel(<input required value={editUser.name} onChange={(e) => setEditUser({ ...editUser, name: e.target.value })} className={inputClass()} />, 'Нэр')}
             {fieldLabel(<input value={editUser.lastName || ''} onChange={(e) => setEditUser({ ...editUser, lastName: e.target.value })} className={inputClass()} />, 'Овог')}
             {fieldLabel(<input value={editUser.phone || ''} onChange={(e) => setEditUser({ ...editUser, phone: e.target.value })} className={inputClass()} />, 'Утас')}

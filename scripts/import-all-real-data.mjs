@@ -58,20 +58,29 @@ async function importSalons() {
     const categoryName = String(row[7] || 'САЛОН').trim();
     const phone = String(row[8] || '').replace(/[^0-9+]/g, '').trim();
     const nameUpper = `${name} ${categoryName}`;
-    let discount_tier = 'et';
-    let discount_percent = 15;
-    if (/(^|[\s./])ES(\s|$)/i.test(nameUpper) || categoryCode === '003') {
-      discount_tier = 'es';
-      discount_percent = 10;
-    } else if (/(^|[\s./])EP(\s|$)/i.test(nameUpper)) {
-      discount_tier = 'ep';
-      discount_percent = 15;
-    } else if (/(^|[\s./])ET(\s|$)/i.test(nameUpper) || categoryCode === '002') {
-      discount_tier = 'et';
-      discount_percent = 15;
-    } else if (categoryCode === '001') {
-      discount_tier = 'p20';
+    let discount_tier = 'vip5';
+    let discount_percent = 0;
+    if (/\d+\.\s*EP\b|(^|[\s./])EP(\s|$)/i.test(nameUpper)) {
+      discount_tier = 'top20';
       discount_percent = 20;
+    } else if (/\d+\.\s*ET\b|(^|[\s./])ET(\s|$)/i.test(nameUpper)) {
+      discount_tier = 'contract15';
+      discount_percent = 20;
+    } else if (/\d+\.\s*ES\b|(^|[\s./])ES(\s|$)/i.test(nameUpper)) {
+      discount_tier = 'gold15';
+      discount_percent = 10;
+    } else if (/\/\s*S\b|\bSILVER\b/i.test(nameUpper)) {
+      discount_tier = 'gold15';
+      discount_percent = 10;
+    } else if (/\/\s*G\b|\bGOLD\b/i.test(nameUpper)) {
+      discount_tier = 'gold15';
+      discount_percent = 15;
+    } else if (categoryCode === '4' || categoryCode === '004' || /^\s*4\./.test(name)) {
+      discount_tier = 'vip5';
+      discount_percent = 5;
+    } else if (categoryCode === '1' || categoryCode === '001' || /^\s*1\./.test(name)) {
+      discount_tier = 'vip5';
+      discount_percent = 0;
     }
 
     // Determine city
@@ -126,9 +135,33 @@ async function importCustomers() {
     const categoryCode = String(row[5] || '').trim();
     const tierName = String(row[6] || 'GOLD MEMBER').trim();
     const phone = String(row[8] || '').replace(/[^0-9+]/g, '').trim();
-    const discount = Number(row[9] || (tierName.includes('GOLD') ? 15 : 10));
-    const percent = [20, 15, 10, 5].includes(discount) ? discount : discount >= 12 ? 15 : discount >= 8 ? 10 : 5;
-    const discount_tier = percent === 20 ? 'p20' : percent === 10 ? 'es' : percent === 5 ? 'p5' : tierName.includes('GOLD') ? 'ep' : 'et';
+    const discount = Number(row[9] || 0);
+    const nameUpper = `${name} ${tierName}`;
+    let discount_tier = 'vip5';
+    let discount_percent = 0;
+    if (/\d+\.\s*EP\b|(^|[\s./])EP(\s|$)/i.test(nameUpper)) {
+      discount_tier = 'top20';
+      discount_percent = 20;
+    } else if (/\d+\.\s*ET\b|(^|[\s./])ET(\s|$)/i.test(nameUpper)) {
+      discount_tier = 'contract15';
+      discount_percent = 20;
+    } else if (/\d+\.\s*ES\b|(^|[\s./])ES(\s|$)/i.test(nameUpper) || /\/\s*S\b|\bSILVER\b/i.test(nameUpper)) {
+      discount_tier = 'gold15';
+      discount_percent = 10;
+    } else if (/\/\s*G\b|\bGOLD\b/i.test(nameUpper) || tierName.includes('GOLD')) {
+      discount_tier = 'gold15';
+      discount_percent = 15;
+    } else if (categoryCode === '4' || categoryCode === '004' || /^\s*4\./.test(name)) {
+      discount_tier = 'vip5';
+      discount_percent = 5;
+    } else if (categoryCode === '1' || categoryCode === '001' || /^\s*1\./.test(name)) {
+      discount_tier = 'vip5';
+      discount_percent = 0;
+    } else if ([20, 15, 10, 5, 0].includes(discount)) {
+      discount_percent = discount;
+      discount_tier =
+        discount === 20 ? 'top20' : discount === 15 ? 'gold15' : discount === 10 ? 'gold15' : 'vip5';
+    }
 
     const city = district.includes('аймаг') ? district : 'Улаанбаатар';
 
@@ -143,7 +176,7 @@ async function importCustomers() {
       address: address || `${district}, Монгол`,
       is_active: true,
       discount_tier,
-      discount_percent: percent,
+      discount_percent,
     });
   }
 

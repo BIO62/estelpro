@@ -1,12 +1,13 @@
 import { isSupabaseConfigured, supabaseAdmin } from '@/lib/supabase/server';
 import { OTP_TTL_MS } from '@/lib/auth/otp';
-import { hashPassword } from '@/lib/auth/password';
 import {
+  resolveSalonDiscount,
   salonDefaultPassword,
-  salonDiscountPercent,
   salonDiscountTier,
+  toDbDiscountTier,
   type SalonDiscountTierId,
 } from '@/lib/auth/salon-discount';
+import { hashPassword } from '@/lib/auth/password';
 
 function normalizeSalonCode(code: string) {
   return code.trim().toUpperCase().replace(/\s+/g, '');
@@ -43,9 +44,7 @@ export type SalonRow = {
 };
 
 function fromRow(row: SalonRow & { id: string }): Salon {
-  const VALID = [20, 15, 10, 5, 0];
-  const tier = (salonDiscountTier(row.discount_tier)?.id || 'et') as SalonDiscountTierId;
-  const fromDb = Number(row.discount_percent);
+  const resolved = resolveSalonDiscount(row.discount_tier, row.discount_percent);
   return {
     id: row.id,
     salonCode: row.salon_code,
@@ -56,8 +55,8 @@ function fromRow(row: SalonRow & { id: string }): Salon {
     city: row.city,
     district: row.district,
     address: row.address,
-    discountTier: tier,
-    discountPercent: VALID.includes(fromDb) ? fromDb : salonDiscountPercent(tier),
+    discountTier: resolved.id,
+    discountPercent: resolved.percent,
     passwordHash: row.password_hash || null,
   };
 }
@@ -135,15 +134,16 @@ export async function listSalons({
   search = '',
   discountTier = '',
   discountPercent = '',
-  sort = 'code',
 } = {}) {
   const db = supabaseAdmin();
   if (!db) return { salons: [] as Salon[], total: 0 };
   let query = db.from('salons').select('*', { count: 'exact' }).eq('is_active', true);
-  if (sort === 'discount') {
-    query = query.order('discount_percent', { ascending: false }).order('salon_code');
+  // 20% дээр EP/ET ялгахын тулд tier-ээр эрэмбэлнэ; бусад тохиолдолд нэрээр.
+  if (discountPercent !== '' && Number(discountPercent) === 20) {
+    // top20 (EP) before contract15 (ET)
+    query = query.order('discount_tier', { ascending: false }).order('salon_name');
   } else {
-    query = query.order('salon_code');
+    query = query.order('salon_name');
   }
   if (discountTier.trim()) query = query.eq('discount_tier', discountTier.trim());
   if (discountPercent !== '') {
@@ -155,11 +155,8 @@ export async function listSalons({
   }
   const { data, count, error } = await query.range(offset, offset + limit - 1);
   if (error) {
-    if (/discount_/i.test(error.message) && sort === 'discount') {
-      return listSalons({ limit, offset, search, discountTier, discountPercent, sort: 'code' });
-    }
     if (/discount_/i.test(error.message) && (discountTier || discountPercent !== '')) {
-      return listSalons({ limit, offset, search, discountTier: '', discountPercent: '', sort });
+      return listSalons({ limit, offset, search, discountTier: '', discountPercent: '' });
     }
     throw new Error(error.message);
   }
@@ -256,7 +253,7 @@ export async function updateSalon(
   if (patch.discountTier !== undefined) {
     const tier = salonDiscountTier(patch.discountTier);
     if (!tier) throw new Error('Хөнгөлөлтийн түвшин буруу.');
-    row.discount_tier = tier.id;
+    row.discount_tier = toDbDiscountTier(tier.id);
     row.discount_percent = tier.percent;
   }
   if (patch.passwordHash !== undefined) row.password_hash = patch.passwordHash;
@@ -279,7 +276,7 @@ export async function createSalon(input: {
   const db = supabaseAdmin();
   if (!db) throw new Error('Supabase тохируулаагүй байна.');
   const code = normalizeSalonCode(input.salonCode);
-  const tier = salonDiscountTier(input.discountTier) || salonDiscountTier('et')!;
+  const tier = salonDiscountTier(input.discountTier) || salonDiscountTier('p0')!;
   const phone = (input.phone || '').trim() || '00000000';
   const defaultPass = salonDefaultPassword(phone);
   const base = {
@@ -292,7 +289,7 @@ export async function createSalon(input: {
     district: input.district?.trim() || null,
     address: (input.address || '').trim() || '—',
     is_active: true,
-    discount_tier: tier.id,
+    discount_tier: toDbDiscountTier(tier.id),
     discount_percent: tier.percent,
   };
   let { data, error } = await db
