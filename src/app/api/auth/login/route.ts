@@ -2,9 +2,14 @@ import { NextResponse } from 'next/server';
 import { verifyPassword } from '@/lib/auth/password';
 import { createSession, homeForRole } from '@/lib/auth/session';
 import { findSalonByIdentifier } from '@/lib/salons/repo';
-import { findAppUserByEmail, findAppUserByPhone } from '@/lib/users/repo';
+import { appUsersReady, findAppUserByEmail, findAppUserByPhone } from '@/lib/users/repo';
 import type { AccountKind } from '@/lib/auth/types';
 import { isStaffRole, resolveStaffRole } from '@/lib/auth/roles';
+
+function dbDownResponse(error: unknown) {
+  console.error('login db', error instanceof Error ? error.message : error);
+  return NextResponse.json({ error: 'Өгөгдлийн санд холбогдож чадсангүй.' }, { status: 503 });
+}
 
 export async function POST(request: Request) {
   const body = (await request.json()) as {
@@ -23,7 +28,12 @@ export async function POST(request: Request) {
 
   // 1. Salon Login: Supports Salon Code, Phone, or Email + Password
   if (kind === 'salon') {
-    const salon = await findSalonByIdentifier(identifier);
+    let salon;
+    try {
+      salon = await findSalonByIdentifier(identifier);
+    } catch (error) {
+      return dbDownResponse(error);
+    }
     if (!salon) {
       return NextResponse.json({ error: 'Салоны код эсвэл бүртгэл олдсонгүй.' }, { status: 404 });
     }
@@ -57,11 +67,19 @@ export async function POST(request: Request) {
   }
 
   // 2. Consumer & Staff Login: Email or Phone + Password
-  const lowerId = identifier.toLowerCase();
+  if (!appUsersReady()) {
+    return NextResponse.json({ error: 'Өгөгдлийн сан холбогдоогүй байна.' }, { status: 503 });
+  }
 
-  const user = lowerId.includes('@')
-    ? await findAppUserByEmail(lowerId)
-    : await findAppUserByPhone(identifier);
+  const lowerId = identifier.toLowerCase();
+  let user;
+  try {
+    user = lowerId.includes('@')
+      ? await findAppUserByEmail(lowerId)
+      : await findAppUserByPhone(identifier);
+  } catch (error) {
+    return dbDownResponse(error);
+  }
   if (!user?.passwordHash || !verifyPassword(password, user.passwordHash)) {
     return NextResponse.json({ error: 'Имэйл/дугаар эсвэл нууц үг буруу.' }, { status: 401 });
   }

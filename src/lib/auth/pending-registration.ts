@@ -1,9 +1,9 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import { cookies } from 'next/headers';
+import { OTP_TTL_MS, PENDING_REGISTRATION_TTL_SECONDS } from '@/lib/auth/otp';
 
 const COOKIE = 'estel_pending_registration';
 const SECRET = process.env.AUTH_SECRET || 'estel-dev-secret';
-const TTL_SECONDS = 5 * 60;
 
 export type PendingRegistration = {
   id: string;
@@ -18,6 +18,7 @@ export type PendingRegistration = {
 type PendingToken = PendingRegistration & {
   codeDigest: string;
   exp: number;
+  codeExp: number;
 };
 
 function hmac(value: string) {
@@ -48,32 +49,35 @@ function decode(token?: string): PendingToken | null {
 }
 
 export async function setPendingRegistration(registration: PendingRegistration, code: string) {
+  const now = Date.now();
   const payload: PendingToken = {
     ...registration,
     codeDigest: hmac(`${registration.email}:${code}`),
-    exp: Date.now() + TTL_SECONDS * 1000,
+    exp: now + PENDING_REGISTRATION_TTL_SECONDS * 1000,
+    codeExp: now + OTP_TTL_MS,
   };
   (await cookies()).set(COOKIE, encode(payload), {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: TTL_SECONDS,
+    maxAge: PENDING_REGISTRATION_TTL_SECONDS,
   });
 }
 
 export async function readPendingRegistration(email: string) {
   const payload = decode((await cookies()).get(COOKIE)?.value);
   if (!payload || payload.email !== email.trim().toLowerCase()) return null;
-  const { codeDigest: _codeDigest, exp: _exp, ...registration } = payload;
+  const { codeDigest: _codeDigest, exp: _exp, codeExp: _codeExp, ...registration } = payload;
   return registration;
 }
 
 export async function verifyPendingRegistration(email: string, code: string) {
   const payload = decode((await cookies()).get(COOKIE)?.value);
   if (!payload || payload.email !== email.trim().toLowerCase()) return null;
+  if ((payload.codeExp || payload.exp) <= Date.now()) return null;
   if (!equal(payload.codeDigest, hmac(`${payload.email}:${code}`))) return null;
-  const { codeDigest: _codeDigest, exp: _exp, ...registration } = payload;
+  const { codeDigest: _codeDigest, exp: _exp, codeExp: _codeExp, ...registration } = payload;
   return registration;
 }
 

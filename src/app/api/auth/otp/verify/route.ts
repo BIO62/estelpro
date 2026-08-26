@@ -47,7 +47,7 @@ export async function POST(request: Request) {
   const pending = await verifyPendingRegistration(email, code);
   if (!pending) {
     return NextResponse.json(
-      { error: 'OTP буруу эсвэл 5 минутын хугацаа дууссан.' },
+      { error: 'OTP буруу эсвэл 1 минутын хугацаа дууссан. Дахин илгээнэ үү.' },
       { status: 400 },
     );
   }

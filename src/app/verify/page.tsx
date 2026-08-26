@@ -16,6 +16,7 @@ import AuthSplit from '@/components/auth/AuthSplit';
 import { useLocalizedValidation } from '@/lib/useLocalizedValidation';
 import { Button } from '@/components/ui/button';
 import { Field, FieldGroup } from '@/components/ui/field';
+import { OTP_TTL_SECONDS } from '@/lib/auth/otp';
 
 function VerifyForm() {
   const router = useRouter();
@@ -28,7 +29,7 @@ function VerifyForm() {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [verified, setVerified] = useState(false);
-  const [seconds, setSeconds] = useState(300);
+  const [seconds, setSeconds] = useState(OTP_TTL_SECONDS);
   const [shakeKey, setShakeKey] = useState(0);
   const inputs = useRef<Array<HTMLInputElement | null>>([]);
   const code = digits.join('');
@@ -117,7 +118,7 @@ function VerifyForm() {
       return;
     }
     setDigits(['', '', '', '', '', '']);
-    setSeconds(300);
+    setSeconds(OTP_TTL_SECONDS);
     setNotice('Шинэ код амжилттай илгээгдлээ.');
     inputs.current[0]?.focus();
   }

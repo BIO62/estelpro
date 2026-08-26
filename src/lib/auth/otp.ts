@@ -1,0 +1,3 @@
+export const OTP_TTL_SECONDS = 60;
+export const OTP_TTL_MS = OTP_TTL_SECONDS * 1000;
+export const PENDING_REGISTRATION_TTL_SECONDS = 15 * 60;

@@ -1,4 +1,5 @@
 import { isSupabaseConfigured, supabaseAdmin } from '@/lib/supabase/server';
+import { OTP_TTL_MS } from '@/lib/auth/otp';
 
 function normalizeSalonCode(code: string) {
   return code.trim().toUpperCase().replace(/\s+/g, '');
@@ -27,8 +28,6 @@ export type SalonRow = {
   district: string | null;
   address: string;
 };
-
-const OTP_TTL_MS = 5 * 60 * 1000;
 
 function fromRow(row: SalonRow & { id: string }): Salon {
   return {

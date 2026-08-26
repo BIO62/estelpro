@@ -4,6 +4,7 @@ import { findUserByEmail, findUserByPhone, findUserBySalonCode, saveOtp, saveUse
 import { hashPassword } from '@/lib/auth/password';
 import { maskEmail, sendOtpEmail } from '@/lib/auth/mail';
 import { findSalonByIdentifier } from '@/lib/salons/repo';
+import { OTP_TTL_MS } from '@/lib/auth/otp';
 import { supabaseAdmin } from '@/lib/supabase/server';
 
 export async function POST(request: Request) {
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
       }
 
       const code = String(randomInt(100000, 999999));
-      saveOtp({ email, code, purpose: 'reset_password', expiresAt: Date.now() + 10 * 60 * 1000 });
+      saveOtp({ email, code, purpose: 'reset_password', expiresAt: Date.now() + OTP_TTL_MS });
 
       // Attempt to send email (won't fail if RESEND is mocked or dev mode)
       try {

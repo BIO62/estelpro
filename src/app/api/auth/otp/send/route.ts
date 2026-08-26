@@ -20,11 +20,25 @@ export async function POST(request: Request) {
   // Salon channel: the code is the identity. SMS Pro is not live yet, so the
   // OTP goes to the salon's email while the phone is only shown as a hint.
   if (salonCode) {
-    const salon = await findSalonByCode(salonCode);
+    let salon;
+    try {
+      salon = await findSalonByCode(salonCode);
+    } catch (error) {
+      console.error('otp salon db', error instanceof Error ? error.message : error);
+      return NextResponse.json({ error: 'Өгөгдлийн санд холбогдож чадсангүй.' }, { status: 503 });
+    }
     if (!salon) return NextResponse.json({ error: 'Салоны код олдсонгүй.' }, { status: 404 });
     const code = String(randomInt(100000, 999999));
     await saveSalonOtp(salon, code, 'email');
-    await sendOtpEmail(salon.email, code);
+    try {
+      await sendOtpEmail(salon.email, code);
+    } catch (error) {
+      console.error('otp email', error instanceof Error ? error.message : error);
+      return NextResponse.json(
+        { error: 'OTP илгээх удааширлаа эсвэл имэйл сервер ажиллахгүй байна.' },
+        { status: 502 },
+      );
+    }
     return NextResponse.json({
       ok: true,
       emailHint: maskEmail(salon.email),
@@ -43,7 +57,15 @@ export async function POST(request: Request) {
     );
   }
   const code = String(randomInt(100000, 1000000));
-  await sendOtpEmail(email, code);
+  try {
+    await sendOtpEmail(email, code);
+  } catch (error) {
+    console.error('otp email', error instanceof Error ? error.message : error);
+    return NextResponse.json(
+      { error: 'OTP илгээх удааширлаа эсвэл имэйл сервер ажиллахгүй байна.' },
+      { status: 502 },
+    );
+  }
   await setPendingRegistration(pending, code);
   return NextResponse.json({ ok: true, emailHint: maskEmail(email), channel: 'email' });
 }

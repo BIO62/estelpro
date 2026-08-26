@@ -14,11 +14,12 @@ export async function sendOtpEmail(to: string, code: string) {
       Authorization: `Bearer ${key}`,
       'Content-Type': 'application/json',
     },
+    signal: AbortSignal.timeout(10000),
     body: JSON.stringify({
       from,
       to,
       subject: 'ESTEL нэвтрэх код',
-      text: `Таны OTP код: ${code}\n5 минутын дотор оруулна уу.`,
+      text: `Таны OTP код: ${code}\n1 минутын дотор оруулна уу.`,
     }),
   });
   if (!res.ok) {
