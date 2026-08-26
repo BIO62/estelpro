@@ -8,6 +8,7 @@ import AuthSplit from '@/components/auth/AuthSplit';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/auth/PasswordInput';
 
 export default function NewPasswordPage() {
   const router = useRouter();
@@ -94,9 +95,8 @@ export default function NewPasswordPage() {
             <FieldLabel htmlFor="new-pass" className="text-neutral-700 font-medium text-xs">
               Шинэ нууц үг
             </FieldLabel>
-            <Input
+            <PasswordInput
               id="new-pass"
-              type="password"
               required
               minLength={6}
               className="bg-white/90 text-neutral-900 border-neutral-300/80 rounded-xl placeholder:text-neutral-400 focus:bg-white focus:border-neutral-900"
@@ -113,9 +113,8 @@ export default function NewPasswordPage() {
             <FieldLabel htmlFor="confirm-pass" className="text-neutral-700 font-medium text-xs">
               Нууц үг давтах
             </FieldLabel>
-            <Input
+            <PasswordInput
               id="confirm-pass"
-              type="password"
               required
               minLength={6}
               className="bg-white/90 text-neutral-900 border-neutral-300/80 rounded-xl placeholder:text-neutral-400 focus:bg-white focus:border-neutral-900"

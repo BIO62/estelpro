@@ -8,6 +8,7 @@ import { useLocalizedValidation } from '@/lib/useLocalizedValidation';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/auth/PasswordInput';
 
 type FieldName = 'lastName' | 'name' | 'phone' | 'email' | 'password' | 'confirm';
 type Errors = Partial<Record<FieldName | 'form', string>>;
@@ -156,9 +157,8 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'form'>
         <div className="grid grid-cols-2 gap-3">
           <Field data-invalid={errors.password ? true : undefined}>
             <FieldLabel htmlFor="password" className="text-neutral-700 font-medium text-xs">Нууц үг</FieldLabel>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               required
               minLength={6}
               placeholder="••••••••"
@@ -174,9 +174,8 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'form'>
           </Field>
           <Field data-invalid={errors.confirm ? true : undefined}>
             <FieldLabel htmlFor="confirm-password" className="text-neutral-700 font-medium text-xs">Давтах</FieldLabel>
-            <Input
+            <PasswordInput
               id="confirm-password"
-              type="password"
               required
               minLength={6}
               placeholder="••••••••"
@@ -197,7 +196,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<'form'>
           <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#2196F3] hover:bg-[#0D47A1] text-white py-3 rounded-xl font-semibold shadow-md transition-all duration-300"
+            className="w-full"
           >
             {loading ? 'Бүртгэл үүсгэж байна...' : 'Бүртгүүлэх'}
           </Button>
