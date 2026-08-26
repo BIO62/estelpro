@@ -45,7 +45,10 @@ export async function listProducts(opts?: {
         .range(offset, offset + limit - 1);
 
       if (q) {
-        query = query.or(`name.ilike.%${q}%,sku.ilike.%${q}%,code.ilike.%${q}%`);
+        const cleanQ = q.replace(/[,()]/g, ' ').trim();
+        if (cleanQ) {
+          query = query.or(`name.ilike.%${cleanQ}%,sku.ilike.%${cleanQ}%,code.ilike.%${cleanQ}%`);
+        }
       }
       if (opts?.taxon && opts.taxon !== 'ALL') {
         query = query.or(`taxon.eq.${opts.taxon},taxons.cs.["${opts.taxon}"]`);

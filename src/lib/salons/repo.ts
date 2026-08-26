@@ -1,5 +1,12 @@
 import { isSupabaseConfigured, supabaseAdmin } from '@/lib/supabase/server';
 import { OTP_TTL_MS } from '@/lib/auth/otp';
+import { hashPassword } from '@/lib/auth/password';
+import {
+  salonDefaultPassword,
+  salonDiscountPercent,
+  salonDiscountTier,
+  type SalonDiscountTierId,
+} from '@/lib/auth/salon-discount';
 
 function normalizeSalonCode(code: string) {
   return code.trim().toUpperCase().replace(/\s+/g, '');
@@ -15,6 +22,9 @@ export type Salon = {
   city: string;
   district: string | null;
   address: string;
+  discountTier: SalonDiscountTierId;
+  discountPercent: number;
+  passwordHash: string | null;
 };
 
 export type SalonRow = {
@@ -27,9 +37,15 @@ export type SalonRow = {
   city: string;
   district: string | null;
   address: string;
+  discount_tier?: string | null;
+  discount_percent?: number | null;
+  password_hash?: string | null;
 };
 
 function fromRow(row: SalonRow & { id: string }): Salon {
+  const VALID = [20, 15, 10, 5, 0];
+  const tier = (salonDiscountTier(row.discount_tier)?.id || 'et') as SalonDiscountTierId;
+  const fromDb = Number(row.discount_percent);
   return {
     id: row.id,
     salonCode: row.salon_code,
@@ -40,6 +56,9 @@ function fromRow(row: SalonRow & { id: string }): Salon {
     city: row.city,
     district: row.district,
     address: row.address,
+    discountTier: tier,
+    discountPercent: VALID.includes(fromDb) ? fromDb : salonDiscountPercent(tier),
+    passwordHash: row.password_hash || null,
   };
 }
 
@@ -110,16 +129,40 @@ export async function findSalonByIdentifier(identifier: string): Promise<Salon |
   return null;
 }
 
-export async function listSalons({ limit = 50, offset = 0, search = '' } = {}) {
+export async function listSalons({
+  limit = 50,
+  offset = 0,
+  search = '',
+  discountTier = '',
+  discountPercent = '',
+  sort = 'code',
+} = {}) {
   const db = supabaseAdmin();
   if (!db) return { salons: [] as Salon[], total: 0 };
-  let query = db.from('salons').select('*', { count: 'exact' }).eq('is_active', true).order('salon_code');
+  let query = db.from('salons').select('*', { count: 'exact' }).eq('is_active', true);
+  if (sort === 'discount') {
+    query = query.order('discount_percent', { ascending: false }).order('salon_code');
+  } else {
+    query = query.order('salon_code');
+  }
+  if (discountTier.trim()) query = query.eq('discount_tier', discountTier.trim());
+  if (discountPercent !== '') {
+    query = query.eq('discount_percent', Number(discountPercent));
+  }
   if (search.trim()) {
     const term = `%${search.trim()}%`;
     query = query.or(`salon_code.ilike.${term},salon_name.ilike.${term},phone.ilike.${term},city.ilike.${term}`);
   }
   const { data, count, error } = await query.range(offset, offset + limit - 1);
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (/discount_/i.test(error.message) && sort === 'discount') {
+      return listSalons({ limit, offset, search, discountTier, discountPercent, sort: 'code' });
+    }
+    if (/discount_/i.test(error.message) && (discountTier || discountPercent !== '')) {
+      return listSalons({ limit, offset, search, discountTier: '', discountPercent: '', sort });
+    }
+    throw new Error(error.message);
+  }
   return { salons: (data || []).map((row) => fromRow(row as SalonRow & { id: string })), total: count || 0 };
 }
 
@@ -196,6 +239,8 @@ export async function updateSalon(
     city: string;
     district: string | null;
     address: string;
+    discountTier?: string;
+    passwordHash?: string | null;
   }>,
 ) {
   const db = supabaseAdmin();
@@ -208,6 +253,13 @@ export async function updateSalon(
   if (patch.city !== undefined) row.city = patch.city;
   if (patch.district !== undefined) row.district = patch.district;
   if (patch.address !== undefined) row.address = patch.address;
+  if (patch.discountTier !== undefined) {
+    const tier = salonDiscountTier(patch.discountTier);
+    if (!tier) throw new Error('Хөнгөлөлтийн түвшин буруу.');
+    row.discount_tier = tier.id;
+    row.discount_percent = tier.percent;
+  }
+  if (patch.passwordHash !== undefined) row.password_hash = patch.passwordHash;
   const { data, error } = await db.from('salons').update(row).eq('id', id).select('*').single();
   if (error) throw new Error(error.message);
   return fromRow(data as SalonRow & { id: string });
@@ -222,22 +274,35 @@ export async function createSalon(input: {
   city?: string;
   district?: string;
   address?: string;
+  discountTier?: string;
 }) {
   const db = supabaseAdmin();
   if (!db) throw new Error('Supabase тохируулаагүй байна.');
   const code = normalizeSalonCode(input.salonCode);
-  const row = {
+  const tier = salonDiscountTier(input.discountTier) || salonDiscountTier('et')!;
+  const phone = (input.phone || '').trim() || '00000000';
+  const defaultPass = salonDefaultPassword(phone);
+  const base = {
     salon_code: code,
     salon_name: input.salonName.trim(),
     contact_name: input.contactName.trim(),
     email: input.email.trim().toLowerCase(),
-    phone: (input.phone || '').trim() || '00000000',
+    phone,
     city: (input.city || 'Улаанбаатар').trim(),
     district: input.district?.trim() || null,
     address: (input.address || '').trim() || '—',
     is_active: true,
+    discount_tier: tier.id,
+    discount_percent: tier.percent,
   };
-  const { data, error } = await db.from('salons').insert(row).select('*').single();
+  let { data, error } = await db
+    .from('salons')
+    .insert({ ...base, password_hash: hashPassword(defaultPass) })
+    .select('*')
+    .single();
+  if (error && /password_hash/i.test(error.message)) {
+    ({ data, error } = await db.from('salons').insert(base).select('*').single());
+  }
   if (error) throw new Error(error.message);
   return fromRow(data as SalonRow & { id: string });
 }

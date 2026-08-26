@@ -2,14 +2,74 @@ import { NextResponse } from 'next/server';
 
 import { writeAudit } from '@/lib/audit/log';
 import { getSessionUser } from '@/lib/auth/session';
-import { updateSalon } from '@/lib/salons/repo';
-import { updateAppUser } from '@/lib/users/repo';
+import { listSalons, updateSalon } from '@/lib/salons/repo';
+import { listAppUsers, updateAppUser } from '@/lib/users/repo';
 import { isStaffRole } from '@/lib/auth/roles';
 
 export const dynamic = 'force-dynamic';
 
 function staffOnly(session: Awaited<ReturnType<typeof getSessionUser>>) {
   return session && isStaffRole(session.role);
+}
+
+export async function GET(req: Request) {
+  const session = await getSessionUser();
+  if (!staffOnly(session)) {
+    return NextResponse.json({ error: 'Хандах эрхгүй.' }, { status: 403 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const q = (searchParams.get('q') || '').trim();
+
+  try {
+    const [salonsRes, usersRes] = await Promise.all([
+      listSalons({ search: q, limit: q ? 25 : 12 }),
+      listAppUsers({ q, limit: q ? 25 : 12, kind: 'consumer' }),
+    ]);
+
+    const salons = (salonsRes.salons || []).map((s) => ({
+      id: `salon-${s.id}`,
+      rawId: s.id,
+      type: 'salon' as const,
+      code: s.salonCode,
+      name: s.salonName,
+      contactName: s.contactName,
+      salonName: s.salonName,
+      company: s.salonName,
+      phone: s.phone || '',
+      email: s.email || '',
+      city: s.city || '',
+      district: s.district || '',
+      address: s.address || '',
+      discountPercent: s.discountPercent ?? 15,
+      discountTier: s.discountTier,
+    }));
+
+    const consumers = (usersRes.items || []).map((u) => ({
+      id: `user-${u.id}`,
+      rawId: u.id,
+      type: 'consumer' as const,
+      code: '',
+      name: `${u.lastName ? u.lastName + ' ' : ''}${u.name}`.trim(),
+      firstname: u.name,
+      lastname: u.lastName || '',
+      company: '',
+      phone: u.phone || '',
+      email: u.email || '',
+      city: u.city || '',
+      district: u.district || '',
+      address: u.address || '',
+      discountPercent: 0,
+    }));
+
+    return NextResponse.json({
+      customers: [...salons, ...consumers],
+      total: (salonsRes.total || 0) + (usersRes.total || 0),
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Алдаа';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function PATCH(req: Request) {
@@ -31,6 +91,7 @@ export async function PATCH(req: Request) {
     district?: string | null;
     address?: string | null;
     notes?: string | null;
+    discountTier?: string;
   };
 
   if (!body.id || !body.type) {
@@ -47,6 +108,7 @@ export async function PATCH(req: Request) {
         city: body.city || undefined,
         district: body.district,
         address: body.address || undefined,
+        discountTier: body.discountTier,
       });
       await writeAudit({
         actorId: session!.id,

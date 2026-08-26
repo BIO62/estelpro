@@ -116,6 +116,16 @@ export default function Header() {
                     <div className="overflow-hidden">
                       <strong className="d-block fs-14 text-truncate">{user.name || 'Хэрэглэгч'}</strong>
                       <span className="d-block fs-12 fc-secondary text-truncate">{user.email}</span>
+                      {isSalon && user.discountPercent ? (
+                        <span className="d-block fs-12 fw-semibold text-truncate" style={{ color: '#1170b7' }}>
+                          {user.discountLabel || `${user.discountPercent}% хөнгөлөлт`}
+                        </span>
+                      ) : null}
+                      {isSalon && user.discountPercent === 0 ? (
+                        <span className="d-block fs-12 fw-semibold text-truncate" style={{ color: '#1170b7' }}>
+                          0% хөнгөлөлт
+                        </span>
+                      ) : null}
                     </div>
                   </div>
 
@@ -126,6 +136,15 @@ export default function Header() {
                   >
                     {accountLabel}
                   </Link>
+                  {isSalon ? (
+                    <Link
+                      href="/dresser/account"
+                      className="d-block rounded-3 px-3 py-2 text-decoration-none fc-dark fs-13"
+                      onClick={() => setAccountOpen(false)}
+                    >
+                      Нууц үг солих
+                    </Link>
+                  ) : null}
                   {isConsumer ? (
                     <>
                       <Link

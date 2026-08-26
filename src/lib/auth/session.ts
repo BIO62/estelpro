@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { DRESSER_COOKIE } from '@/lib/catalog-audience';
 import { findAppUserByEmail } from '@/lib/users/repo';
 import { resolveStaffRole } from './roles';
+import { salonDiscountTier } from './salon-discount';
 import type { PublicUser, UserRole } from './types';
 
 const COOKIE = 'estel_auth';
@@ -64,6 +65,7 @@ export async function getSessionUser(): Promise<PublicUser | null> {
     const { findSalonByEmail } = await import('@/lib/salons/repo');
     const salon = await findSalonByEmail(payload.email);
     if (!salon) return null;
+    const tier = salonDiscountTier(salon.discountTier);
     return {
       id: salon.id,
       email: salon.email,
@@ -76,6 +78,9 @@ export async function getSessionUser(): Promise<PublicUser | null> {
       district: salon.district || undefined,
       kind: 'salon',
       role: 'salon',
+      discountPercent: salon.discountPercent,
+      discountTier: salon.discountTier,
+      discountLabel: tier?.label,
       verified: true,
       createdAt: new Date(0).toISOString(),
     };

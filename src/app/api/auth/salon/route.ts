@@ -15,9 +15,12 @@ export async function GET(request: Request) {
   const page = Math.max(1, Number(searchParams.get('page') || '1'));
   const limit = Math.min(100, Number(searchParams.get('limit') || '50'));
   const offset = (page - 1) * limit;
+  const discountTier = searchParams.get('discountTier') || '';
+  const discountPercent = searchParams.get('discountPercent') || '';
+  const sort = searchParams.get('sort') || 'code';
 
   try {
-    const { salons, total } = await listSalons({ limit, offset, search });
+    const { salons, total } = await listSalons({ limit, offset, search, discountTier, discountPercent, sort });
     return NextResponse.json({ salons, users: salons, total, page, limit });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Алдаа';
@@ -40,6 +43,7 @@ export async function POST(request: Request) {
     city?: string;
     district?: string;
     address?: string;
+    discountTier?: string;
   };
 
   const salonCode = body.salonCode?.trim() || '';
@@ -62,6 +66,7 @@ export async function POST(request: Request) {
       city: body.city,
       district: body.district,
       address: body.address,
+      discountTier: body.discountTier,
     });
     await writeAudit({
       actorId: me.id,

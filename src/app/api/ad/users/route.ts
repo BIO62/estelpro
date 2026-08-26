@@ -3,13 +3,16 @@ import { NextResponse } from 'next/server';
 import { writeAudit } from '@/lib/audit/log';
 import { getSessionUser } from '@/lib/auth/session';
 import {
+  createAppUser,
   deleteAppUser,
+  findAppUserByEmail,
   findAppUserById,
   listAppUsers,
   updateAppUser,
   type AppUserStatus,
 } from '@/lib/users/repo';
 import { canDeleteUsers, isStaffRole } from '@/lib/auth/roles';
+import { hashPassword } from '@/lib/auth/password';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,6 +52,55 @@ export async function GET(req: Request) {
       { status: 500 },
     );
   }
+}
+
+export async function POST(req: Request) {
+  const session = await getSessionUser();
+  if (!session || !isStaffRole(session.role)) {
+    return NextResponse.json({ error: 'Хандах эрхгүй.' }, { status: 403 });
+  }
+
+  const body = (await req.json()) as {
+    email?: string;
+    name?: string;
+    lastName?: string;
+    phone?: string;
+    password?: string;
+  };
+  const email = body.email?.trim().toLowerCase() || '';
+  const name = body.name?.trim() || '';
+  const password = body.password?.trim() || `Estel${Math.floor(1000 + Math.random() * 9000)}`;
+  if (!email || !name) {
+    return NextResponse.json({ error: 'Имэйл болон нэр шаардлагатай.' }, { status: 400 });
+  }
+  if (await findAppUserByEmail(email)) {
+    return NextResponse.json({ error: 'Энэ имэйл бүртгэлтэй.' }, { status: 409 });
+  }
+
+  const user = await createAppUser({
+    email,
+    name,
+    lastName: body.lastName,
+    phone: body.phone,
+    passwordHash: hashPassword(password),
+    kind: 'consumer',
+    role: 'consumer',
+    status: 'active',
+    emailVerified: true,
+  });
+  if (!user) return NextResponse.json({ error: 'Бүртгэлийн сан холбогдсонгүй.' }, { status: 503 });
+
+  await writeAudit({
+    actorId: session.id,
+    actorEmail: session.email,
+    actorRole: session.role,
+    action: 'user_create',
+    entityType: 'app_user',
+    entityId: user.id,
+    summary: `${session.name || session.email} хэрэглэгч нэмсэн: ${user.email}`,
+  });
+
+  return NextResponse.json({ ok: true, user, password });
 }
 
 export async function PATCH(req: Request) {

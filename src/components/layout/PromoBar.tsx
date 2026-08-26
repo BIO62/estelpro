@@ -54,7 +54,9 @@ export default function PromoBar() {
               className={`ticker-text fs-12 d-block lh-sm my-1 ms-sm-5 ps-sm-5${fading ? ' fading' : ''}`}
               id="promo-ticker"
             >
-              {PROMO_MESSAGES[index]}
+              {isSalon && typeof user?.discountPercent === 'number'
+                ? `Салоны хөнгөлөлт ${user.discountPercent}%`
+                : PROMO_MESSAGES[index]}
             </span>
           </div>
 

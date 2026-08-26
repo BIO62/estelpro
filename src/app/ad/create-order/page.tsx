@@ -3,21 +3,38 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, X } from 'lucide-react';
+import { ArrowLeft, Building2, Check, Loader2, Plus, Sparkles, User, X } from 'lucide-react';
 
 import {
   CREATE_ORDER_CURRENCIES,
   CREATE_ORDER_PAYMENTS,
-  searchMembers,
   type CatalogProduct,
-  type DemoMember,
 } from '@/lib/ad/create-order';
 import {
   AIMAGS,
   BAGS_BY_DISTRICT,
   DISTRICTS_BY_AIMAG,
-  getDeliveryPrice,
 } from '@/lib/ad/locations';
+
+export type CustomerResult = {
+  id: string;
+  rawId: string;
+  type: 'salon' | 'consumer';
+  code?: string;
+  name: string;
+  firstname?: string;
+  lastname?: string;
+  contactName?: string;
+  salonName?: string;
+  company?: string;
+  phone: string;
+  email: string;
+  city?: string;
+  district?: string;
+  address?: string;
+  discountPercent?: number;
+  discountTier?: string;
+};
 
 type LineItem = {
   key: number;
@@ -56,11 +73,20 @@ function emptyRow(key: number): LineItem {
   };
 }
 
+const FREE_DELIVERY_THRESHOLD = 100000;
+const STANDARD_DELIVERY_FEE = 7000;
+
 export default function AdCreateOrderPage() {
   const router = useRouter();
+
+  // Customer state
   const [memberQuery, setMemberQuery] = useState('');
   const [memberOpen, setMemberOpen] = useState(false);
-  const [member, setMember] = useState<DemoMember | null>(null);
+  const [customerHits, setCustomerHits] = useState<CustomerResult[]>([]);
+  const [customerLoading, setCustomerLoading] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerResult | null>(null);
+
+  // Customer form fields
   const [isCompany, setIsCompany] = useState(false);
   const [companyRd, setCompanyRd] = useState('');
   const [phone, setPhone] = useState('');
@@ -74,16 +100,27 @@ export default function AdCreateOrderPage() {
   const [aimag, setAimag] = useState('Улаанбаатар хот');
   const [district, setDistrict] = useState('');
   const [bag, setBag] = useState('');
-  const [deliveryPrice, setDeliveryPrice] = useState('');
+
+  // Delivery price & automatic 100,000₮ rule
+  const [deliveryPrice, setDeliveryPrice] = useState('7000');
+  const [deliveryPriceManuallyEdited, setDeliveryPriceManuallyEdited] = useState(false);
+
+  // Rows and product suggestion
   const [rows, setRows] = useState<LineItem[]>([]);
   const [suggestKey, setSuggestKey] = useState<number | null>(null);
   const [suggestQ, setSuggestQ] = useState('');
+  const [productHits, setProductHits] = useState<CatalogProduct[]>([]);
+  const [productLoading, setProductLoading] = useState(false);
+
+  // Order payment & misc
   const [paymentId, setPaymentId] = useState('1');
   const [currencyId, setCurrencyId] = useState('1');
   const [sendEmail, setSendEmail] = useState(false);
   const [sendSms, setSendSms] = useState(false);
   const [note, setNote] = useState('');
   const [flash, setFlash] = useState('');
+
+  // Custom modal for new product
   const [newProductOpen, setNewProductOpen] = useState(false);
   const [newProductKey, setNewProductKey] = useState<number | null>(null);
   const [newProduct, setNewProduct] = useState({
@@ -93,33 +130,66 @@ export default function AdCreateOrderPage() {
     sku: '',
     tax: '1',
   });
-  const [productHits, setProductHits] = useState<CatalogProduct[]>([]);
+
   const nextKey = useRef(1);
   const memberBoxRef = useRef<HTMLDivElement>(null);
 
   const districts = DISTRICTS_BY_AIMAG[aimag] ?? [];
   const bags = BAGS_BY_DISTRICT[district] ?? [];
-  const memberHits = searchMembers(memberQuery);
 
+  // 1. Live customer search by code, name, phone, or salon name
+  useEffect(() => {
+    if (!memberOpen) return;
+    const ctrl = new AbortController();
+    setCustomerLoading(true);
+    const t = window.setTimeout(() => {
+      const q = memberQuery.trim();
+      fetch(`/api/ad/customers?q=${encodeURIComponent(q)}`, { signal: ctrl.signal })
+        .then((r) => r.json())
+        .then((data: { customers?: CustomerResult[] }) => {
+          setCustomerHits(data.customers ?? []);
+          setCustomerLoading(false);
+        })
+        .catch(() => {
+          setCustomerHits([]);
+          setCustomerLoading(false);
+        });
+    }, 150);
+    return () => {
+      ctrl.abort();
+      window.clearTimeout(t);
+    };
+  }, [memberOpen, memberQuery]);
+
+  // 2. Live product search by code, SKU, or name
   useEffect(() => {
     if (suggestKey == null) {
       setProductHits([]);
+      setProductLoading(false);
       return;
     }
     const ctrl = new AbortController();
+    setProductLoading(true);
     const t = window.setTimeout(() => {
       const q = suggestQ.trim();
       fetch(`/api/ad/catalog?q=${encodeURIComponent(q)}`, { signal: ctrl.signal })
         .then((r) => r.json())
-        .then((data: { results?: CatalogProduct[] }) => setProductHits(data.results ?? []))
-        .catch(() => setProductHits([]));
-    }, 200);
+        .then((data: { results?: CatalogProduct[] }) => {
+          setProductHits(data.results ?? []);
+          setProductLoading(false);
+        })
+        .catch(() => {
+          setProductHits([]);
+          setProductLoading(false);
+        });
+    }, 150);
     return () => {
       ctrl.abort();
       window.clearTimeout(t);
     };
   }, [suggestKey, suggestQ]);
 
+  // 3. Totals calculation
   const totals = useMemo(() => {
     let price = 0;
     let nuat = 0;
@@ -133,9 +203,24 @@ export default function AdCreateOrderPage() {
       qty += row.qty;
       if (row.taxed) nuat += total / 11;
     }
-    return { price, nuat, discount, qty, withNuat: price };
+    return { price, nuat, discount, qty };
   }, [rows]);
 
+  // 4. Automatic delivery fee rule (Free if >= 100,000₮, 7,000₮ if < 100,000₮)
+  useEffect(() => {
+    if (!deliveryPriceManuallyEdited) {
+      if (totals.price >= FREE_DELIVERY_THRESHOLD) {
+        setDeliveryPrice('0');
+      } else {
+        setDeliveryPrice(String(STANDARD_DELIVERY_FEE));
+      }
+    }
+  }, [totals.price, deliveryPriceManuallyEdited]);
+
+  const deliveryFeeNum = Number(String(deliveryPrice).replace(/,/g, '')) || 0;
+  const grandTotal = totals.price + deliveryFeeNum;
+
+  // Close dropdown on outside click
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
       if (!memberBoxRef.current?.contains(e.target as Node)) setMemberOpen(false);
@@ -144,16 +229,32 @@ export default function AdCreateOrderPage() {
     return () => document.removeEventListener('mousedown', onDoc);
   }, []);
 
-  const pickMember = (m: DemoMember) => {
-    setMember(m);
-    setMemberQuery(`${m.lastname} ${m.firstname}`.trim() || m.company || m.phone);
+  const pickMember = (c: CustomerResult) => {
+    setSelectedCustomer(c);
+    setMemberQuery(
+      c.type === 'salon'
+        ? `[${c.code}] ${c.salonName || c.name} (${c.contactName || c.phone})`
+        : `${c.lastname ? c.lastname + ' ' : ''}${c.name} (${c.phone})`,
+    );
     setMemberOpen(false);
-    setFirstname(m.firstname);
-    setLastname(m.lastname);
-    setCompany(m.company);
-    setPhone(m.phone);
-    setEmail(m.email);
-    setAddress(m.address_1);
+    setFirstname(c.firstname || c.contactName || c.name);
+    setLastname(c.lastname || '');
+    setCompany(c.company || c.salonName || '');
+    setPhone(c.phone || '');
+    setEmail(c.email || '');
+    setContractId(c.code || '');
+    if (c.address) setAddress(c.address);
+    if (c.city) setAimag(c.city.includes('Улаанбаатар') ? 'Улаанбаатар хот' : c.city);
+    if (c.district) setDistrict(c.district);
+    if (c.type === 'salon') {
+      setIsCompany(true);
+      // Auto-apply salon discount to existing product rows if any
+      if (c.discountPercent && c.discountPercent > 0) {
+        setRows((prev) =>
+          prev.map((r) => (r.sale === 0 ? { ...r, sale: c.discountPercent!, saleType: 'perc' } : r)),
+        );
+      }
+    }
   };
 
   const updateRow = (key: number, patch: Partial<LineItem>) => {
@@ -161,13 +262,16 @@ export default function AdCreateOrderPage() {
   };
 
   const pickProduct = (key: number, p: CatalogProduct) => {
+    const defaultSale = selectedCustomer?.discountPercent ?? 0;
     updateRow(key, {
       id: p.id,
-      sku: p.sku,
+      sku: p.sku || p.id,
       name: p.title,
       price: p.price,
       taxed: p.isTax,
       stock: p.stock,
+      sale: defaultSale > 0 ? defaultSale : 0,
+      saleType: 'perc',
     });
     setSuggestKey(null);
     setSuggestQ('');
@@ -175,11 +279,18 @@ export default function AdCreateOrderPage() {
 
   const addRow = () => {
     const key = nextKey.current++;
-    setRows((prev) => [...prev, emptyRow(key)]);
+    const defaultSale = selectedCustomer?.discountPercent ?? 0;
+    setRows((prev) => [
+      ...prev,
+      {
+        ...emptyRow(key),
+        sale: defaultSale > 0 ? defaultSale : 0,
+      },
+    ]);
   };
 
   const removeRow = (key: number) => {
-    if (!window.confirm('Устгахдаа итгэлтэй байна уу ?')) return;
+    if (!window.confirm('Устгахдаа итгэлтэй байна уу?')) return;
     setRows((prev) => prev.filter((r) => r.key !== key));
   };
 
@@ -219,35 +330,32 @@ export default function AdCreateOrderPage() {
     setAimag(v);
     setDistrict('');
     setBag('');
-    setDeliveryPrice('');
   };
 
   const onDistrictChange = (v: string) => {
     setDistrict(v);
     setBag('');
-    setDeliveryPrice('');
   };
 
   const onBagChange = (v: string) => {
     setBag(v);
-    setDeliveryPrice(String(getDeliveryPrice(district, v)));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!phone.trim()) {
-      setFlash('Утас заавал');
+      setFlash('Утасны дугаар заавал оруулна уу');
       return;
     }
     if (!address.trim()) {
-      setFlash('Хаяг заавал');
+      setFlash('Хүргэлтийн хаяг заавал оруулна уу');
       return;
     }
     if (rows.length === 0 || rows.every((r) => !r.name)) {
       setFlash('Бүтээгдэхүүн нэмнэ үү');
       return;
     }
-    setFlash('Захиалга хадгалагдлаа');
+    setFlash('Захиалга амжилттай хадгалагдлаа');
     window.setTimeout(() => router.push('/ad/orders'), 900);
   };
 
@@ -265,38 +373,78 @@ export default function AdCreateOrderPage() {
 
       <form onSubmit={handleSubmit}>
         <section className="ad-co-panel">
-          <div className="ad-co-panel__head">Хэрэглэгч сонгох</div>
+          <div className="ad-co-panel__head">Харилцагч сонгох & Мэдээлэл</div>
           <div className="ad-co-panel__body">
             <div className="ad-co-user-top">
               <div className="ad-co-field" ref={memberBoxRef}>
-                <label>Харилцагч сонгох</label>
+                <label className="flex items-center justify-between">
+                  <span>Харилцагч хайж сонгох (Код, нэр, дугаараар)</span>
+                  {customerLoading ? <Loader2 className="size-3.5 animate-spin text-blue-600" /> : null}
+                </label>
                 <div className="ad-co-suggest">
                   <input
                     className="ad-order-input"
                     value={memberQuery}
-                    placeholder="Харилцагч сонгох"
+                    placeholder="Код (20002..), салон, нэр эсвэл утсаар хайх..."
                     onFocus={() => setMemberOpen(true)}
                     onChange={(e) => {
                       setMemberQuery(e.target.value);
                       setMemberOpen(true);
-                      setMember(null);
+                      setSelectedCustomer(null);
                     }}
                   />
                   {memberOpen && (
-                    <ul className="ad-co-suggest__list">
-                      {memberQuery.trim().length < 3 ? (
-                        <li className="ad-co-suggest__hint">Хамгийн багадаа 3 үсэг шаардлагатай</li>
-                      ) : memberHits.length === 0 ? (
-                        <li className="ad-co-suggest__hint">Олдсонгүй</li>
+                    <ul className="ad-co-suggest__list shadow-xl rounded-b-lg border border-slate-200 divide-y divide-slate-100 max-h-72 overflow-y-auto">
+                      {customerLoading && customerHits.length === 0 ? (
+                        <li className="ad-co-suggest__hint flex items-center gap-2 py-3 px-4 text-slate-500">
+                          <Loader2 className="size-4 animate-spin text-blue-600" />
+                          Харилцагчдыг хайж байна...
+                        </li>
+                      ) : customerHits.length === 0 ? (
+                        <li className="ad-co-suggest__hint py-3 px-4 text-slate-500">
+                          {memberQuery.trim() ? 'Тохирох харилцагч олдсонгүй' : 'Код, нэр эсвэл утсаа бичиж хайна уу'}
+                        </li>
                       ) : (
-                        memberHits.map((m) => (
-                          <li key={m.id}>
-                            <button type="button" onClick={() => pickMember(m)}>
-                              <strong>
-                                {m.lastname} {m.firstname}
-                              </strong>
-                              {m.company ? ` · ${m.company}` : ''}
-                              <span>{m.phone}</span>
+                        customerHits.map((m) => (
+                          <li key={m.id} className="hover:bg-blue-50 transition-colors">
+                            <button
+                              type="button"
+                              onClick={() => pickMember(m)}
+                              className="w-full text-left p-3 flex items-start gap-2.5"
+                            >
+                              {m.type === 'salon' ? (
+                                <Building2 className="size-4 text-blue-600 mt-0.5 shrink-0" />
+                              ) : (
+                                <User className="size-4 text-slate-600 mt-0.5 shrink-0" />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {m.code ? (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-800">
+                                      {m.code}
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700">
+                                      Хувь хүн
+                                    </span>
+                                  )}
+                                  <strong className="text-sm text-slate-900 truncate">
+                                    {m.type === 'salon' ? m.salonName || m.name : m.name}
+                                  </strong>
+                                  {m.discountPercent ? (
+                                    <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800">
+                                      -{m.discountPercent}%
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-3">
+                                  <span>Утас: <strong className="text-slate-700">{m.phone || '—'}</strong></span>
+                                  {m.contactName && m.type === 'salon' ? (
+                                    <span>Хариуцагч: {m.contactName}</span>
+                                  ) : null}
+                                  {m.city ? <span>{m.city}</span> : null}
+                                </div>
+                              </div>
                             </button>
                           </li>
                         ))
@@ -323,12 +471,12 @@ export default function AdCreateOrderPage() {
                     checked={isCompany}
                     onChange={() => setIsCompany(true)}
                   />
-                  Байгууллага
+                  Байгууллага / Салон
                 </label>
                 {isCompany ? (
                   <input
                     className="ad-order-input"
-                    placeholder="Компанийн РД..."
+                    placeholder="Байгууллагын РД / ТТД..."
                     value={companyRd}
                     onChange={(e) => setCompanyRd(e.target.value)}
                   />
@@ -400,28 +548,39 @@ export default function AdCreateOrderPage() {
 
                 <div className="ad-co-grid-3">
                   <div className="ad-co-field">
-                    <label>
-                      Хүргэлтийн үнэ <span className="ad-co-req">(* заавал)</span>
+                    <label className="flex items-center justify-between">
+                      <span>
+                        Хүргэлтийн үнэ <span className="ad-co-req">(* заавал)</span>
+                      </span>
+                      {totals.price >= FREE_DELIVERY_THRESHOLD ? (
+                        <span className="text-[11px] font-bold text-emerald-600">Үнэгүй хүргэлт (100k+)</span>
+                      ) : (
+                        <span className="text-[11px] font-semibold text-amber-600">Автомат: 7,000₮</span>
+                      )}
                     </label>
                     <input
-                      className="ad-order-input"
+                      className="ad-order-input font-medium"
                       value={deliveryPrice}
-                      onChange={(e) => setDeliveryPrice(e.target.value)}
+                      onChange={(e) => {
+                        setDeliveryPrice(e.target.value);
+                        setDeliveryPriceManuallyEdited(true);
+                      }}
                     />
                   </div>
                   <div className="ad-co-field">
                     <label>
-                      Гэрээний дугаар <span className="ad-co-opt">(нэмэлт)</span>
+                      Салон / Гэрээний код <span className="ad-co-opt">(нэмэлт)</span>
                     </label>
                     <input
                       className="ad-order-input"
                       value={contractId}
                       onChange={(e) => setContractId(e.target.value)}
+                      placeholder="Жишээ: 20002"
                     />
                   </div>
                   <div className="ad-co-field">
                     <label>
-                      Байгууллагын нэр <span className="ad-co-opt">(нэмэлт)</span>
+                      Байгууллага / Салоны нэр <span className="ad-co-opt">(нэмэлт)</span>
                     </label>
                     <input className="ad-order-input" value={company} onChange={(e) => setCompany(e.target.value)} />
                   </div>
@@ -430,34 +589,36 @@ export default function AdCreateOrderPage() {
 
               <div className="ad-co-field">
                 <label>
-                  Хаяг <span className="ad-co-req">(* заавал)</span>
+                  Хүргэлтийн хаяг <span className="ad-co-req">(* заавал)</span>
                 </label>
                 <textarea
                   className="ad-order-textarea"
                   rows={4}
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Дэлгэрэнгүй хаяг, байр, орц, тоот..."
                   required
                 />
-                <label className="ad-co-check">
+                <label className="ad-co-check mt-1">
                   <input type="checkbox" checked={syncCrm} onChange={(e) => setSyncCrm(e.target.checked)} />
-                  CRM-д харилцагчийн мэдээллийг шинэчлэж хуулах
+                  CRM-д харилцагчийн мэдээллийг шинэчлэж хадгалах
                 </label>
               </div>
             </div>
           </div>
         </section>
 
+        {/* Product Items Table */}
         <section className="ad-co-panel">
           <div className="ad-co-panel__body">
             <div className="ad-inv-products-wrap">
               <table className="ad-inv-products ad-co-products">
                 <thead>
                   <tr>
-                    <th style={{ width: 300 }}>Тайлбар</th>
-                    <th style={{ width: 70 }}>Ширхэг</th>
-                    <th>Нэгж</th>
-                    <th style={{ width: 160 }}>Хямдрал</th>
+                    <th style={{ width: 340 }}>Бүтээгдэхүүн (Код эсвэл нэрээр)</th>
+                    <th style={{ width: 75 }}>Ширхэг</th>
+                    <th>Нэгж үнэ</th>
+                    <th style={{ width: 150 }}>Хөнгөлөлт</th>
                     <th>Нийт</th>
                     <th>(НӨАТ)</th>
                     <th className="text-center">−</th>
@@ -471,7 +632,7 @@ export default function AdCreateOrderPage() {
                           <input
                             className="ad-order-input"
                             value={row.name}
-                            placeholder="Нэр эсвэл sku кодоор хайх..."
+                            placeholder="Код (SKU), эсвэл бүтээгдэхүүний нэрээр хайх..."
                             onFocus={() => {
                               setSuggestKey(row.key);
                               setSuggestQ(row.name);
@@ -483,21 +644,54 @@ export default function AdCreateOrderPage() {
                             }}
                           />
                           {row.stock != null && row.id ? (
-                            <span className="ad-co-stock">нийт үлдэгдэл: {row.stock}</span>
+                            <span className="ad-co-stock font-medium text-slate-500">
+                              Код: <strong className="text-blue-700">{row.sku || row.id}</strong> · Үлдэгдэл: <strong className="text-emerald-700">{row.stock}</strong>
+                            </span>
                           ) : null}
                           {suggestKey === row.key ? (
-                            <ul className="ad-co-suggest__list ad-co-suggest__list--prod">
-                              {productHits.map((p) => (
-                                <li key={p.id}>
-                                  <button type="button" onClick={() => pickProduct(row.key, p)}>
-                                    {p.title}
-                                    <span>үнэ: {fmt(p.price)}</span>
-                                  </button>
+                            <ul className="ad-co-suggest__list ad-co-suggest__list--prod shadow-xl rounded-lg border border-slate-200 divide-y divide-slate-100 max-h-72 overflow-y-auto">
+                              {productLoading && productHits.length === 0 ? (
+                                <li className="ad-co-suggest__hint flex items-center gap-2 py-3 px-4 text-slate-500">
+                                  <Loader2 className="size-4 animate-spin text-blue-600" />
+                                  Бүтээгдэхүүн хайж байна...
                                 </li>
-                              ))}
+                              ) : productHits.length === 0 ? (
+                                <li className="ad-co-suggest__hint py-3 px-4 text-slate-500">
+                                  {suggestQ.trim() ? 'Бүтээгдэхүүн олдсонгүй' : 'Код эсвэл нэрээ бичиж хайна уу'}
+                                </li>
+                              ) : (
+                                productHits.map((p) => (
+                                  <li key={p.id} className="hover:bg-blue-50 transition-colors">
+                                    <button
+                                      type="button"
+                                      onClick={() => pickProduct(row.key, p)}
+                                      className="w-full text-left p-2.5 flex items-start justify-between gap-2"
+                                    >
+                                      <div>
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-800 border border-slate-200">
+                                            {p.sku || p.id}
+                                          </span>
+                                          <strong className="text-sm text-slate-900">{p.title}</strong>
+                                        </div>
+                                        <span className="text-xs text-slate-500 block mt-0.5">
+                                          Үлдэгдэл: <strong className="text-slate-700">{p.stock ?? 0}</strong>
+                                        </span>
+                                      </div>
+                                      <div className="text-right shrink-0">
+                                        <strong className="text-sm font-bold text-blue-600">{fmt(p.price)} ₮</strong>
+                                      </div>
+                                    </button>
+                                  </li>
+                                ))
+                              )}
                               <li>
-                                <button type="button" className="ad-co-suggest__add" onClick={() => openNewProduct(row.key)}>
-                                  <Plus className="size-3.5" /> Шинээр нэмэх
+                                <button
+                                  type="button"
+                                  className="ad-co-suggest__add py-2.5 px-3 w-full text-blue-600 font-semibold hover:bg-blue-50"
+                                  onClick={() => openNewProduct(row.key)}
+                                >
+                                  <Plus className="size-3.5" /> Шинэ бүтээгдэхүүн үүсгэж нэмэх
                                 </button>
                               </li>
                             </ul>
@@ -506,15 +700,17 @@ export default function AdCreateOrderPage() {
                       </td>
                       <td>
                         <input
-                          className="ad-order-input"
+                          type="number"
+                          min={1}
+                          className="ad-order-input text-center font-medium"
                           value={row.qty}
-                          onChange={(e) => updateRow(row.key, { qty: Number(e.target.value) || 0 })}
+                          onChange={(e) => updateRow(row.key, { qty: Math.max(1, Number(e.target.value) || 1) })}
                         />
                       </td>
                       <td>
                         <div className="ad-inv-input-addon">
                           <input
-                            className="ad-order-input"
+                            className="ad-order-input font-medium"
                             value={fmt(row.price)}
                             onChange={(e) =>
                               updateRow(row.key, {
@@ -528,7 +724,7 @@ export default function AdCreateOrderPage() {
                       <td>
                         <div className="ad-inv-input-addon">
                           <input
-                            className="ad-order-input"
+                            className="ad-order-input font-medium"
                             value={row.sale.toFixed(2)}
                             onChange={(e) =>
                               updateRow(row.key, {
@@ -547,7 +743,7 @@ export default function AdCreateOrderPage() {
                       </td>
                       <td>
                         <div className="ad-inv-input-addon">
-                          <input className="ad-order-input" readOnly value={fmt(lineTotal(row))} />
+                          <input className="ad-order-input font-bold text-slate-900" readOnly value={fmt(lineTotal(row))} />
                           <span>₮</span>
                         </div>
                       </td>
@@ -571,15 +767,34 @@ export default function AdCreateOrderPage() {
                   <tr>
                     <td colSpan={3}>
                       <button type="button" className="ad-inv-add-row" onClick={addRow}>
-                        + Бүтээгдэхүүн, ажил үйлчилгээ нэмэх
+                        + Бүтээгдэхүүн, үйлчилгээ нэмэх
                       </button>
                     </td>
-                    <td className="text-right font-bold">Нийт үнэ:</td>
-                    <td colSpan={3}>{fmt(totals.price)} ₮</td>
+                    <td className="text-right font-bold">Барааны нийт үнэ:</td>
+                    <td colSpan={3} className="font-semibold">{fmt(totals.price)} ₮</td>
                   </tr>
                   <tr>
                     <td colSpan={4} className="text-right font-bold">
-                      НӨАТ (10%)
+                      <div className="inline-flex items-center gap-1.5">
+                        <span>Хүргэлтийн төлбөр:</span>
+                        {deliveryFeeNum === 0 && totals.price >= FREE_DELIVERY_THRESHOLD ? (
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                            ✨ 100,000₮-с дээш үнэгүй
+                          </span>
+                        ) : totals.price > 0 && totals.price < FREE_DELIVERY_THRESHOLD ? (
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                            100k хүрээгүй (+7,000₮)
+                          </span>
+                        ) : null}
+                      </div>
+                    </td>
+                    <td colSpan={3} className={`font-semibold ${deliveryFeeNum === 0 ? 'text-emerald-700' : 'text-slate-900'}`}>
+                      {deliveryFeeNum === 0 ? '0.00 ₮ (Үнэгүй)' : `${fmt(deliveryFeeNum)} ₮`}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colSpan={4} className="text-right font-bold">
+                      НӨАТ (10%):
                     </td>
                     <td colSpan={3}>{fmt(totals.nuat)} ₮</td>
                   </tr>
@@ -593,13 +808,15 @@ export default function AdCreateOrderPage() {
                     <td colSpan={4} className="text-right font-bold">
                       Тоо ширхэг:
                     </td>
-                    <td colSpan={3}>{fmt(totals.qty)}</td>
+                    <td colSpan={3}>{totals.qty} ширхэг</td>
                   </tr>
-                  <tr>
-                    <td colSpan={4} className="text-right font-bold">
-                      Нийт дүн:
+                  <tr className="bg-blue-50/50">
+                    <td colSpan={4} className="text-right font-bold text-base text-slate-900">
+                      Төлөх нийт дүн:
                     </td>
-                    <td colSpan={3}>{fmt(totals.withNuat)} ₮</td>
+                    <td colSpan={3} className="font-extrabold text-base text-blue-700">
+                      {fmt(grandTotal)} ₮
+                    </td>
                   </tr>
                 </tfoot>
               </table>
@@ -616,8 +833,14 @@ export default function AdCreateOrderPage() {
                   Захиалгын SMS илгээх
                 </label>
                 <div className="ad-co-field" style={{ marginTop: '0.5rem' }}>
-                  <label>Нэмэлт мэдээлэл</label>
-                  <textarea className="ad-order-textarea" rows={4} value={note} onChange={(e) => setNote(e.target.value)} />
+                  <label>Нэмэлт тэмдэглэл</label>
+                  <textarea
+                    className="ad-order-textarea"
+                    rows={4}
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="Захиалгын нэмэлт тайлбар, санамж..."
+                  />
                 </div>
               </div>
               <div className="ad-co-pay-grid">
@@ -649,7 +872,7 @@ export default function AdCreateOrderPage() {
             </div>
 
             <button type="submit" className="ad-order-btn ad-order-btn--success ad-co-submit">
-              Хадгалах
+              Захиалга баталгаажуулж хадгалах
             </button>
           </div>
         </section>
@@ -706,7 +929,7 @@ export default function AdCreateOrderPage() {
                     />
                   </div>
                   <div className="ad-co-field">
-                    <label>SKU</label>
+                    <label>SKU / Код</label>
                     <input
                       className="ad-order-input"
                       required

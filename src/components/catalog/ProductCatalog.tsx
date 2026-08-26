@@ -12,6 +12,7 @@ import {
 } from '@/lib/storefront-products';
 import { isDresserTaxonCode } from '@/lib/catalog-audience';
 import { getMenuBrand, MENU_BRANDS } from '@/lib/brands';
+import { getSessionUser } from '@/lib/auth/session';
 
 const PAGE_SIZE = 24;
 
@@ -65,6 +66,8 @@ export default async function ProductCatalog({
   const brand = getMenuBrand(firstParam(sp.brand))?.slug;
   const sort = ((firstParam(sp.sort) as ProductSort) || (forceNew ? 'newest' : 'random')) as ProductSort;
   const page = Math.max(1, Number(firstParam(sp.page)) || 1);
+  const session = audience === 'dresser' ? await getSessionUser() : null;
+  const contractPercent = session?.role === 'salon' ? session.discountPercent || 0 : 0;
 
   const { items: allProducts } = await getStorefrontProducts({
     taxon,
@@ -86,7 +89,7 @@ export default async function ProductCatalog({
   const safePage = Math.min(page, totalPages);
   const products = sorted
     .slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
-    .map((item) => toStorefrontProduct(item, { forceNew }));
+    .map((item) => toStorefrontProduct(item, { forceNew, contractPercent }));
   const countLabel = knownTotal;
   const title = currentBrand?.name || currentTaxon?.name || defaultTitle;
   const sortOptions: { value: ProductSort; label: string }[] = forceNew

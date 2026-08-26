@@ -55,14 +55,7 @@ export const primaryNav: NavItem[] = [
       { title: 'Үлдэгдэл хяналт', url: '/ad/products?section=stock' },
     ],
   },
-  {
-    title: 'Хэрэглэгчид',
-    icon: Users,
-    items: [
-      { title: 'Бүх харилцагч', url: '/ad/customers' },
-      { title: 'Салоны код өгөх', url: '/ad/salons', roles: ['owner', 'director'] },
-    ],
-  },
+  { title: 'Хэрэглэгчид', url: '/ad/customers', icon: Users },
   { title: 'Ажилчид', url: '/ad/staff', icon: UserCog, roles: ['owner', 'director'] },
   { title: 'Түүх', url: '/ad/activity', icon: ClipboardList },
 ];

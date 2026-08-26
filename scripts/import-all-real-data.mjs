@@ -57,6 +57,22 @@ async function importSalons() {
     const categoryCode = String(row[5] || '001').trim();
     const categoryName = String(row[7] || 'САЛОН').trim();
     const phone = String(row[8] || '').replace(/[^0-9+]/g, '').trim();
+    const nameUpper = `${name} ${categoryName}`;
+    let discount_tier = 'et';
+    let discount_percent = 15;
+    if (/(^|[\s./])ES(\s|$)/i.test(nameUpper) || categoryCode === '003') {
+      discount_tier = 'es';
+      discount_percent = 10;
+    } else if (/(^|[\s./])EP(\s|$)/i.test(nameUpper)) {
+      discount_tier = 'ep';
+      discount_percent = 15;
+    } else if (/(^|[\s./])ET(\s|$)/i.test(nameUpper) || categoryCode === '002') {
+      discount_tier = 'et';
+      discount_percent = 15;
+    } else if (categoryCode === '001') {
+      discount_tier = 'p20';
+      discount_percent = 20;
+    }
 
     // Determine city
     const city = district.includes('аймаг') ? district : 'Улаанбаатар';
@@ -71,6 +87,8 @@ async function importSalons() {
       district: district,
       address: address || `${district}, Монгол`,
       is_active: true,
+      discount_tier,
+      discount_percent,
     });
   }
 
@@ -109,6 +127,8 @@ async function importCustomers() {
     const tierName = String(row[6] || 'GOLD MEMBER').trim();
     const phone = String(row[8] || '').replace(/[^0-9+]/g, '').trim();
     const discount = Number(row[9] || (tierName.includes('GOLD') ? 15 : 10));
+    const percent = [20, 15, 10, 5].includes(discount) ? discount : discount >= 12 ? 15 : discount >= 8 ? 10 : 5;
+    const discount_tier = percent === 20 ? 'p20' : percent === 10 ? 'es' : percent === 5 ? 'p5' : tierName.includes('GOLD') ? 'ep' : 'et';
 
     const city = district.includes('аймаг') ? district : 'Улаанбаатар';
 
@@ -122,6 +142,8 @@ async function importCustomers() {
       district: district,
       address: address || `${district}, Монгол`,
       is_active: true,
+      discount_tier,
+      discount_percent: percent,
     });
   }
 

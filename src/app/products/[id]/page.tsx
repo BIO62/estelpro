@@ -8,6 +8,7 @@ import {
   toStorefrontProduct,
 } from '@/lib/storefront-products';
 import { DRESSER_COOKIE } from '@/lib/catalog-audience';
+import { getSessionUser } from '@/lib/auth/session';
 
 export default async function ProductDetailPage({
   params,
@@ -22,6 +23,8 @@ export default async function ProductDetailPage({
   if (isDresserStorefrontProduct(product) && !dresserSession) notFound();
 
   const audience = isDresserStorefrontProduct(product) ? 'dresser' : 'consumer';
+  const session = await getSessionUser();
+  const contractPercent = session?.role === 'salon' ? session.discountPercent || 0 : 0;
   const { items: relatedRaw } = await getStorefrontProducts({
     taxon: product.taxon || undefined,
     audience,
@@ -29,11 +32,11 @@ export default async function ProductDetailPage({
   const related = relatedRaw
     .filter((item) => item.code !== product.code)
     .slice(0, 4)
-    .map((item) => toStorefrontProduct(item));
+    .map((item) => toStorefrontProduct(item, { contractPercent }));
 
   return (
     <ProductDetailView
-      product={toStorefrontProduct(product)}
+      product={toStorefrontProduct(product, { contractPercent })}
       related={related}
       description={product.description || product.short_description || undefined}
       inStock={product.stock}

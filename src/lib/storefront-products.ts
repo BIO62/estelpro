@@ -4,6 +4,7 @@ import { listProducts, type DbProduct } from '@/lib/ad/products-repo';
 import { MENU_BRANDS, productMatchesBrand } from '@/lib/brands';
 import type { MenuTaxon, ProductSort } from '@/lib/api/sylius';
 import type { CatalogProduct } from '@/lib/products';
+import { applySalonDiscount } from '@/lib/auth/salon-discount';
 
 const TAXON_LABELS: Record<string, string> = {
   hair_care: 'Үс арчилгаа',
@@ -76,21 +77,32 @@ function productCategory(product: DbProduct) {
   return known ? TAXON_LABELS[known] : '';
 }
 
-export function toStorefrontProduct(product: DbProduct, options?: { forceNew?: boolean }): CatalogProduct {
+export function toStorefrontProduct(
+  product: DbProduct,
+  options?: { forceNew?: boolean; contractPercent?: number },
+): CatalogProduct {
   const original = product.original_price && product.original_price > product.price ? product.original_price : null;
-  const discount = original ? Math.round(((original - product.price) / original) * 100) : 0;
+  const catalogDiscount = original ? Math.round(((original - product.price) / original) * 100) : 0;
   const gallery = [product.image_url, ...(product.gallery || [])].filter(
     (image, index, images): image is string => Boolean(image) && images.indexOf(image) === index,
   );
+  const percent = options?.contractPercent || 0;
+  const salePrice = percent ? applySalonDiscount(product.price, percent) : product.price;
+  const listPrice = percent ? product.price : original;
+  const discount = percent
+    ? `-${percent}%`
+    : catalogDiscount > 0
+      ? `-${catalogDiscount}%`
+      : undefined;
 
   return {
     id: product.code,
     name: product.name,
     category: productCategory(product),
     brand: product.brand || 'ESTEL',
-    price: money(product.price),
-    originalPrice: original ? money(original) : undefined,
-    discount: discount > 0 ? `-${discount}%` : undefined,
+    price: money(salePrice),
+    originalPrice: listPrice ? money(listPrice) : undefined,
+    discount,
     isNew: options?.forceNew,
     image: gallery[0] || FALLBACK_PRODUCT_IMAGE,
     gallery: gallery.length ? gallery : [FALLBACK_PRODUCT_IMAGE],

@@ -5,6 +5,7 @@ import { findSalonByIdentifier } from '@/lib/salons/repo';
 import { appUsersReady, findAppUserByEmail, findAppUserByPhone } from '@/lib/users/repo';
 import type { AccountKind } from '@/lib/auth/types';
 import { isStaffRole, resolveStaffRole } from '@/lib/auth/roles';
+import { matchesSalonPhonePassword, salonDiscountTier } from '@/lib/auth/salon-discount';
 
 function dbDownResponse(error: unknown) {
   console.error('login db', error instanceof Error ? error.message : error);
@@ -42,12 +43,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Нууц үгээ оруулна уу.' }, { status: 400 });
     }
 
+    const passwordOk = salon.passwordHash
+      ? verifyPassword(password, salon.passwordHash)
+      : matchesSalonPhonePassword(password, salon.phone);
+    if (!passwordOk) {
+      return NextResponse.json({ error: 'Салоны код эсвэл нууц үг буруу.' }, { status: 401 });
+    }
+
     await createSession({
       id: salon.id,
       email: salon.email,
       role: 'salon',
     });
 
+    const tier = salonDiscountTier(salon.discountTier);
     return NextResponse.json({
       ok: true,
       user: {
@@ -59,6 +68,9 @@ export async function POST(request: Request) {
         salonCode: salon.salonCode,
         kind: 'salon',
         role: 'salon',
+        discountPercent: salon.discountPercent,
+        discountTier: salon.discountTier,
+        discountLabel: tier?.label,
         verified: true,
         createdAt: new Date().toISOString(),
       },

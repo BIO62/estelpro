@@ -33,7 +33,7 @@ export async function middleware(request: NextRequest) {
       return loginRedirect(request, '/login/staff');
     }
     if (
-      (pathname.startsWith('/ad/staff') || pathname.startsWith('/ad/salons')) &&
+      pathname.startsWith('/ad/staff') &&
       !isLeadershipRole(session.role)
     ) {
       return loginRedirect(request, session.role === 'operator' ? '/ad/orders' : '/ad');

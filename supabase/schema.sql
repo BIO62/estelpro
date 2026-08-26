@@ -14,6 +14,9 @@ create table if not exists public.salons (
   district text,
   address text not null,
   is_active boolean not null default true,
+  discount_tier text not null default 'et',
+  discount_percent integer not null default 15,
+  password_hash text,
   created_at timestamptz not null default now()
 );
 

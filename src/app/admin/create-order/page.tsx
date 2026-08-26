@@ -310,10 +310,10 @@ export default function CreateOrderPOSPage() {
                     onChange={(e) => setDiscountPercent(Number(e.target.value))}
                     className="bg-stone-50 border border-stone-200 rounded-lg px-2 py-1 text-xs text-slate-900 font-semibold focus:outline-none focus:border-[#C9A227] cursor-pointer"
                   >
-                    <option value={0}>0% (Хөнгөлөлтгүй)</option>
-                    <option value={5}>5% (VIP хэрэглэгч)</option>
-                    <option value={10}>10% (Мэргэжлийн үсчин)</option>
-                    <option value={20}>20% (Гэрээт Салон бөөний)</option>
+                    <option value={20}>20%</option>
+                    <option value={15}>15%</option>
+                    <option value={10}>10%</option>
+                    <option value={5}>5%</option>
                   </select>
                 </div>
               </div>

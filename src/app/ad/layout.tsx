@@ -44,7 +44,7 @@ export default function AdLayout({ children }: AdLayoutProps) {
           return;
         }
         if (
-          (pathname.startsWith('/ad/staff') || pathname.startsWith('/ad/salons')) &&
+          pathname.startsWith('/ad/staff') &&
           !isLeadershipRole(next.role)
         ) {
           router.replace(next.role === 'operator' ? '/ad/orders' : '/ad');
@@ -81,8 +81,7 @@ function AdLayoutShell({
     if (pathname.startsWith('/ad/orders')) return 'Захиалгууд';
     if (pathname.startsWith('/ad/create-order')) return 'Шинэ захиалга бүртгэх';
     if (pathname.startsWith('/ad/users')) return 'Сайтын хэрэглэгчид';
-    if (pathname.startsWith('/ad/customers')) return 'Салон & харилцагч';
-    if (pathname.startsWith('/ad/salons')) return 'Салоны код';
+    if (pathname.startsWith('/ad/customers')) return 'Харилцагч';
     if (pathname.startsWith('/ad/products')) return 'Бүтээгдэхүүн';
     if (pathname.startsWith('/ad/staff')) return 'Ажилчид';
     if (pathname.startsWith('/ad/activity')) return 'Түүх';

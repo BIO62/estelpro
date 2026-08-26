@@ -14,6 +14,9 @@ export type AuthUser = {
   city?: string;
   district?: string;
   position?: string;
+  discountPercent?: number;
+  discountTier?: string;
+  discountLabel?: string;
   kind: AccountKind;
   role: UserRole;
   passwordHash: string;
