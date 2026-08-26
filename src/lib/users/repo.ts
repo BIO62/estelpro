@@ -2,7 +2,7 @@ import { isSupabaseConfigured, supabaseAdmin } from '@/lib/supabase/server';
 
 export type AppUserStatus = 'pending_otp' | 'pending_review' | 'active' | 'rejected';
 export type AppUserKind = 'consumer' | 'staff';
-export type AppUserRole = 'consumer' | 'manager' | 'operator';
+export type AppUserRole = 'consumer' | 'owner' | 'director' | 'manager' | 'operator';
 
 export type AppUser = {
   id: string;
@@ -18,6 +18,7 @@ export type AppUser = {
   address: string | null;
   city: string | null;
   district: string | null;
+  position: string | null;
   notes: string | null;
   createdAt: string;
   updatedAt: string;
@@ -37,6 +38,7 @@ type Row = {
   address: string | null;
   city: string | null;
   district: string | null;
+  position: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -57,6 +59,7 @@ function fromRow(row: Row): AppUser {
     address: row.address,
     city: row.city,
     district: row.district,
+    position: row.position,
     notes: row.notes,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -76,6 +79,7 @@ export async function createAppUser(input: {
   passwordHash?: string;
   kind?: AppUserKind;
   role?: AppUserRole;
+  position?: string;
   status?: AppUserStatus;
   emailVerified?: boolean;
 }) {
@@ -92,6 +96,7 @@ export async function createAppUser(input: {
       password_hash: input.passwordHash || null,
       kind: input.kind || 'consumer',
       role: input.role || 'consumer',
+      position: input.position || null,
       status: input.status || 'pending_otp',
       email_verified: input.emailVerified ?? false,
       updated_at: new Date().toISOString(),
@@ -110,6 +115,14 @@ export async function findAppUserByEmail(email: string) {
     .select('*')
     .eq('email', email.trim().toLowerCase())
     .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? fromRow(data as Row) : null;
+}
+
+export async function findAppUserById(id: string) {
+  const db = supabaseAdmin();
+  if (!db) return null;
+  const { data, error } = await db.from('app_users').select('*').eq('id', id).maybeSingle();
   if (error) throw new Error(error.message);
   return data ? fromRow(data as Row) : null;
 }
@@ -137,6 +150,16 @@ export async function deleteUnverifiedAppUser(email: string) {
     .eq('email', email.trim().toLowerCase())
     .eq('email_verified', false);
   if (error) throw new Error(error.message);
+}
+
+export async function deleteAppUser(id: string, kind?: AppUserKind) {
+  const db = supabaseAdmin();
+  if (!db) return null;
+  let query = db.from('app_users').delete().eq('id', id);
+  if (kind) query = query.eq('kind', kind);
+  const { data, error } = await query.select('id,email,role').maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
 }
 
 export async function listAppUsers(opts?: {
@@ -182,6 +205,7 @@ export async function updateAppUser(
     emailVerified: boolean;
     passwordHash: string;
     role: AppUserRole;
+    position: string | null;
   }>,
 ) {
   const db = supabaseAdmin();
@@ -198,6 +222,7 @@ export async function updateAppUser(
   if (patch.emailVerified !== undefined) row.email_verified = patch.emailVerified;
   if (patch.passwordHash !== undefined) row.password_hash = patch.passwordHash;
   if (patch.role !== undefined) row.role = patch.role;
+  if (patch.position !== undefined) row.position = patch.position;
   if (patch.status === 'active' || patch.status === 'rejected') {
     row.reviewed_at = new Date().toISOString();
   }
@@ -222,4 +247,16 @@ export async function markAppUserEmailVerified(email: string) {
     .maybeSingle();
   if (error) throw new Error(error.message);
   return data ? fromRow(data as Row) : null;
+}
+
+export async function countStaffByRole(role: AppUserRole) {
+  const db = supabaseAdmin();
+  if (!db) return 0;
+  const { count, error } = await db
+    .from('app_users')
+    .select('id', { count: 'exact', head: true })
+    .eq('kind', 'staff')
+    .eq('role', role);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
 }

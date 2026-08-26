@@ -1,7 +1,7 @@
 const SECRET = process.env.AUTH_SECRET || 'estel-dev-secret';
 const COOKIE = 'estel_auth';
 
-export type SessionRole = 'consumer' | 'salon' | 'manager' | 'operator';
+export type SessionRole = 'consumer' | 'salon' | 'owner' | 'director' | 'manager' | 'operator';
 
 export type SessionPayload = {
   id: string;

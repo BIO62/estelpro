@@ -1,5 +1,5 @@
 export type AccountKind = 'consumer' | 'salon' | 'staff';
-export type StaffRole = 'director' | 'manager' | 'operator';
+export type StaffRole = 'owner' | 'director' | 'manager' | 'operator';
 export type UserRole = 'consumer' | 'salon' | StaffRole;
 
 export type AuthUser = {
@@ -13,6 +13,7 @@ export type AuthUser = {
   address?: string;
   city?: string;
   district?: string;
+  position?: string;
   kind: AccountKind;
   role: UserRole;
   passwordHash: string;

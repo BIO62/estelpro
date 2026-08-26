@@ -73,7 +73,7 @@ function money(value: number) {
 function productCategory(product: DbProduct) {
   const taxons = productTaxons(product);
   const known = Object.keys(TAXON_LABELS).find((code) => taxons.has(code));
-  return known ? TAXON_LABELS[known] : product.taxon || 'ESTEL';
+  return known ? TAXON_LABELS[known] : '';
 }
 
 export function toStorefrontProduct(product: DbProduct, options?: { forceNew?: boolean }): CatalogProduct {
@@ -94,6 +94,7 @@ export function toStorefrontProduct(product: DbProduct, options?: { forceNew?: b
     isNew: options?.forceNew,
     image: gallery[0] || FALLBACK_PRODUCT_IMAGE,
     gallery: gallery.length ? gallery : [FALLBACK_PRODUCT_IMAGE],
+    shortDescription: product.short_description || undefined,
   };
 }
 

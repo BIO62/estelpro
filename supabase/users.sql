@@ -13,7 +13,7 @@ create table if not exists public.app_users (
   kind text not null default 'consumer'
     check (kind in ('consumer', 'staff')),
   role text not null default 'consumer'
-    check (role in ('consumer', 'manager', 'operator')),
+    check (role in ('consumer', 'owner', 'director', 'manager', 'operator')),
   -- pending_otp → pending_review (after email OTP) → active | rejected
   status text not null default 'pending_otp'
     check (status in ('pending_otp', 'pending_review', 'active', 'rejected')),
@@ -21,6 +21,7 @@ create table if not exists public.app_users (
   address text,
   city text,
   district text,
+  position text,
   notes text,
   reviewed_by uuid,
   reviewed_at timestamptz,

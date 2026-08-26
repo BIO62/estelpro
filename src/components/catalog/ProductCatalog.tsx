@@ -15,19 +15,13 @@ import { getMenuBrand, MENU_BRANDS } from '@/lib/brands';
 
 const PAGE_SIZE = 24;
 
-const LISTING_PATTERN: { layout: 's' | 'l' | 'h' }[] = [
+const LISTING_PATTERN: { layout: 's' | 'l' }[] = [
   { layout: 's' },
   { layout: 's' },
   { layout: 'l' },
   { layout: 'l' },
   { layout: 's' },
   { layout: 's' },
-  { layout: 's' },
-  { layout: 's' },
-  { layout: 'l' },
-  { layout: 's' },
-  { layout: 's' },
-  { layout: 'h' },
 ];
 
 function listingSlot(index: number) {
@@ -178,11 +172,12 @@ export default async function ProductCatalog({
             {products.map((product, index) => {
               const slot = listingSlot(index);
               return (
-                <div key={product.id} className="ga-plp-grid__item" data-layout={slot.layout}>
-                  <ProductCard
-                    {...product}
-                    layout={slot.layout}
-                  />
+                <div
+                  key={product.id}
+                  className={`ga-plp-grid__item ga-plp-item ga-plp-item--${slot.layout}`}
+                  data-layout={slot.layout}
+                >
+                  <ProductCard {...product} layout={slot.layout} />
                 </div>
               );
             })}

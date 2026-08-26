@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 import { COOKIE, verifySessionToken } from '@/lib/auth/token-edge';
+import { isLeadershipRole, isStaffRole } from '@/lib/auth/roles';
 
 const PUBLIC_PREFIXES = ['/login', '/register', '/verify', '/forgot-password', '/api/auth'];
 
@@ -28,8 +29,14 @@ export async function middleware(request: NextRequest) {
   const session = token ? await verifySessionToken(token) : null;
 
   if (pathname.startsWith('/ad')) {
-    if (!session || (session.role !== 'manager' && session.role !== 'operator')) {
+    if (!session || !isStaffRole(session.role)) {
       return loginRedirect(request, '/login/staff');
+    }
+    if (
+      (pathname.startsWith('/ad/staff') || pathname.startsWith('/ad/salons')) &&
+      !isLeadershipRole(session.role)
+    ) {
+      return loginRedirect(request, session.role === 'operator' ? '/ad/orders' : '/ad');
     }
     return NextResponse.next();
   }
@@ -53,8 +60,8 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith('/login/staff')) {
-    if (session && (session.role === 'manager' || session.role === 'operator')) {
-      return loginRedirect(request, '/ad');
+    if (session && isStaffRole(session.role)) {
+      return loginRedirect(request, session.role === 'operator' ? '/ad/orders' : '/ad');
     }
   }
 

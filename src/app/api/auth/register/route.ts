@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server';
+import { randomInt } from 'crypto';
 import { hashPassword } from '@/lib/auth/password';
-import { createSession } from '@/lib/auth/session';
 import {
-  createAppUser,
   deleteUnverifiedAppUser,
   findAppUserByEmail,
   findAppUserByPhone,
 } from '@/lib/users/repo';
+import { sendOtpEmail } from '@/lib/auth/mail';
+import {
+  clearPendingRegistration,
+  setPendingRegistration,
+} from '@/lib/auth/pending-registration';
 
 type Field = 'lastName' | 'name' | 'phone' | 'email' | 'password';
 
@@ -51,36 +55,27 @@ export async function POST(request: Request) {
     return fail('phone', 'Энэ дугаар өөр бүртгэлд холбогдсон байна.', 409);
   }
 
-  const user = await createAppUser({
+  const pending = {
+    id: crypto.randomUUID(),
     email,
     name,
     lastName,
     phone,
     passwordHash: hashPassword(password),
-    status: 'active',
-    emailVerified: true,
-  });
-  if (!user) return fail('email', 'Бүртгэлийн сан холбогдсонгүй.', 503);
-
-  await createSession({
-    id: user.id,
-    email: user.email,
-    role: user.role,
-  });
+    createdAt: new Date().toISOString(),
+  };
+  const code = String(randomInt(100000, 1000000));
+  await setPendingRegistration(pending, code);
+  try {
+    await sendOtpEmail(email, code);
+  } catch (error) {
+    await clearPendingRegistration();
+    console.error('registration OTP delivery failed', error);
+    return fail('email', 'Баталгаажуулах код илгээж чадсангүй.', 502);
+  }
 
   return NextResponse.json({
     ok: true,
-    user: {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      lastName: user.lastName || undefined,
-      phone: user.phone || undefined,
-      kind: user.kind,
-      role: user.role,
-      verified: user.emailVerified,
-      createdAt: user.createdAt,
-    },
-    redirect: '/',
+    redirect: `/verify?email=${encodeURIComponent(email)}`,
   });
 }

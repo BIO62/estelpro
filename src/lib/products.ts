@@ -25,6 +25,7 @@ export type CatalogProduct = {
   gallery?: string[];
   sizes?: ProductSize[];
   shades?: ProductShade[];
+  shortDescription?: string;
 };
 
 export const catalog: CatalogProduct[] = [

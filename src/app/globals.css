@@ -165,8 +165,13 @@ input::-ms-clear {
 }
 
 .auth-scope input::-ms-reveal,
-.auth-scope input::-ms-clear {
-  display: none;
+.auth-scope input::-ms-clear,
+.auth-scope input::-webkit-credentials-auto-fill-button,
+.auth-scope input::-webkit-contacts-auto-fill-button,
+.auth-scope input::-webkit-strong-password-auto-fill-button {
+  display: none !important;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .auth-scope input:not([type='checkbox']):not([type='radio']) {
@@ -180,7 +185,38 @@ input::-ms-clear {
 }
 
 .auth-scope input.auth-password-input:not([type='checkbox']):not([type='radio']) {
-  padding-right: 2.75rem !important;
+  padding-right: 3rem !important;
+}
+
+.auth-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  z-index: 2;
+  display: flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 0.6rem;
+  background: transparent;
+  color: #1d1d1f;
+  transform: translateY(-50%);
+}
+
+.auth-password-toggle svg {
+  width: 22px !important;
+  height: 22px !important;
+  display: block;
+  flex-shrink: 0;
+  stroke-width: 1.75;
+}
+
+.auth-password-toggle:hover {
+  color: #000;
+  background: rgb(0 0 0 / 0.06);
 }
 
 .auth-scope input:focus-visible {

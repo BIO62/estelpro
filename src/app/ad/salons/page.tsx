@@ -1,6 +1,9 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
+import { Trash2 } from 'lucide-react';
+import type { PublicUser } from '@/lib/auth/types';
+import { isLeadershipRole } from '@/lib/auth/roles';
 
 type SalonItem = {
   id: string;
@@ -20,6 +23,7 @@ export default function SalonCodesPage() {
   const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
+  const [canManage, setCanManage] = useState(false);
 
   async function load() {
     const res = await fetch('/api/auth/salon?limit=40');
@@ -33,6 +37,9 @@ export default function SalonCodesPage() {
 
   useEffect(() => {
     load();
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data: { user?: PublicUser | null }) => setCanManage(isLeadershipRole(data.user?.role)));
   }, []);
 
   async function onSubmit(event: FormEvent) {
@@ -58,6 +65,24 @@ export default function SalonCodesPage() {
     load();
   }
 
+  async function removeSalon(salon: SalonItem) {
+    if (!window.confirm(`${salon.salonName} салоныг устгах уу?`)) return;
+    setError('');
+    setOk('');
+    const res = await fetch('/api/auth/salon', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: salon.id }),
+    });
+    const data = (await res.json()) as { error?: string };
+    if (!res.ok) {
+      setError(data.error || 'Устгаж чадсангүй.');
+      return;
+    }
+    setOk('Салоны бүртгэлийг устгалаа.');
+    load();
+  }
+
   return (
     <div className="max-w-2xl space-y-5 text-foreground">
       <div>
@@ -68,7 +93,7 @@ export default function SalonCodesPage() {
       </div>
       {error ? <p className="text-sm font-bold text-rose-600">{error}</p> : null}
       {ok ? <p className="text-sm font-bold text-emerald-700">{ok}</p> : null}
-      <form onSubmit={onSubmit} className="space-y-3 rounded-2xl border border-border bg-card p-5">
+      {canManage ? <form onSubmit={onSubmit} className="space-y-3 rounded-2xl border border-border bg-card p-5">
         <input
           required
           value={salonCode}
@@ -107,7 +132,7 @@ export default function SalonCodesPage() {
         <button type="submit" className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">
           Код үүсгэх
         </button>
-      </form>
+      </form> : null}
       <ul className="space-y-2">
         {salons.map((salon) => (
           <li
@@ -117,7 +142,14 @@ export default function SalonCodesPage() {
             <span>
               {salon.salonName} · {salon.contactName} · {salon.email}
             </span>
-            <span className="font-black tracking-wide">{salon.salonCode}</span>
+            <div className="flex items-center gap-3">
+              <span className="font-black tracking-wide">{salon.salonCode}</span>
+              {canManage ? (
+                <button type="button" onClick={() => removeSalon(salon)} className="text-rose-600" aria-label="Салон устгах">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              ) : null}
+            </div>
           </li>
         ))}
       </ul>

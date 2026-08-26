@@ -4,6 +4,7 @@ import { createSession, homeForRole } from '@/lib/auth/session';
 import { findSalonByIdentifier } from '@/lib/salons/repo';
 import { findAppUserByEmail, findAppUserByPhone } from '@/lib/users/repo';
 import type { AccountKind } from '@/lib/auth/types';
+import { isStaffRole, resolveStaffRole } from '@/lib/auth/roles';
 
 export async function POST(request: Request) {
   const body = (await request.json()) as {
@@ -65,14 +66,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Имэйл/дугаар эсвэл нууц үг буруу.' }, { status: 401 });
   }
 
-  if (kind === 'staff' && user.kind !== 'staff') {
-    return NextResponse.json({ error: 'Энэ хэсэг зөвхөн ажилтанд зориулагдсан.' }, { status: 403 });
+  if (kind === 'staff') {
+    if (user.kind !== 'staff' || !isStaffRole(user.role)) {
+      return NextResponse.json({ error: 'Энэ хэсэг зөвхөн Portal хэрэглэгчид зориулагдсан.' }, { status: 403 });
+    }
+  } else if (user.kind === 'staff') {
+    return NextResponse.json({ error: 'Portal /login/staff хэсгээр нэвтэрнэ үү.' }, { status: 403 });
   }
+  if (user.status !== 'active') {
+    return NextResponse.json({ error: 'Энэ бүртгэл идэвхгүй байна.' }, { status: 403 });
+  }
+
+  const sessionRole = user.kind === 'staff' ? resolveStaffRole(user.email, user.role) : user.role;
 
   await createSession({
     id: user.id,
     email: user.email,
-    role: user.role,
+    role: sessionRole,
   });
 
   return NextResponse.json({
@@ -84,10 +94,11 @@ export async function POST(request: Request) {
       lastName: user.lastName || undefined,
       phone: user.phone || undefined,
       kind: user.kind,
-      role: user.role,
+      role: sessionRole,
+      position: user.position || undefined,
       verified: user.emailVerified,
       createdAt: user.createdAt,
     },
-    redirect: user.role === 'manager' || user.role === 'operator' ? '/ad' : homeForRole(user.role),
+    redirect: homeForRole(sessionRole),
   });
 }

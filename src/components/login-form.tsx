@@ -8,6 +8,7 @@ import { useLocalizedValidation } from '@/lib/useLocalizedValidation';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/auth/PasswordInput';
 import type { AccountKind } from '@/lib/auth/types';
 
 export function LoginForm({ className, ...props }: React.ComponentProps<'form'>) {
@@ -22,8 +23,8 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
   const [salonPassword, setSalonPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const showConsumerPassword = emailOrPhone.trim().length >= 4;
-  const showSalonPassword = salonIdentifier.trim().length >= 4;
+  const showConsumerPassword = emailOrPhone.trim().length >= 4 || password.length > 0;
+  const showSalonPassword = salonIdentifier.trim().length >= 4 || salonPassword.length > 0;
 
   const copy = useMemo(
     () =>
@@ -102,16 +103,11 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
     >
       <FieldGroup className="gap-4">
         {/* Account Kind Tabs */}
-        <div className="flex w-full gap-1 rounded-2xl bg-[#E3F2FD] p-1 border border-[#90CAF9]/60 backdrop-blur-sm">
+        <div className="auth-tab-track flex w-full gap-1 rounded-2xl p-1">
           <Button
             type="button"
             variant={kind === 'consumer' ? 'default' : 'ghost'}
-            className={cn(
-              'auth-tab flex-1 whitespace-nowrap px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200',
-              kind === 'consumer'
-                ? 'bg-[#2196F3] text-white shadow-sm hover:bg-[#0D47A1]'
-                : 'text-[#0D47A1] hover:text-[#0D47A1] hover:bg-[#90CAF9]/35'
-            )}
+            className="auth-tab flex-1 whitespace-nowrap px-3 py-2 text-sm font-medium rounded-xl"
             onClick={() => {
               setKind('consumer');
               setError('');
@@ -122,12 +118,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
           <Button
             type="button"
             variant={kind === 'salon' ? 'default' : 'ghost'}
-            className={cn(
-              'auth-tab flex-1 whitespace-nowrap px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200',
-              kind === 'salon'
-                ? 'bg-[#2196F3] text-white shadow-sm hover:bg-[#0D47A1]'
-                : 'text-[#0D47A1] hover:text-[#0D47A1] hover:bg-[#90CAF9]/35'
-            )}
+            className="auth-tab flex-1 whitespace-nowrap px-3 py-2 text-sm font-medium rounded-xl"
             onClick={() => {
               setKind('salon');
               setError('');
@@ -173,16 +164,23 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
               className={cn(
                 'overflow-hidden transition-all duration-700 ease-out',
                 showSalonPassword
-                  ? 'max-h-32 translate-y-0 opacity-100'
+                  ? 'max-h-48 translate-y-0 opacity-100'
                   : 'pointer-events-none max-h-0 -translate-y-3 opacity-0',
               )}
               aria-hidden={!showSalonPassword}
             >
               <Field>
-                <FieldLabel htmlFor="salon-password" className="text-neutral-700 font-medium">Нууц үг</FieldLabel>
-                <Input
+                <div className="flex items-center justify-between">
+                  <FieldLabel htmlFor="salon-password" className="text-neutral-700 font-medium">Нууц үг</FieldLabel>
+                  <Link
+                    href="/forgot-password"
+                    className="text-xs text-neutral-500 hover:text-[#0D47A1] hover:underline"
+                  >
+                    Нууц үг мартсан
+                  </Link>
+                </div>
+                <PasswordInput
                   id="salon-password"
-                  type="password"
                   required={showSalonPassword}
                   tabIndex={showSalonPassword ? 0 : -1}
                   autoComplete="current-password"
@@ -201,7 +199,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
               <Button
                 type="submit"
                 disabled={loading || !showSalonPassword || !salonPassword}
-                className="w-full bg-[#2196F3] hover:bg-[#0D47A1] text-white py-3 rounded-xl font-semibold shadow-md transition-all duration-300"
+                className="w-full"
               >
                 {loading ? 'Шалгаж байна...' : 'Нэвтрэх'}
               </Button>
@@ -240,7 +238,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
               className={cn(
                 'overflow-hidden transition-all duration-700 ease-out',
                 showConsumerPassword
-                  ? 'max-h-32 translate-y-0 opacity-100'
+                  ? 'max-h-48 translate-y-0 opacity-100'
                   : 'pointer-events-none max-h-0 -translate-y-3 opacity-0',
               )}
               aria-hidden={!showConsumerPassword}
@@ -255,9 +253,8 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
                     Нууц үг мартсан
                   </Link>
                 </div>
-                <Input
+                <PasswordInput
                   id="password"
-                  type="password"
                   required={showConsumerPassword}
                   tabIndex={showConsumerPassword ? 0 : -1}
                   autoComplete="current-password"
@@ -276,7 +273,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
               <Button
                 type="submit"
                 disabled={loading || !showConsumerPassword || !password}
-                className="w-full bg-[#2196F3] hover:bg-[#0D47A1] text-white py-3 rounded-xl font-semibold shadow-md transition-all duration-300"
+                className="w-full"
               >
                 {loading ? 'Шалгаж байна...' : 'Нэвтрэх'}
               </Button>

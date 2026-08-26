@@ -4,19 +4,28 @@ import { getSessionUser } from '@/lib/auth/session';
 import { hashPassword } from '@/lib/auth/password';
 import { createAppUser, findAppUserByEmail } from '@/lib/users/repo';
 import type { StaffRole } from '@/lib/auth/types';
+import { canManageStaff, parseInviteRole } from '@/lib/auth/roles';
 
 export async function POST(request: Request) {
   const me = await getSessionUser();
-  if (!me || me.role !== 'manager') {
-    return NextResponse.json({ error: 'Зөвхөн менежер ажилтан бүртгэнэ.' }, { status: 403 });
+  if (!me || !canManageStaff(me.role)) {
+    return NextResponse.json({ error: 'Зөвхөн захирал ажилтан бүртгэнэ.' }, { status: 403 });
   }
-  const body = (await request.json()) as { email?: string; name?: string; role?: StaffRole };
+  const body = (await request.json()) as {
+    email?: string;
+    name?: string;
+    role?: StaffRole;
+    position?: string;
+    password?: string;
+  };
   const email = body.email?.trim().toLowerCase() || '';
   const name = body.name?.trim() || 'Ажилтан';
-  const role: StaffRole = body.role === 'operator' ? 'operator' : 'manager';
+  const role = parseInviteRole(body.role, me.role);
+  const position = body.position?.trim() || '';
   if (!email) return NextResponse.json({ error: 'Имэйл шаардлагатай.' }, { status: 400 });
   if (await findAppUserByEmail(email)) return NextResponse.json({ error: 'Энэ имэйл бүртгэлтэй.' }, { status: 409 });
-  const temp = `Estel${Math.floor(1000 + Math.random() * 9000)}`;
+  const temp = body.password?.trim() || `Estel${Math.floor(1000 + Math.random() * 9000)}`;
+  if (temp.length < 6) return NextResponse.json({ error: 'Нууц үг хамгийн багадаа 6 тэмдэгт.' }, { status: 400 });
   const id = crypto.randomUUID();
   const passwordHash = hashPassword(temp);
   const user = await createAppUser({
@@ -25,6 +34,7 @@ export async function POST(request: Request) {
     name,
     kind: 'staff',
     role,
+    position,
     passwordHash,
     status: 'active',
     emailVerified: true,
@@ -37,7 +47,7 @@ export async function POST(request: Request) {
     action: 'staff_invite',
     entityType: 'app_user',
     entityId: id,
-    summary: `${me.name} ажилтан бүртгэсэн: ${name} (${email}) · ${role}`,
+    summary: `${me.name} ажилтан бүртгэсэн: ${name} (${email}) · ${role} · ${position || '-'}`,
   });
   return NextResponse.json({ ok: true, user, tempPassword: temp });
 }

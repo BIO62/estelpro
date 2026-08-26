@@ -1,10 +1,29 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { assetUrl } from '@/lib/constants';
 import CartIconButton from '@/components/ui/CartIconButton';
 import WishlistButton from '@/components/ui/WishlistButton';
+import { hairConcernFor } from '@/lib/hair-concern';
 import type { CatalogProduct } from '@/lib/products';
+
+const SIZE_IN_NAME = /[,\s]+(\d+(?:[.,]\d+)?\s*(?:мл|ml|л|l|г|g))\s*$/i;
+
+function splitCardName(name: string, sizeLabel?: string) {
+  const clean = name.replace(/^\s*ESTEL\s+/i, '').trim() || name;
+  const fromName = clean.match(SIZE_IN_NAME);
+  const title = fromName ? clean.slice(0, fromName.index).replace(/[,\s]+$/, '').trim() : clean;
+  const fromLabel = (sizeLabel || '').trim();
+  const size =
+    fromName?.[1]?.replace(/\s+/g, ' ') ||
+    (fromLabel && /^\d/.test(fromLabel)
+      ? /(?:мл|ml|л|l|г|g)$/i.test(fromLabel)
+        ? fromLabel
+        : `${fromLabel}мл`
+      : '');
+  return { title, size };
+}
 
 type ProductCardProps = Partial<CatalogProduct> & {
   id: string;
@@ -27,6 +46,7 @@ export default function ProductCard({
   gallery,
   sizes,
   shades,
+  shortDescription,
   className = '',
   layout = 's',
 }: ProductCardProps) {
@@ -44,88 +64,76 @@ export default function ProductCard({
     gallery,
     sizes,
     shades,
+    shortDescription,
   };
   const displayPrice = sizes?.[0]?.price || price;
   const displayOriginal = sizes?.[0]?.originalPrice || originalPrice;
-  const showSizes = Boolean(sizes && sizes.length > 1);
-  const showShades = Boolean(shades && shades.length > 0);
-  const extraShades = shades && shades.length > 2 ? shades.length - 2 : 0;
-  const extraSizes = sizes && sizes.length > 2 ? sizes.length - 2 : 0;
-  const hoverImages = (gallery && gallery.length > 1 ? gallery.slice(1, 6) : []).filter(Boolean);
+  const concern = hairConcernFor({ name, category });
+  const slides = useMemo(() => {
+    const unique = [image, ...(gallery || [])].filter(
+      (src, index, list): src is string => Boolean(src) && list.indexOf(src) === index
+    );
+    return unique.length ? unique : [image];
+  }, [gallery, image]);
+  const [slide, setSlide] = useState(0);
+  const typeLabel = category && !/^[a-z0-9_]+$/i.test(category) ? category : '';
+  const { title, size } = splitCardName(name, sizes?.[0]?.label);
 
   return (
     <article className={`ga-card ga-card--${layout}${className ? ` ${className}` : ''}`}>
       <div className="ga-card__body">
-        <Link href={`/products/${encodeURIComponent(id)}`} className="ga-card__link">
-          <div className="ga-card__ratio">
+        <div className="ga-card__ratio">
+          {(discount || hit || isNew) && (
+            <div className="ga-card__labels">
+              {discount ? <span className="ga-card__label ga-card__label--sale">{discount.replace(/^-/, '')}</span> : null}
+              {hit ? <span className="ga-card__label ga-card__label--hit">HIT</span> : null}
+              {isNew ? <span className="ga-card__label ga-card__label--new">NEW</span> : null}
+            </div>
+          )}
+          <Link
+            href={`/products/${encodeURIComponent(id)}`}
+            className="ga-card__media-link"
+            onMouseMove={(event) => {
+              if (slides.length < 2) return;
+              const rect = event.currentTarget.getBoundingClientRect();
+              const x = (event.clientX - rect.left) / rect.width;
+              const next = Math.min(slides.length - 1, Math.max(0, Math.floor(x * slides.length)));
+              setSlide(next);
+            }}
+            onMouseLeave={() => setSlide(0)}
+          >
             <div className="ga-card__gallery">
-              <div className="ga-card__gallery-item is-visible">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={assetUrl(image)} alt={name} />
-              </div>
-              {hoverImages.map((src) => (
-                <div className="ga-card__gallery-item" key={src}>
+              {slides.map((src, index) => (
+                <div key={src} className={`ga-card__gallery-item${index === slide ? ' is-visible' : ''}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={assetUrl(src)} alt="" />
+                  <img src={assetUrl(src)} alt={name} />
                 </div>
               ))}
             </div>
-            {(discount || hit || isNew) && (
-              <div className="ga-card__labels">
-                {discount && <span className="ga-card__label ga-card__label--sale">{discount}</span>}
-                {hit && <span className="ga-card__label ga-card__label--hit">HIT</span>}
-                {isNew && <span className="ga-card__label ga-card__label--new">NEW</span>}
-              </div>
-            )}
-            <WishlistButton product={product} />
-            <div className="ga-card__cart">
-              <CartIconButton product={product} className="ga-card__cart-btn" />
-            </div>
+          </Link>
+          <WishlistButton product={product} />
+          <div className="ga-card__cart">
+            <CartIconButton product={product} className="ga-card__cart-btn" />
           </div>
+        </div>
+        <Link href={`/products/${encodeURIComponent(id)}`} className="ga-card__link">
           <div className="ga-card__info">
-            {(showShades || showSizes) && (
-              <div className="ga-card__attrs">
-                {showShades && (
-                  <div className="ga-card__colors">
-                    {shades!.slice(0, 2).map((shade) => (
-                      <span
-                        key={shade.id}
-                        className="ga-card__color"
-                        style={{ background: shade.hex }}
-                        aria-label={shade.name}
-                      />
-                    ))}
-                    {extraShades > 0 && <span className="ga-card__color-more">+{extraShades}</span>}
-                  </div>
-                )}
-                {showSizes && (
-                  <div className="ga-card__units">
-                    {sizes!.slice(0, 2).map((size) => (
-                      <span key={size.label} className="ga-card__unit">
-                        {size.label}
-                      </span>
-                    ))}
-                    {extraSizes > 0 && <span className="ga-card__unit-more">+{extraSizes}</span>}
-                  </div>
-                )}
-              </div>
-            )}
-            <div className="ga-card__type">{category}</div>
-            <div className="ga-card__name">
-              <span className="ga-card__brand">{brand}</span>
-              <span className="ga-card__title">{name}</span>
+            <div className="ga-card__meta">
+              {concern ? (
+                <span className={`ga-card__concern ga-card__concern--${concern.tone}`}>{concern.label}</span>
+              ) : typeLabel ? (
+                <div className="ga-card__type">{typeLabel}</div>
+              ) : (
+                <span className="ga-card__concern ga-card__concern--empty" aria-hidden="true" />
+              )}
             </div>
-            {discount && (
-              <div className="ga-card__coupon">
-                <span>ХЯМДРАЛ</span>
-                <span className="ga-card__coupon-div">|</span>
-                <span>{`до −${String(discount).replace(/^[−\-]?/, '').replace(/%$/, '')}%`}</span>
-              </div>
-            )}
+            <div className="ga-card__name">
+              <span className="ga-card__title">{title}</span>
+              {size ? <span className="ga-card__size">{size}</span> : null}
+            </div>
             <div className="ga-card__price">
-              {showSizes && <span className="ga-card__price-from">от</span>}
               <strong>{displayPrice}</strong>
-              {displayOriginal && <s>{displayOriginal}</s>}
+              {displayOriginal ? <s>{displayOriginal}</s> : null}
             </div>
           </div>
         </Link>

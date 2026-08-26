@@ -4,11 +4,12 @@ import { writeAudit } from '@/lib/audit/log';
 import { getSessionUser } from '@/lib/auth/session';
 import { updateSalon } from '@/lib/salons/repo';
 import { updateAppUser } from '@/lib/users/repo';
+import { isStaffRole } from '@/lib/auth/roles';
 
 export const dynamic = 'force-dynamic';
 
 function staffOnly(session: Awaited<ReturnType<typeof getSessionUser>>) {
-  return session && (session.role === 'manager' || session.role === 'operator');
+  return session && isStaffRole(session.role);
 }
 
 export async function PATCH(req: Request) {

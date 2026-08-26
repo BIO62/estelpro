@@ -16,7 +16,7 @@ import {
 
 import { useIsMobile } from '@/hooks/use-mobile';
 import { isNavHrefActive } from '@/lib/ad/nav-active';
-import { primaryNav, secondaryNav, type NavItem } from '@/lib/ad/nav-config';
+import { filterNavItems, primaryNav, secondaryNav, type NavItem } from '@/lib/ad/nav-config';
 import type { PublicUser } from '@/lib/auth/types';
 import { cn } from '@/lib/utils';
 
@@ -306,10 +306,12 @@ function SidebarBrand({ expanded, onClose }: { expanded: boolean; onClose?: () =
   );
 }
 
-function DesktopHoverSidebarInner({ user: _user }: { user: PublicUser | null }) {
+function DesktopHoverSidebarInner({ user }: { user: PublicUser | null }) {
   const { expanded } = useAdSidebar();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const visiblePrimary = React.useMemo(() => filterNavItems(primaryNav, user?.role), [user?.role]);
+  const visibleSecondary = React.useMemo(() => filterNavItems(secondaryNav, user?.role), [user?.role]);
 
   return (
     <motion.aside
@@ -323,14 +325,14 @@ function DesktopHoverSidebarInner({ user: _user }: { user: PublicUser | null }) 
       <div className={cn('ad-sidebar-nav ad-sidebar-nav--scroll flex min-h-0 flex-1 flex-col gap-4', expanded ? 'px-3' : 'px-2')}>
         <SidebarNavSection
           label="Үндсэн"
-          items={primaryNav}
+          items={visiblePrimary}
           expanded={expanded}
           pathname={pathname}
           searchParams={searchParams}
         />
         <SidebarNavSection
           label="Бусад"
-          items={secondaryNav}
+          items={visibleSecondary}
           expanded={expanded}
           pathname={pathname}
           searchParams={searchParams}
@@ -348,11 +350,13 @@ function DesktopHoverSidebar({ user }: { user: PublicUser | null }) {
   );
 }
 
-function MobileNavOverlayInner({ user: _user }: { user: PublicUser | null }) {
+function MobileNavOverlayInner({ user }: { user: PublicUser | null }) {
   const { mobileOpen, setMobileOpen } = useAdSidebar();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const close = () => setMobileOpen(false);
+  const visiblePrimary = React.useMemo(() => filterNavItems(primaryNav, user?.role), [user?.role]);
+  const visibleSecondary = React.useMemo(() => filterNavItems(secondaryNav, user?.role), [user?.role]);
 
   React.useEffect(() => {
     if (mobileOpen) {
@@ -389,7 +393,7 @@ function MobileNavOverlayInner({ user: _user }: { user: PublicUser | null }) {
             <div className="ad-sidebar-nav ad-sidebar-nav--scroll flex min-h-0 flex-1 flex-col gap-6 px-4 py-4">
               <SidebarNavSection
                 label="Үндсэн"
-                items={primaryNav}
+                items={visiblePrimary}
                 expanded
                 pathname={pathname}
                 searchParams={searchParams}
@@ -397,7 +401,7 @@ function MobileNavOverlayInner({ user: _user }: { user: PublicUser | null }) {
               />
               <SidebarNavSection
                 label="Бусад"
-                items={secondaryNav}
+                items={visibleSecondary}
                 expanded
                 pathname={pathname}
                 searchParams={searchParams}

@@ -7,6 +7,7 @@ import { assetUrl } from '@/lib/constants';
 import CartBagIcon from '@/components/ui/CartBagIcon';
 import { useCart } from '@/components/providers/CartProvider';
 import type { PublicUser } from '@/lib/auth/types';
+import { isStaffRole } from '@/lib/auth/roles';
 
 export default function Header() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function Header() {
 
   const isConsumer = user?.role === 'consumer';
   const isSalon = user?.role === 'salon' || user?.kind === 'salon';
-  const isStaff = user?.role === 'manager' || user?.role === 'operator';
+  const isStaff = isStaffRole(user?.role);
   const accountHref = isSalon ? '/dresser' : isStaff ? '/ad' : '/account/profile';
   const accountLabel = isSalon ? 'Салоны хэсэг' : isStaff ? 'Админ хэсэг' : 'Хувийн мэдээлэл';
 

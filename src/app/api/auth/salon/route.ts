@@ -2,9 +2,14 @@ import { NextResponse } from 'next/server';
 
 import { writeAudit } from '@/lib/audit/log';
 import { getSessionUser } from '@/lib/auth/session';
-import { createSalon, listSalons } from '@/lib/salons/repo';
+import { createSalon, deactivateSalon, listSalons } from '@/lib/salons/repo';
+import { canManageSalons, isStaffRole } from '@/lib/auth/roles';
 
 export async function GET(request: Request) {
+  const me = await getSessionUser();
+  if (!me || !isStaffRole(me.role)) {
+    return NextResponse.json({ error: 'Хандах эрхгүй.' }, { status: 403 });
+  }
   const { searchParams } = new URL(request.url);
   const search = searchParams.get('search') || '';
   const page = Math.max(1, Number(searchParams.get('page') || '1'));
@@ -22,8 +27,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const me = await getSessionUser();
-  if (!me || me.role !== 'manager') {
-    return NextResponse.json({ error: 'Зөвхөн менежер салон код үүсгэнэ.' }, { status: 403 });
+  if (!me || !canManageSalons(me.role)) {
+    return NextResponse.json({ error: 'Зөвхөн захирал салон код үүсгэнэ.' }, { status: 403 });
   }
 
   const body = (await request.json()) as {
@@ -82,4 +87,26 @@ export async function POST(request: Request) {
     const message = err instanceof Error ? err.message : 'Алдаа';
     return NextResponse.json({ error: message }, { status: 400 });
   }
+}
+
+export async function DELETE(request: Request) {
+  const me = await getSessionUser();
+  if (!me || !canManageSalons(me.role)) {
+    return NextResponse.json({ error: 'Зөвхөн захирал салон устгана.' }, { status: 403 });
+  }
+  const body = (await request.json()) as { id?: string };
+  if (!body.id) return NextResponse.json({ error: 'Салоны ID шаардлагатай.' }, { status: 400 });
+
+  const salon = await deactivateSalon(body.id);
+  if (!salon) return NextResponse.json({ error: 'Салон олдсонгүй.' }, { status: 404 });
+  await writeAudit({
+    actorId: me.id,
+    actorEmail: me.email,
+    actorRole: me.role,
+    action: 'salon_delete',
+    entityType: 'salon',
+    entityId: body.id,
+    summary: `${me.name} салон идэвхгүй болгосон: ${salon.salon_code}`,
+  });
+  return NextResponse.json({ ok: true });
 }

@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { assetUrl } from '@/lib/constants';
 import RelatedProducts from '@/components/ui/RelatedProducts';
-import { useQuickView } from '@/components/providers/QuickViewProvider';
+import { useCart } from '@/components/providers/CartProvider';
 import { useWishlist } from '@/components/providers/WishlistProvider';
 import type { CatalogProduct } from '@/lib/products';
+import { defaultSelection } from '@/lib/cart';
+import { hairConcernFor } from '@/lib/hair-concern';
 
 type Props = {
   product: CatalogProduct;
@@ -19,9 +21,11 @@ export default function ProductDetailView({ product, related, description, inSto
   const [activeImg, setActiveImg] = useState(0);
   const [qty, setQty] = useState(1);
   const [sizeIdx, setSizeIdx] = useState(0);
-  const { addToCart } = useQuickView();
+  const { items, addItem, removeByProductId } = useCart();
   const { has, toggle } = useWishlist();
   const wished = has(product.id);
+  const inCart = items.some((item) => item.productId === product.id);
+  const concern = hairConcernFor({ name: product.name, category: product.category });
   const size = product.sizes?.[sizeIdx];
   const price = size?.price || product.price;
   const original = size?.originalPrice || product.originalPrice;
@@ -62,6 +66,11 @@ export default function ProductDetailView({ product, related, description, inSto
 
             <div className="col-lg-6">
               <div className="mb-3">
+                {concern ? (
+                  <span className={`ga-card__concern ga-card__concern--${concern.tone} mb-2`}>
+                    {concern.label}
+                  </span>
+                ) : null}
                 <span className="fs-12 fc-secondary text-uppercase d-block mb-1">{product.brand || 'ESTEL'}</span>
                 <h1 className="fw-bold fs-4 lh-sm mb-2">{product.name}</h1>
                 <div className="d-flex align-items-start gap-2 mb-2">
@@ -130,13 +139,17 @@ export default function ProductDetailView({ product, related, description, inSto
               <div className="d-flex gap-2 mb-4">
                 <button
                   type="button"
-                  className="btn btn-main flex-grow-1 p-3 d-flex align-items-center justify-content-center gap-2"
+                  className={`btn btn-main flex-grow-1 p-3 d-flex align-items-center justify-content-center gap-2${inCart ? ' is-added' : ''}`}
+                  aria-pressed={inCart}
                   onClick={() => {
-                    addToCart(product, { size: size?.label });
+                    if (inCart) {
+                      removeByProductId(product.id);
+                      return;
+                    }
+                    addItem(product, { ...defaultSelection(product), size: size?.label });
                   }}
                 >
-                  <img src={assetUrl('images/icons/cartAddWhite.svg')} alt="" />
-                  <strong>Сагслах</strong>
+                  <strong>{inCart ? 'Сагсанд байна' : 'Сагслах'}</strong>
                 </button>
                 <button
                   type="button"

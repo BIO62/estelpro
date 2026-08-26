@@ -2,6 +2,15 @@
 
 import { type ReactNode, useLayoutEffect, useRef } from 'react';
 
+const DESKTOP_SLOTS = [
+  { col: 0, span: 1 },
+  { col: 1, span: 1 },
+  { col: 2, span: 2 },
+  { col: 0, span: 2 },
+  { col: 2, span: 1 },
+  { col: 3, span: 1 },
+];
+
 export default function MasonryGrid({
   children,
   className = '',
@@ -27,32 +36,26 @@ export default function MasonryGrid({
       const colW = (root.clientWidth - colGap * (cols - 1)) / cols;
       const heights = Array.from({ length: cols }, () => 0);
 
-      items.forEach((el) => {
-        const wide = cols > 2 && (el.classList.contains('ga-plp-item--l') || el.classList.contains('ga-plp-item--h'));
-        const span = wide ? 2 : 1;
+      items.forEach((el, index) => {
+        const desktop = cols > 2;
+        const slot = desktop ? DESKTOP_SLOTS[index % DESKTOP_SLOTS.length] : { col: index % cols, span: 1 };
+        const span = Math.min(slot.span, cols);
+        const col = Math.min(slot.col, cols - span);
         el.style.position = 'absolute';
         el.style.width = `${span * colW + (span - 1) * colGap}px`;
         el.style.margin = '0';
 
-        let bestCol = 0;
-        let bestY = Number.POSITIVE_INFINITY;
-        for (let col = 0; col <= cols - span; col += 1) {
-          const y = Math.max(...heights.slice(col, col + span));
-          if (y < bestY) {
-            bestY = y;
-            bestCol = col;
-          }
-        }
-
-        el.style.left = `${bestCol * (colW + colGap)}px`;
-        el.style.top = `${bestY}px`;
-        const next = bestY + el.offsetHeight + rowGap;
-        for (let col = bestCol; col < bestCol + span; col += 1) {
-          heights[col] = next;
+        const y = Math.max(...heights.slice(col, col + span));
+        el.style.left = `${col * (colW + colGap)}px`;
+        el.style.top = `${y}px`;
+        const next = y + el.offsetHeight + rowGap;
+        for (let c = col; c < col + span; c += 1) {
+          heights[c] = next;
         }
       });
 
-      root.style.height = `${Math.max(0, ...heights) - rowGap}px`;
+      const maxH = Math.max(0, ...heights);
+      root.style.height = `${maxH > 0 ? maxH - rowGap : 0}px`;
     };
 
     const schedule = () => {
@@ -64,6 +67,7 @@ export default function MasonryGrid({
     };
 
     const observer = new ResizeObserver(schedule);
+    observer.observe(root);
     Array.from(root.children).forEach((el) => observer.observe(el));
     window.addEventListener('resize', schedule);
 

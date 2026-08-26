@@ -2,9 +2,11 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { CheckCircle, Mail, MapPin, Pencil, Phone, Search } from 'lucide-react';
+import { CheckCircle, Mail, MapPin, Pencil, Phone, Search, Trash2 } from 'lucide-react';
 
 import type { AppUser } from '@/lib/users/repo';
+import type { PublicUser } from '@/lib/auth/types';
+import { isLeadershipRole } from '@/lib/auth/roles';
 
 type SalonItem = {
   id: string;
@@ -33,6 +35,7 @@ export default function AdCustomersPage() {
   const [editUser, setEditUser] = useState<AppUser | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [isDirector, setIsDirector] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -58,6 +61,9 @@ export default function AdCustomersPage() {
   useEffect(() => {
     const q = new URLSearchParams(window.location.search).get('tab') as Tab | null;
     if (q === 'SALON' || q === 'CONSUMER' || q === 'ALL') setTab(q);
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data: { user?: PublicUser | null }) => setIsDirector(isLeadershipRole(data.user?.role)));
   }, []);
 
   useEffect(() => {
@@ -135,6 +141,36 @@ export default function AdCustomersPage() {
     load();
   }
 
+  async function removeSalon(salon: SalonItem) {
+    if (!window.confirm(`${salon.salonName} салоныг устгах уу?`)) return;
+    const res = await fetch('/api/auth/salon', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: salon.id }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || 'Салон устгаж чадсангүй.');
+      return;
+    }
+    load();
+  }
+
+  async function removeUser(user: AppUser) {
+    if (!window.confirm(`${user.email} хэрэглэгчийг бүр мөсөн устгах уу?`)) return;
+    const res = await fetch('/api/ad/users', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: user.id }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || 'Хэрэглэгч устгаж чадсангүй.');
+      return;
+    }
+    load();
+  }
+
   const tabClass = (active: boolean) =>
     active ? 'bg-primary text-primary-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground';
 
@@ -147,12 +183,12 @@ export default function AdCustomersPage() {
             Салон {salonTotal.toLocaleString()} · Сайтын хэрэглэгч {consumerTotal.toLocaleString()}
           </p>
         </div>
-        <Link
+        {isDirector ? <Link
           href="/ad/salons"
           className="self-start rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground sm:self-auto"
         >
           + Салоны код өгөх
-        </Link>
+        </Link> : null}
       </div>
 
       <div className="flex flex-wrap items-center gap-1 rounded-lg border border-border bg-card p-1 text-xs font-semibold shadow-xs">
@@ -201,9 +237,16 @@ export default function AdCustomersPage() {
               </div>
               <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
                 <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600"><CheckCircle className="h-3 w-3" />Идэвхтэй</span>
-                <button type="button" onClick={() => setEditSalon({ ...c })} className="inline-flex items-center gap-1 text-xs font-bold text-primary">
-                  <Pencil className="h-3.5 w-3.5" />Засах
-                </button>
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={() => setEditSalon({ ...c })} className="inline-flex items-center gap-1 text-xs font-bold text-primary">
+                    <Pencil className="h-3.5 w-3.5" />Засах
+                  </button>
+                  {isDirector ? (
+                    <button type="button" onClick={() => removeSalon(c)} className="inline-flex items-center gap-1 text-xs font-bold text-rose-600">
+                      <Trash2 className="h-3.5 w-3.5" />Устгах
+                    </button>
+                  ) : null}
+                </div>
               </div>
             </article>
           ))}
@@ -219,10 +262,15 @@ export default function AdCustomersPage() {
                 <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" /><span className="truncate">{u.email}</span></div>
                 <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5" />{u.phone || '—'}</div>
               </div>
-              <div className="mt-4 flex justify-end border-t border-border pt-3">
+              <div className="mt-4 flex justify-end gap-3 border-t border-border pt-3">
                 <button type="button" onClick={() => setEditUser({ ...u })} className="inline-flex items-center gap-1 text-xs font-bold text-primary">
                   <Pencil className="h-3.5 w-3.5" />Засах
                 </button>
+                {isDirector ? (
+                  <button type="button" onClick={() => removeUser(u)} className="inline-flex items-center gap-1 text-xs font-bold text-rose-600">
+                    <Trash2 className="h-3.5 w-3.5" />Устгах
+                  </button>
+                ) : null}
               </div>
             </article>
           ))}

@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server';
 
 import { listAuditLogs } from '@/lib/audit/log';
 import { getSessionUser } from '@/lib/auth/session';
+import { isStaffRole } from '@/lib/auth/roles';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   const session = await getSessionUser();
-  if (!session || (session.role !== 'manager' && session.role !== 'operator')) {
+  if (!session || !isStaffRole(session.role)) {
     return NextResponse.json({ error: 'Хандах эрхгүй.' }, { status: 401 });
   }
 

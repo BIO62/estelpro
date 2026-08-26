@@ -28,6 +28,8 @@ export default function ClientLayout({
     pathname === '/register' ||
     pathname === '/signup' ||
     pathname === '/verify' ||
+    pathname === '/forgot-password' ||
+    pathname === '/new-password' ||
     pathname === '/particles';
 
   if (isAuth) {

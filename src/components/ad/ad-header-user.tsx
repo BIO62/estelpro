@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { PublicUser } from '@/lib/auth/types';
+import { positionLabel, roleLabel } from '@/lib/auth/roles';
 
 export function AdHeaderUser({ user }: { user: PublicUser | null }) {
   const router = useRouter();
@@ -51,6 +52,9 @@ export function AdHeaderUser({ user }: { user: PublicUser | null }) {
             </Avatar>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold leading-tight">{name}</p>
+              <p className="truncate text-xs leading-tight text-muted-foreground">
+                {positionLabel(user?.position) || roleLabel(user?.role)}
+              </p>
               <p className="truncate text-xs leading-tight text-muted-foreground">{email}</p>
             </div>
           </div>

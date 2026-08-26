@@ -2,13 +2,20 @@ import { NextResponse } from 'next/server';
 
 import { writeAudit } from '@/lib/audit/log';
 import { getSessionUser } from '@/lib/auth/session';
-import { listAppUsers, updateAppUser, type AppUserStatus } from '@/lib/users/repo';
+import {
+  deleteAppUser,
+  findAppUserById,
+  listAppUsers,
+  updateAppUser,
+  type AppUserStatus,
+} from '@/lib/users/repo';
+import { canDeleteUsers, isStaffRole } from '@/lib/auth/roles';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   const session = await getSessionUser();
-  if (!session || (session.role !== 'manager' && session.role !== 'operator')) {
+  if (!session || !isStaffRole(session.role)) {
     return NextResponse.json({ error: 'Хандах эрхгүй.' }, { status: 401 });
   }
 
@@ -46,7 +53,7 @@ export async function GET(req: Request) {
 
 export async function PATCH(req: Request) {
   const session = await getSessionUser();
-  if (!session || (session.role !== 'manager' && session.role !== 'operator')) {
+  if (!session || !isStaffRole(session.role)) {
     return NextResponse.json({ error: 'Хандах эрхгүй.' }, { status: 403 });
   }
 
@@ -94,4 +101,28 @@ export async function PATCH(req: Request) {
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Алдаа' }, { status: 500 });
   }
+}
+
+export async function DELETE(req: Request) {
+  const session = await getSessionUser();
+  if (!session || !canDeleteUsers(session.role)) {
+    return NextResponse.json({ error: 'Зөвхөн захирал хэрэглэгч устгана.' }, { status: 403 });
+  }
+  const body = (await req.json()) as { id?: string };
+  if (!body.id) return NextResponse.json({ error: 'id шаардлагатай.' }, { status: 400 });
+  const target = await findAppUserById(body.id);
+  if (!target || target.kind !== 'consumer') {
+    return NextResponse.json({ error: 'Хэрэглэгч олдсонгүй.' }, { status: 404 });
+  }
+  await deleteAppUser(target.id, 'consumer');
+  await writeAudit({
+    actorId: session.id,
+    actorEmail: session.email,
+    actorRole: session.role,
+    action: 'user_delete',
+    entityType: 'app_user',
+    entityId: target.id,
+    summary: `${session.name} хэрэглэгч устгасан: ${target.email}`,
+  });
+  return NextResponse.json({ ok: true });
 }

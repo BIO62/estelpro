@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/breadcrumb';
 import { cn } from '@/lib/utils';
 import type { PublicUser } from '@/lib/auth/types';
+import { isLeadershipRole, isStaffRole } from '@/lib/auth/roles';
 
 interface AdLayoutProps {
   children: React.ReactNode;
@@ -38,13 +39,20 @@ export default function AdLayout({ children }: AdLayoutProps) {
       .then((res) => res.json())
       .then((data: { user?: PublicUser | null }) => {
         const next = data.user;
-        if (!next || (next.role !== 'manager' && next.role !== 'operator')) {
+        if (!next || !isStaffRole(next.role)) {
           router.replace('/login/staff');
+          return;
+        }
+        if (
+          (pathname.startsWith('/ad/staff') || pathname.startsWith('/ad/salons')) &&
+          !isLeadershipRole(next.role)
+        ) {
+          router.replace(next.role === 'operator' ? '/ad/orders' : '/ad');
           return;
         }
         setUser(next);
       });
-  }, [router]);
+  }, [pathname, router]);
 
   return (
     <AdThemeProvider>

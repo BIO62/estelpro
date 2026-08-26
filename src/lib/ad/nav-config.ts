@@ -13,12 +13,20 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react';
+import type { UserRole } from '@/lib/auth/types';
+
+export type NavSubItem = {
+  title: string;
+  url: string;
+  roles?: UserRole[];
+};
 
 export type NavItem = {
   title: string;
   url?: string;
   icon?: LucideIcon;
-  items?: { title: string; url: string }[];
+  roles?: UserRole[];
+  items?: NavSubItem[];
 };
 
 export const primaryNav: NavItem[] = [
@@ -52,10 +60,10 @@ export const primaryNav: NavItem[] = [
     icon: Users,
     items: [
       { title: 'Бүх харилцагч', url: '/ad/customers' },
-      { title: 'Салоны код өгөх', url: '/ad/salons' },
+      { title: 'Салоны код өгөх', url: '/ad/salons', roles: ['owner', 'director'] },
     ],
   },
-  { title: 'Ажилчид', url: '/ad/staff', icon: UserCog },
+  { title: 'Ажилчид', url: '/ad/staff', icon: UserCog, roles: ['owner', 'director'] },
   { title: 'Түүх', url: '/ad/activity', icon: ClipboardList },
 ];
 
@@ -75,3 +83,12 @@ export const secondaryNav: NavItem[] = [
 ];
 
 export const allNavItems: NavItem[] = [...primaryNav, ...secondaryNav];
+
+export function filterNavItems(items: NavItem[], role?: UserRole): NavItem[] {
+  return items.flatMap((item) => {
+    if (item.roles && (!role || !item.roles.includes(role))) return [];
+    const children = item.items?.filter((child) => !child.roles || (role && child.roles.includes(role)));
+    if (item.items && !children?.length && !item.url) return [];
+    return [{ ...item, items: children }];
+  });
+}

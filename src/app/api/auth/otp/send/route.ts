@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { randomInt } from 'crypto';
 import { findSalonByCode, saveSalonOtp } from '@/lib/salons/repo';
 import { maskEmail, sendOtpEmail } from '@/lib/auth/mail';
+import {
+  readPendingRegistration,
+  setPendingRegistration,
+} from '@/lib/auth/pending-registration';
 
 function maskPhone(phone: string) {
   const digits = phone.replace(/\D/g, '');
@@ -30,8 +34,16 @@ export async function POST(request: Request) {
     });
   }
 
-  return NextResponse.json(
-    { error: 'Хэрэглэгчийн имэйл OTP энэ урсгалд ашиглагдахгүй.' },
-    { status: 410 },
-  );
+  const email = body.email?.trim().toLowerCase() || '';
+  const pending = await readPendingRegistration(email);
+  if (!pending) {
+    return NextResponse.json(
+      { error: 'Бүртгэлийн хүсэлт олдсонгүй эсвэл хугацаа дууссан.' },
+      { status: 404 },
+    );
+  }
+  const code = String(randomInt(100000, 1000000));
+  await sendOtpEmail(email, code);
+  await setPendingRegistration(pending, code);
+  return NextResponse.json({ ok: true, emailHint: maskEmail(email), channel: 'email' });
 }

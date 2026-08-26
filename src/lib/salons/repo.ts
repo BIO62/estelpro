@@ -69,6 +69,7 @@ export async function findSalonByEmail(email: string): Promise<Salon | null> {
     .from('salons')
     .select('*')
     .eq('email', email.trim().toLowerCase())
+    .eq('is_active', true)
     .maybeSingle();
   if (error) throw new Error(error.message);
   return data ? fromRow(data as SalonRow & { id: string }) : null;
@@ -113,7 +114,7 @@ export async function findSalonByIdentifier(identifier: string): Promise<Salon |
 export async function listSalons({ limit = 50, offset = 0, search = '' } = {}) {
   const db = supabaseAdmin();
   if (!db) return { salons: [] as Salon[], total: 0 };
-  let query = db.from('salons').select('*', { count: 'exact' }).order('salon_code');
+  let query = db.from('salons').select('*', { count: 'exact' }).eq('is_active', true).order('salon_code');
   if (search.trim()) {
     const term = `%${search.trim()}%`;
     query = query.or(`salon_code.ilike.${term},salon_name.ilike.${term},phone.ilike.${term},city.ilike.${term}`);
@@ -121,6 +122,19 @@ export async function listSalons({ limit = 50, offset = 0, search = '' } = {}) {
   const { data, count, error } = await query.range(offset, offset + limit - 1);
   if (error) throw new Error(error.message);
   return { salons: (data || []).map((row) => fromRow(row as SalonRow & { id: string })), total: count || 0 };
+}
+
+export async function deactivateSalon(id: string) {
+  const db = supabaseAdmin();
+  if (!db) return null;
+  const { data, error } = await db
+    .from('salons')
+    .update({ is_active: false })
+    .eq('id', id)
+    .select('id,salon_code,salon_name')
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
 }
 
 export async function saveSalonOtp(salon: Salon, code: string, channel: 'email' | 'sms' = 'email') {

@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from 'crypto';
 import { cookies } from 'next/headers';
 import { DRESSER_COOKIE } from '@/lib/catalog-audience';
 import { findAppUserByEmail } from '@/lib/users/repo';
+import { resolveStaffRole } from './roles';
 import type { PublicUser, UserRole } from './types';
 
 const COOKIE = 'estel_auth';
@@ -90,8 +91,9 @@ export async function getSessionUser(): Promise<PublicUser | null> {
     address: user.address || undefined,
     city: user.city || undefined,
     district: user.district || undefined,
+    position: user.position || undefined,
     kind: user.kind,
-    role: user.role,
+    role: user.kind === 'staff' ? resolveStaffRole(user.email, user.role) : user.role,
     verified: user.emailVerified,
     createdAt: user.createdAt,
   };
@@ -99,6 +101,7 @@ export async function getSessionUser(): Promise<PublicUser | null> {
 
 export function homeForRole(role: UserRole) {
   if (role === 'salon') return '/dresser';
+  if (role === 'owner' || role === 'director') return '/ad';
   if (role === 'manager') return '/ad';
   if (role === 'operator') return '/ad/orders';
   return '/list';
