@@ -9,24 +9,24 @@ export function PasswordInput({ className, ...props }: Omit<React.ComponentProps
   const [visible, setVisible] = useState(false);
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full flex items-center">
       <Input
         {...props}
         type={visible ? 'text' : 'password'}
-        className={cn('auth-password-input pr-12', className)}
+        className={cn('auth-password-input pr-12 text-sm', className)}
       />
       <button
         type="button"
         tabIndex={-1}
-        className="absolute inset-y-0 right-0 z-10 flex w-12 items-center justify-center text-neutral-400 hover:text-neutral-800 transition-colors duration-200 cursor-pointer focus:outline-none"
+        className="absolute right-0 top-0 bottom-0 z-20 flex w-12 items-center justify-center text-neutral-500 hover:text-neutral-900 transition-colors duration-150 cursor-pointer focus:outline-none select-none"
         onMouseDown={(event) => event.preventDefault()}
         onClick={() => setVisible((value) => !value)}
         aria-label={visible ? 'Нууц үг нуух' : 'Нууц үг харах'}
       >
         {visible ? (
-          <EyeOff className="h-5 w-5 text-neutral-600 transition-transform active:scale-90" strokeWidth={2} />
+          <EyeOff className="h-[22px] w-[22px] stroke-[2] text-neutral-700 hover:text-black transition-transform active:scale-90" />
         ) : (
-          <Eye className="h-5 w-5 text-neutral-500 transition-transform active:scale-90" strokeWidth={2} />
+          <Eye className="h-[22px] w-[22px] stroke-[2] text-neutral-600 hover:text-black transition-transform active:scale-90" />
         )}
       </button>
     </div>
