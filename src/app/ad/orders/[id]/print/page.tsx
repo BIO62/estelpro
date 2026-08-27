@@ -16,8 +16,10 @@ export default function AdOrderPrintPage() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setOrder(getOrderById(params.id));
-    setReady(true);
+    void getOrderById(params.id).then((row) => {
+      setOrder(row);
+      setReady(true);
+    });
   }, [params.id]);
 
   if (!ready) return null;

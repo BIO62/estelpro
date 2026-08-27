@@ -78,3 +78,5 @@ alter table public.products enable row level security;
 
 -- If products table already exists without taxons:
 alter table public.products add column if not exists taxons jsonb not null default '[]'::jsonb;
+
+-- Orders: see supabase/orders.sql

@@ -13,7 +13,6 @@ import {
   appendOrderTimeline,
   formatOrderDate,
   getOrderById,
-  nextOrderNumber,
   patchStoredOrder,
   saveStoredOrder,
   staffDisplayName,
@@ -180,37 +179,38 @@ export function AdOrderCompose({ editId }: { editId?: string }) {
 
   useEffect(() => {
     if (!editId) return;
-    const order = getOrderById(editId);
-    if (!order) {
+    void getOrderById(editId).then((order) => {
+      if (!order) {
+        setHydrated(true);
+        return;
+      }
+      setMemberQuery(order.customerName);
+      setPhone(order.phone || '');
+      setEmail(order.email || '');
+      setFirstname(order.firstName || '');
+      setLastname(order.lastName || '');
+      setAddress(order.address || '');
+      setNote(order.note || '');
+      setDeliveryPrice(String(order.deliveryFee ?? 0));
+      setDeliveryPriceManuallyEdited(true);
+      setIsCompany((order.vatType || '').toLowerCase().includes('байгууллага'));
+      const pay = CREATE_ORDER_PAYMENTS.find((p) => p.label === order.paymentMethod);
+      setPaymentId(pay?.value || '1');
+      const loaded = (order.items ?? []).map((item, i) => ({
+        key: i + 1,
+        id: item.id || item.sku || '',
+        sku: item.sku,
+        name: item.name,
+        qty: item.qty,
+        price: item.price,
+        sale: item.discountPercent ?? 0,
+        saleType: 'perc' as const,
+        taxed: true,
+      }));
+      setRows(loaded);
+      nextKey.current = loaded.length + 1;
       setHydrated(true);
-      return;
-    }
-    setMemberQuery(order.customerName);
-    setPhone(order.phone || '');
-    setEmail(order.email || '');
-    setFirstname(order.firstName || '');
-    setLastname(order.lastName || '');
-    setAddress(order.address || '');
-    setNote(order.note || '');
-    setDeliveryPrice(String(order.deliveryFee ?? 0));
-    setDeliveryPriceManuallyEdited(true);
-    setIsCompany((order.vatType || '').toLowerCase().includes('байгууллага'));
-    const pay = CREATE_ORDER_PAYMENTS.find((p) => p.label === order.paymentMethod);
-    setPaymentId(pay?.value || '1');
-    const loaded = (order.items ?? []).map((item, i) => ({
-      key: i + 1,
-      id: item.id || item.sku || '',
-      sku: item.sku,
-      name: item.name,
-      qty: item.qty,
-      price: item.price,
-      sale: item.discountPercent ?? 0,
-      saleType: 'perc' as const,
-      taxed: true,
-    }));
-    setRows(loaded);
-    nextKey.current = loaded.length + 1;
-    setHydrated(true);
+    });
   }, [editId]);
 
   // 1. Live customer search by code, name, phone, or salon name
@@ -421,7 +421,7 @@ export function AdOrderCompose({ editId }: { editId?: string }) {
     setBag(v);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!phone.trim()) {
       setFlash('Утасны дугаар заавал оруулна уу');
@@ -454,12 +454,12 @@ export function AdOrderCompose({ editId }: { editId?: string }) {
     const actor = staffDisplayName(staffUser);
 
     if (isEdit && editId) {
-      const existing = getOrderById(editId);
+      const existing = await getOrderById(editId);
       if (!existing) {
         setFlash('Захиалга олдсонгүй');
         return;
       }
-      patchStoredOrder(existing.id, {
+      await patchStoredOrder(existing.id, {
         customerName: company ? `${displayName} ${company}`.trim() : displayName,
         lastName: lastname,
         firstName: firstname,
@@ -473,7 +473,7 @@ export function AdOrderCompose({ editId }: { editId?: string }) {
         note: note.trim(),
         items,
       });
-      appendOrderTimeline(
+      await appendOrderTimeline(
         existing.id,
         `(#${actor}) хэрэглэгч #${existing.id} захиалгын барааг шинэчиллээ.`,
         actor,
@@ -484,10 +484,8 @@ export function AdOrderCompose({ editId }: { editId?: string }) {
       return;
     }
 
-    const id = nextOrderNumber();
     const date = formatOrderDate();
-    const order: AdOrder = {
-      id,
+    const created = await saveStoredOrder({
       customerName: company ? `${displayName} ${company}`.trim() : displayName,
       lastName: lastname,
       firstName: firstname,
@@ -500,7 +498,7 @@ export function AdOrderCompose({ editId }: { editId?: string }) {
       deliveryFee: deliveryFeeNum,
       deliveryType: '',
       vatType: isCompany ? 'байгууллага' : 'Хувь хүн',
-      invoiceId: id,
+      invoiceId: undefined,
       total: grandTotal,
       paymentStatus: 'unpaid',
       status: 'pending_payment',
@@ -509,14 +507,13 @@ export function AdOrderCompose({ editId }: { editId?: string }) {
       items,
       timeline: [
         {
-          text: `(#${actor}) хэрэглэгч #${id} захиалга үүсгэлээ.`,
+          text: `(#${actor}) хэрэглэгч захиалга үүсгэлээ.`,
           meta: `${actor} / ${date}`,
         },
       ],
-    };
-    saveStoredOrder(order);
-    setFlash(`Захиалга #${id} үүслээ`);
-    window.setTimeout(() => router.push(`/ad/orders/${id}`), 600);
+    });
+    setFlash(`Захиалга #${created.id} үүслээ`);
+    window.setTimeout(() => router.push(`/ad/orders/${created.id}`), 600);
   };
 
   return (

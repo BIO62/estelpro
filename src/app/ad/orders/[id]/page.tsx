@@ -16,6 +16,7 @@ import {
   getProgressCount,
   lineTotal,
   listOrdersByCustomer,
+  listStoredOrders,
   orderPaymentStatus,
   staffDisplayName,
   type AdOrder,
@@ -75,6 +76,7 @@ function KvTable({ rows }: { rows: { label: React.ReactNode; value: React.ReactN
 export default function AdOrderDetailPage() {
   const params = useParams<{ id: string }>();
   const [order, setOrder] = useState<AdOrder | undefined>();
+  const [related, setRelated] = useState<AdOrder[]>([]);
   const [ready, setReady] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -87,8 +89,11 @@ export default function AdOrderDetailPage() {
   const [staffUser, setStaffUser] = useState<PublicUser | null>(null);
 
   useEffect(() => {
-    setOrder(getOrderById(params.id));
-    setReady(true);
+    void getOrderById(params.id).then((row) => {
+      setOrder(row);
+      setReady(true);
+    });
+    void listStoredOrders().then(setRelated);
   }, [params.id]);
 
   useEffect(() => {
@@ -120,7 +125,7 @@ export default function AdOrderDetailPage() {
   const pay = orderPaymentStatus(order);
   const actor = staffDisplayName(staffUser);
   const managerName = order.manager || actor;
-  const customerOrders = listOrdersByCustomer(order);
+  const customerOrders = order ? listOrdersByCustomer(order, related) : [];
   const progress = getProgressCount(order);
   const items = order.items ?? [];
   const invoiceTotal = items.length ? items.reduce((sum, item) => sum + lineTotal(item), 0) : order.total;
@@ -132,8 +137,9 @@ export default function AdOrderDetailPage() {
   const paid = order.payments?.reduce((sum, p) => sum + p.amount, 0) ?? (order.paymentStatus === 'paid' ? order.total : 0);
 
   const logAction = (text: string, extra?: { image?: string; onSheet?: boolean; kind?: 'note' | 'system' }) => {
-    const next = appendOrderTimeline(order.id, text, actor, { ip: clientIp, ...extra });
-    if (next) setOrder(next);
+    void appendOrderTimeline(order.id, text, actor, { ip: clientIp, ...extra }).then((next) => {
+      if (next) setOrder(next);
+    });
   };
 
   return (
@@ -235,8 +241,9 @@ export default function AdOrderDetailPage() {
                   className="ad-order-btn ad-order-btn--success ad-order-btn--sm"
                   disabled={pay === 'paid'}
                   onClick={() => {
-                    const next = applyOrderStatus(order.id, 'success');
-                    if (next) setOrder(next);
+                    void applyOrderStatus(order.id, 'success').then((next) => {
+                      if (next) setOrder(next);
+                    });
                     logAction(`(#${actor}) хэрэглэгч #${order.id} захиалгыг "Амжилттай" / төлсөн болголоо.`);
                   }}
                 >
@@ -247,8 +254,9 @@ export default function AdOrderDetailPage() {
                   className="ad-order-btn ad-order-btn--default ad-order-btn--sm"
                   disabled={pay === 'refunded'}
                   onClick={() => {
-                    const next = applyOrderStatus(order.id, 'returned');
-                    if (next) setOrder(next);
+                    void applyOrderStatus(order.id, 'returned').then((next) => {
+                      if (next) setOrder(next);
+                    });
                     logAction(`(#${actor}) хэрэглэгч #${order.id} захиалгад буцаалт хийлээ.`);
                   }}
                 >
@@ -259,8 +267,9 @@ export default function AdOrderDetailPage() {
                   className="ad-order-btn ad-order-btn--default ad-order-btn--sm"
                   disabled={pay === 'unpaid'}
                   onClick={() => {
-                    const next = applyOrderStatus(order.id, 'pending_payment');
-                    if (next) setOrder(next);
+                    void applyOrderStatus(order.id, 'pending_payment').then((next) => {
+                      if (next) setOrder(next);
+                    });
                     logAction(`(#${actor}) хэрэглэгч #${order.id} захиалгыг "Төлбөр хүлээгдэж байгаа" / төлөөгүй болголоо.`);
                   }}
                 >
@@ -525,15 +534,16 @@ export default function AdOrderDetailPage() {
           order={order}
           onClose={() => setStatusOpen(false)}
           onSave={(status) => {
-            const next = applyOrderStatus(order.id, status);
-            if (next) setOrder(next);
-            appendOrderTimeline(
-              order.id,
-              `(#${actor}) хэрэглэгч (#${order.id}) дугаартай захиалгын төлөвийг "${ORDER_STATUS_LABELS[status]}" болгож өөрчиллөө.`,
-              actor,
-            );
-            const refreshed = getOrderById(order.id);
-            if (refreshed) setOrder(refreshed);
+            void (async () => {
+              const next = await applyOrderStatus(order.id, status);
+              if (next) setOrder(next);
+              const logged = await appendOrderTimeline(
+                order.id,
+                `(#${actor}) хэрэглэгч (#${order.id}) дугаартай захиалгын төлөвийг "${ORDER_STATUS_LABELS[status]}" болгож өөрчиллөө.`,
+                actor,
+              );
+              if (logged) setOrder(logged);
+            })();
           }}
         />
       )}

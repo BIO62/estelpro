@@ -43,7 +43,7 @@ export default function AdOrderToolsPage() {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    setOrders(listStoredOrders().filter((o) => !o.deletedAt));
+    void listStoredOrders().then((rows) => setOrders(rows.filter((o) => !o.deletedAt)));
   }, []);
 
   const tooLong = dateRangeTooLong(startDate, endDate);

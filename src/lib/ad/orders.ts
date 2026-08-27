@@ -222,49 +222,59 @@ export function lineTotal(item: AdOrderItem): number {
   return Math.round(raw * (1 - item.discountPercent / 100));
 }
 
-const ORDERS_KEY = 'estel-ad-orders';
-const SEQ_KEY = 'estel-ad-order-seq';
-const ORDER_SEQ_START = 1000;
+const LEGACY_ORDERS_KEY = 'estel-ad-orders';
+const LEGACY_SEQ_KEY = 'estel-ad-order-seq';
 
 export function formatOrderDate(d = new Date()) {
   const p = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
-export function listStoredOrders(): AdOrder[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(ORDERS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as AdOrder[];
-    if (!Array.isArray(parsed)) return [];
-    return parsed.map(syncOrderPayment);
-  } catch {
-    return [];
-  }
-}
-
 export const ORDERS_CHANGED_EVENT = 'estel-ad-orders-changed';
 
-function writeOrders(orders: AdOrder[]) {
-  localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new Event(ORDERS_CHANGED_EVENT));
+function notifyOrdersChanged() {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(ORDERS_CHANGED_EVENT));
+}
+
+async function ordersJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(path, {
+    ...init,
+    headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
+  });
+  const data = (await res.json()) as T & { error?: string };
+  if (!res.ok) throw new Error(data.error || 'Захиалгын алдаа');
+  return data;
+}
+
+export async function listStoredOrders(): Promise<AdOrder[]> {
+  const data = await ordersJson<{ orders: AdOrder[] }>('/api/ad/orders');
+  return (data.orders || []).map(syncOrderPayment);
+}
+
+export async function migrateLegacyLocalOrders() {
+  if (typeof window === 'undefined') return;
+  const raw = localStorage.getItem(LEGACY_ORDERS_KEY);
+  if (!raw) return;
+  try {
+    const parsed = JSON.parse(raw) as AdOrder[];
+    if (Array.isArray(parsed) && parsed.length) {
+      await ordersJson('/api/ad/orders', { method: 'POST', body: JSON.stringify({ orders: parsed }) });
+    }
+    localStorage.removeItem(LEGACY_ORDERS_KEY);
+    localStorage.removeItem(LEGACY_SEQ_KEY);
+    notifyOrdersChanged();
+  } catch {
+    /* keep local copy until table exists */
   }
 }
 
 export function subscribeStoredOrders(onChange: () => void) {
   if (typeof window === 'undefined') return () => {};
-  const onStorage = (e: StorageEvent) => {
-    if (e.key === ORDERS_KEY || e.key === null) onChange();
-  };
   window.addEventListener(ORDERS_CHANGED_EVENT, onChange);
-  window.addEventListener('storage', onStorage);
   window.addEventListener('focus', onChange);
   document.addEventListener('visibilitychange', onChange);
   return () => {
     window.removeEventListener(ORDERS_CHANGED_EVENT, onChange);
-    window.removeEventListener('storage', onStorage);
     window.removeEventListener('focus', onChange);
     document.removeEventListener('visibilitychange', onChange);
   };
@@ -331,67 +341,71 @@ export function setOrderPaid(id: string, paid: boolean) {
   return applyOrderStatus(id, paid ? 'success' : 'pending_payment');
 }
 
-export function applyOrderStatus(id: string, status: OrderStatus) {
-  const order = getOrderById(id);
-  if (!order) return;
-  const paymentStatus = paymentFromStatus(status);
-  const patch: Partial<AdOrder> = { status, paymentStatus };
-  if (paymentStatus === 'paid') {
-    const hasPay = (order.payments ?? []).some((p) => p.amount > 0);
-    if (!hasPay) {
-      patch.payments = [
-        {
-          id: `p-${id}`,
-          method: order.paymentMethod || 'Дансаар шилжүүлэх',
-          date: formatOrderDate(),
-          amount: order.total,
-        },
-      ];
-    }
-  } else if (paymentStatus === 'unpaid') {
-    patch.payments = [];
-  }
-  return patchStoredOrder(id, patch);
+export async function applyOrderStatus(id: string, status: OrderStatus) {
+  const data = await ordersJson<{ order: AdOrder }>(`/api/ad/orders/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+  notifyOrdersChanged();
+  return data.order ? syncOrderPayment(data.order) : undefined;
 }
 
-export function nextOrderNumber(): string {
-  const existing = listStoredOrders()
-    .map((o) => Number(o.id))
-    .filter((n) => Number.isFinite(n) && n > 0);
-  const storedSeq = Number(localStorage.getItem(SEQ_KEY) || ORDER_SEQ_START);
-  const next = Math.max(ORDER_SEQ_START, storedSeq, ...existing) + 1;
-  localStorage.setItem(SEQ_KEY, String(next));
-  return String(next);
+export async function saveStoredOrder(order: Omit<AdOrder, 'id'> & { id?: string }) {
+  const data = await ordersJson<{ order: AdOrder }>('/api/ad/orders', {
+    method: 'POST',
+    body: JSON.stringify({ order }),
+  });
+  notifyOrdersChanged();
+  return data.order ? syncOrderPayment(data.order) : order;
 }
 
-export function saveStoredOrder(order: AdOrder) {
-  const orders = listStoredOrders();
-  const i = orders.findIndex((o) => o.id === order.id);
-  if (i >= 0) orders[i] = order;
-  else orders.unshift(order);
-  writeOrders(orders);
-}
-
-export function patchStoredOrder(id: string, patch: Partial<AdOrder>) {
-  const orders = listStoredOrders().map((o) => (o.id === id ? { ...o, ...patch } : o));
-  writeOrders(orders);
-  return orders.find((o) => o.id === id);
+export async function patchStoredOrder(id: string, patch: Partial<AdOrder>) {
+  const data = await ordersJson<{ order: AdOrder }>(`/api/ad/orders/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ patch }),
+  });
+  notifyOrdersChanged();
+  return data.order ? syncOrderPayment(data.order) : undefined;
 }
 
 export function trashStoredOrder(id: string) {
-  return patchStoredOrder(id, { deletedAt: formatOrderDate() });
+  return ordersJson<{ order: AdOrder }>(`/api/ad/orders/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ trash: true }),
+  }).then((data) => {
+    notifyOrdersChanged();
+    return data.order ? syncOrderPayment(data.order) : undefined;
+  });
 }
 
 export function restoreStoredOrder(id: string) {
-  return patchStoredOrder(id, { deletedAt: null });
+  return ordersJson<{ order: AdOrder }>(`/api/ad/orders/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ restore: true }),
+  }).then((data) => {
+    notifyOrdersChanged();
+    return data.order ? syncOrderPayment(data.order) : undefined;
+  });
 }
 
-export function getOrderById(id: string): AdOrder | undefined {
-  return listStoredOrders().find((order) => order.id === id);
+export async function getOrderById(id: string): Promise<AdOrder | undefined> {
+  try {
+    const data = await ordersJson<{ order: AdOrder }>(`/api/ad/orders/${encodeURIComponent(id)}`);
+    return data.order ? syncOrderPayment(data.order) : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
-export function getOrderByInvoiceId(invoiceId: string): AdOrder | undefined {
-  return listStoredOrders().find((order) => order.invoiceId === invoiceId);
+export async function getOrderByInvoiceId(invoiceId: string): Promise<AdOrder | undefined> {
+  try {
+    const data = await ordersJson<{ order: AdOrder }>(
+      `/api/ad/orders/${encodeURIComponent(invoiceId)}?invoice=1`,
+    );
+    return data.order ? syncOrderPayment(data.order) : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export function staffDisplayName(user?: { name?: string; lastName?: string } | null) {
@@ -399,37 +413,24 @@ export function staffDisplayName(user?: { name?: string; lastName?: string } | n
   return [user.lastName, user.name].filter(Boolean).join(' ').trim() || user.name || 'Ажилтан';
 }
 
-export function appendOrderTimeline(
+export async function appendOrderTimeline(
   id: string,
   text: string,
   actor: string,
   extra?: { image?: string; onSheet?: boolean; kind?: AdOrderTimeline['kind']; ip?: string },
 ) {
-  const order = getOrderById(id);
-  if (!order) return;
-  const date = formatOrderDate();
-  const shortName = actor.trim().split(/\s+/)[0] || actor;
-  const ip = extra?.ip || 'local';
-  const entry: AdOrderTimeline = {
-    text,
-    meta: `${shortName} / ${ip} / ${date}`,
-    kind: extra?.kind || 'system',
-    image: extra?.image,
-    onSheet: extra?.onSheet,
-  };
-  const patch: Partial<AdOrder> = {
-    timeline: [entry, ...(order.timeline ?? [])],
-  };
-  if (extra?.onSheet && extra.kind === 'note' && text.trim()) {
-    patch.note = [order.note, text.trim()].filter(Boolean).join('\n');
-  }
-  return patchStoredOrder(id, patch);
+  const data = await ordersJson<{ order: AdOrder }>(`/api/ad/orders/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ timeline: { text, actor, extra } }),
+  });
+  notifyOrdersChanged();
+  return data.order ? syncOrderPayment(data.order) : undefined;
 }
 
-export function listOrdersByCustomer(order: AdOrder): AdOrder[] {
+export function listOrdersByCustomer(order: AdOrder, all: AdOrder[]): AdOrder[] {
   const phone = (order.phone || '').replace(/\D/g, '');
   const email = (order.email || '').trim().toLowerCase();
-  return listStoredOrders()
+  return all
     .filter((o) => !o.deletedAt)
     .filter((o) => {
       const p = (o.phone || '').replace(/\D/g, '');

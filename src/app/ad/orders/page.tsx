@@ -11,6 +11,7 @@ import {
   applyOrderStatus,
   filterOrders,
   listStoredOrders,
+  migrateLegacyLocalOrders,
   patchStoredOrder,
   restoreStoredOrder,
   subscribeStoredOrders,
@@ -35,9 +36,14 @@ function AdOrdersPageInner() {
   const [appliedFilters, setAppliedFilters] = useState<OrderFilters>(EMPTY_FILTERS);
 
   useEffect(() => {
-    const load = () => setOrders(listStoredOrders());
-    load();
-    return subscribeStoredOrders(load);
+    const load = async () => {
+      await migrateLegacyLocalOrders();
+      setOrders(await listStoredOrders());
+    };
+    void load();
+    return subscribeStoredOrders(() => {
+      void listStoredOrders().then(setOrders);
+    });
   }, []);
 
   const visible = useMemo(
@@ -50,23 +56,23 @@ function AdOrdersPageInner() {
     [visible, appliedFilters],
   );
 
-  const handleUpdate = (id: string, patch: Partial<AdOrder>) => {
+  const handleUpdate = async (id: string, patch: Partial<AdOrder>) => {
     if (patch.status && Object.keys(patch).length === 1) {
-      applyOrderStatus(id, patch.status);
+      await applyOrderStatus(id, patch.status);
     } else {
-      patchStoredOrder(id, patch);
+      await patchStoredOrder(id, patch);
     }
-    setOrders(listStoredOrders());
+    setOrders(await listStoredOrders());
   };
 
-  const handleTrash = (id: string) => {
-    trashStoredOrder(id);
-    setOrders(listStoredOrders());
+  const handleTrash = async (id: string) => {
+    await trashStoredOrder(id);
+    setOrders(await listStoredOrders());
   };
 
-  const handleRestore = (id: string) => {
-    restoreStoredOrder(id);
-    setOrders(listStoredOrders());
+  const handleRestore = async (id: string) => {
+    await restoreStoredOrder(id);
+    setOrders(await listStoredOrders());
   };
 
   return (

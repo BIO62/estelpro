@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import {
   isDashboardOrder,
   listStoredOrders,
+  migrateLegacyLocalOrders,
   ORDER_SOURCE_LABELS,
   PAYMENT_STATUS_LABELS,
   orderDayKey,
@@ -32,9 +33,14 @@ export default function AdOverviewPage() {
   const [all, setAll] = useState<AdOrder[]>([]);
 
   useEffect(() => {
-    const load = () => setAll(listStoredOrders().filter(isDashboardOrder));
-    load();
-    return subscribeStoredOrders(load);
+    const load = async () => {
+      await migrateLegacyLocalOrders();
+      setAll((await listStoredOrders()).filter(isDashboardOrder));
+    };
+    void load();
+    return subscribeStoredOrders(() => {
+      void listStoredOrders().then((rows) => setAll(rows.filter(isDashboardOrder)));
+    });
   }, []);
 
   const todayStr = isoDay(new Date());

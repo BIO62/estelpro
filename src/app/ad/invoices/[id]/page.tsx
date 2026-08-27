@@ -11,6 +11,7 @@ import {
   INVOICE_STATUS_LABELS,
   getOrderById,
   getOrderByInvoiceId,
+  type AdOrder,
   type AdOrderItem,
   type AdOrderPayment,
   type InvoiceStatus,
@@ -55,11 +56,23 @@ function toEditable(items: AdOrderItem[]): EditableItem[] {
 export default function AdInvoicePage() {
   const params = useParams<{ id: string }>();
   const invoiceId = params.id;
-  const [found, setFound] = useState(() => getOrderByInvoiceId(invoiceId) ?? getOrderById(invoiceId));
+  const [found, setFound] = useState<AdOrder | undefined>();
 
   useEffect(() => {
-    setFound(getOrderByInvoiceId(invoiceId) ?? getOrderById(invoiceId));
+    void (async () => {
+      const byInvoice = await getOrderByInvoiceId(invoiceId);
+      setFound(byInvoice ?? (await getOrderById(invoiceId)));
+    })();
   }, [invoiceId]);
+
+  useEffect(() => {
+    if (!found) return;
+    setInvoiceStatus(found.paymentStatus === 'paid' ? 'paid' : 'unpaid');
+    setItems(toEditable(found.items ?? []));
+    setPayments(found.payments ?? []);
+    setInvoiceDate(found.date?.slice(0, 10) || '2026-08-25');
+    setRefundForm((prev) => ({ ...prev, transactionId: found.payments?.[0]?.id ?? prev.transactionId }));
+  }, [found]);
 
   const [tab, setTab] = useState<InvTab>('home');
   const [invoiceStatus, setInvoiceStatus] = useState<InvoiceStatus>(() =>
