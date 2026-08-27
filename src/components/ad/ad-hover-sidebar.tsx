@@ -16,7 +16,7 @@ import {
 
 import { useIsMobile } from '@/hooks/use-mobile';
 import { isNavHrefActive } from '@/lib/ad/nav-active';
-import { filterNavItems, primaryNav, secondaryNav, type NavItem } from '@/lib/ad/nav-config';
+import { filterNavItems, primaryNav, type NavItem } from '@/lib/ad/nav-config';
 import type { PublicUser } from '@/lib/auth/types';
 import { cn } from '@/lib/utils';
 
@@ -311,7 +311,6 @@ function DesktopHoverSidebarInner({ user }: { user: PublicUser | null }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const visiblePrimary = React.useMemo(() => filterNavItems(primaryNav, user?.role), [user?.role]);
-  const visibleSecondary = React.useMemo(() => filterNavItems(secondaryNav, user?.role), [user?.role]);
 
   return (
     <motion.aside
@@ -326,13 +325,6 @@ function DesktopHoverSidebarInner({ user }: { user: PublicUser | null }) {
         <SidebarNavSection
           label="Үндсэн"
           items={visiblePrimary}
-          expanded={expanded}
-          pathname={pathname}
-          searchParams={searchParams}
-        />
-        <SidebarNavSection
-          label="Бусад"
-          items={visibleSecondary}
           expanded={expanded}
           pathname={pathname}
           searchParams={searchParams}
@@ -356,7 +348,6 @@ function MobileNavOverlayInner({ user }: { user: PublicUser | null }) {
   const searchParams = useSearchParams();
   const close = () => setMobileOpen(false);
   const visiblePrimary = React.useMemo(() => filterNavItems(primaryNav, user?.role), [user?.role]);
-  const visibleSecondary = React.useMemo(() => filterNavItems(secondaryNav, user?.role), [user?.role]);
 
   React.useEffect(() => {
     if (mobileOpen) {
@@ -394,14 +385,6 @@ function MobileNavOverlayInner({ user }: { user: PublicUser | null }) {
               <SidebarNavSection
                 label="Үндсэн"
                 items={visiblePrimary}
-                expanded
-                pathname={pathname}
-                searchParams={searchParams}
-                onNavigate={close}
-              />
-              <SidebarNavSection
-                label="Бусад"
-                items={visibleSecondary}
                 expanded
                 pathname={pathname}
                 searchParams={searchParams}
