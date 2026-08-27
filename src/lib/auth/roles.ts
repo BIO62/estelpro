@@ -28,6 +28,18 @@ export function canManageSalons(role?: UserRole | null) {
   return isLeadershipRole(role);
 }
 
+export function canViewAdminReports(role?: UserRole | null) {
+  return isStaffRole(role) && role !== 'operator';
+}
+
+export function canViewActivityLog(role?: UserRole | null) {
+  return canViewAdminReports(role);
+}
+
+export function canViewSiteUsers(role?: UserRole | null) {
+  return canViewAdminReports(role);
+}
+
 export function canDeleteUsers(role?: UserRole | null) {
   return isLeadershipRole(role);
 }

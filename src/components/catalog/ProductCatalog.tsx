@@ -3,11 +3,12 @@ import { assetUrl } from '@/lib/constants';
 import MasonryGrid from '@/components/catalog/MasonryGrid';
 import ProductCard from '@/components/ui/ProductCard';
 import {
+  getStorefrontMenuTaxons,
   getStorefrontProducts,
-  storefrontMenuTaxons,
   storefrontProductMatchesBrand,
   sortStorefrontProducts,
   toStorefrontProduct,
+  menuHasTaxon,
   type ProductSort,
 } from '@/lib/storefront-products';
 import { isDresserTaxonCode } from '@/lib/catalog-audience';
@@ -61,19 +62,22 @@ export default async function ProductCatalog({
 }) {
   const sp = await searchParams;
   let taxon = firstParam(sp.taxon);
+  const session = await getSessionUser();
+  const isSalon = session?.role === 'salon';
+  const contractPercent = isSalon ? session?.discountPercent || 0 : 0;
+  const menuTaxons = await getStorefrontMenuTaxons(audience);
   if (audience === 'consumer' && isDresserTaxonCode(taxon)) taxon = undefined;
-  if (audience === 'dresser' && (!taxon || !isDresserTaxonCode(taxon))) taxon = 'hair_coloring';
+  if (audience === 'dresser' && taxon && !menuHasTaxon(menuTaxons, taxon)) {
+    taxon = undefined;
+  }
   const brand = getMenuBrand(firstParam(sp.brand))?.slug;
   const sort = ((firstParam(sp.sort) as ProductSort) || (forceNew ? 'newest' : 'random')) as ProductSort;
   const page = Math.max(1, Number(firstParam(sp.page)) || 1);
-  const session = audience === 'dresser' ? await getSessionUser() : null;
-  const contractPercent = session?.role === 'salon' ? session.discountPercent || 0 : 0;
 
   const { items: allProducts } = await getStorefrontProducts({
     taxon,
     audience,
   });
-  const menuTaxons = storefrontMenuTaxons(audience);
   const currentTaxon =
     menuTaxons.find((item) => item.code === taxon) ||
     menuTaxons.flatMap((item) => item.children).find((item) => item.code === taxon);

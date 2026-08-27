@@ -28,6 +28,7 @@ export const primaryNav: NavItem[] = [
   {
     title: 'Тайлан',
     icon: 'icon-bulb',
+    roles: ['owner', 'director', 'manager'],
     items: [
       { title: 'Захиалгын тайлан', url: '/ad/orders?section=order-report' },
       { title: 'Ажилтны тайлан', url: '/ad/orders?section=staff-report' },
@@ -44,7 +45,7 @@ export const primaryNav: NavItem[] = [
   { title: 'Захиалга экспорт', url: '/ad/order-tools', icon: 'icon-cloud-download' },
   { title: 'Хэрэглэгчид', url: '/ad/customers', icon: 'fa fa-users' },
   { title: 'Ажилчид', url: '/ad/staff', icon: 'icon-user', roles: ['owner', 'director'] },
-  { title: 'Түүх', url: '/ad/activity', icon: 'icon-list' },
+  { title: 'Түүх', url: '/ad/activity', icon: 'icon-list', roles: ['owner', 'director', 'manager'] },
 ];
 
 export const secondaryNav: NavItem[] = [];

@@ -24,13 +24,17 @@ import {
 import {
   ORDER_SOURCE_LABELS,
   ORDER_STATUS_LABELS,
+  PAYMENT_STATUS_LABELS,
+  orderPaymentStatus,
   type AdOrder,
   type OrderStatus,
 } from '@/lib/ad/orders';
 import { cn, formatPrice } from '@/lib/utils';
 
 function paymentClass(status: AdOrder['paymentStatus']) {
-  return status === 'paid' ? 'ad-order-status--success' : 'ad-order-status--muted';
+  if (status === 'paid') return 'ad-order-status--success';
+  if (status === 'refunded') return 'ad-order-status--danger';
+  return 'ad-order-status--warning';
 }
 
 function orderStatusClass(status: OrderStatus) {
@@ -45,6 +49,7 @@ function orderStatusClass(status: OrderStatus) {
     case 'delivering':
       return 'ad-order-status--info';
     case 'cancelled':
+    case 'returned':
     case 'fake':
     case 'delivery_failed':
       return 'ad-order-status--danger';
@@ -226,8 +231,8 @@ function OrderRow({
         <td className="ad-order-cell ad-order-cell--amount">₮ {formatPrice(order.total).replace('₮', '').trim()}</td>
 
         <td className="ad-order-cell">
-          <div className={cn('ad-order-status', paymentClass(order.paymentStatus))}>
-            {order.paymentStatus === 'paid' ? 'Төлсөн' : 'Төлөөгүй'}
+          <div className={cn('ad-order-status', paymentClass(orderPaymentStatus(order)))}>
+            {PAYMENT_STATUS_LABELS[orderPaymentStatus(order)]}
           </div>
         </td>
 

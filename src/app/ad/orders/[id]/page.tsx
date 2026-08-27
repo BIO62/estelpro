@@ -9,12 +9,14 @@ import { AdOrderStatusModal } from '@/components/ad/ad-order-status-modal';
 import {
   ORDER_PROGRESS_STEPS,
   ORDER_STATUS_LABELS,
+  PAYMENT_STATUS_LABELS,
+  applyOrderStatus,
   appendOrderTimeline,
   getOrderById,
   getProgressCount,
   lineTotal,
   listOrdersByCustomer,
-  patchStoredOrder,
+  orderPaymentStatus,
   staffDisplayName,
   type AdOrder,
 } from '@/lib/ad/orders';
@@ -115,6 +117,7 @@ export default function AdOrderDetailPage() {
   }
 
   const isTrashed = !!order.deletedAt;
+  const pay = orderPaymentStatus(order);
   const actor = staffDisplayName(staffUser);
   const managerName = order.manager || actor;
   const customerOrders = listOrdersByCustomer(order);
@@ -220,20 +223,47 @@ export default function AdOrderDetailPage() {
             title="Нэхэмжлэл"
             headingClass="ad-od-panel__head--navy"
             right={
-              <span className={cn('ad-od-badge', order.paymentStatus === 'paid' ? 'ad-od-badge--paid' : 'ad-od-badge--unpaid')}>
-                {order.paymentStatus === 'paid' ? 'Төлсөн' : 'Төлөөгүй'}
+              <span className={cn('ad-od-badge', `ad-od-badge--${pay}`)}>
+                {PAYMENT_STATUS_LABELS[pay]}
               </span>
             }
           >
             <div className="ad-od-invoice-toolbar">
               <div className="ad-od-invoice-toolbar__left">
-                <button type="button" className="ad-order-btn ad-order-btn--success ad-order-btn--sm" disabled={order.paymentStatus === 'paid'}>
+                <button
+                  type="button"
+                  className="ad-order-btn ad-order-btn--success ad-order-btn--sm"
+                  disabled={pay === 'paid'}
+                  onClick={() => {
+                    const next = applyOrderStatus(order.id, 'success');
+                    if (next) setOrder(next);
+                    logAction(`(#${actor}) хэрэглэгч #${order.id} захиалгыг "Амжилттай" / төлсөн болголоо.`);
+                  }}
+                >
                   Төлөгдсөн болгох
                 </button>
-                <button type="button" className="ad-order-btn ad-order-btn--default ad-order-btn--sm">
+                <button
+                  type="button"
+                  className="ad-order-btn ad-order-btn--default ad-order-btn--sm"
+                  disabled={pay === 'refunded'}
+                  onClick={() => {
+                    const next = applyOrderStatus(order.id, 'returned');
+                    if (next) setOrder(next);
+                    logAction(`(#${actor}) хэрэглэгч #${order.id} захиалгад буцаалт хийлээ.`);
+                  }}
+                >
                   Цуцлах
                 </button>
-                <button type="button" className="ad-order-btn ad-order-btn--default ad-order-btn--sm">
+                <button
+                  type="button"
+                  className="ad-order-btn ad-order-btn--default ad-order-btn--sm"
+                  disabled={pay === 'unpaid'}
+                  onClick={() => {
+                    const next = applyOrderStatus(order.id, 'pending_payment');
+                    if (next) setOrder(next);
+                    logAction(`(#${actor}) хэрэглэгч #${order.id} захиалгыг "Төлбөр хүлээгдэж байгаа" / төлөөгүй болголоо.`);
+                  }}
+                >
                   Төлөгдөөгүй болгох
                 </button>
               </div>
@@ -495,7 +525,7 @@ export default function AdOrderDetailPage() {
           order={order}
           onClose={() => setStatusOpen(false)}
           onSave={(status) => {
-            const next = patchStoredOrder(order.id, { status });
+            const next = applyOrderStatus(order.id, status);
             if (next) setOrder(next);
             appendOrderTimeline(
               order.id,
@@ -538,8 +568,8 @@ export default function AdOrderDetailPage() {
                         <td>{o.date}</td>
                         <td>{money(o.total)}</td>
                         <td>
-                          <span className={cn('ad-cust-hist__pay', o.paymentStatus === 'paid' && 'is-paid')}>
-                            {o.paymentStatus === 'paid' ? 'Төлсөн' : 'Төлөөгүй'}
+                          <span className={cn('ad-cust-hist__pay', orderPaymentStatus(o) === 'paid' && 'is-paid')}>
+                            {PAYMENT_STATUS_LABELS[orderPaymentStatus(o)]}
                           </span>
                         </td>
                         <td>{ORDER_STATUS_LABELS[o.status]}</td>

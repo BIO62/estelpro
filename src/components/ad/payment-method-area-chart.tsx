@@ -1,6 +1,7 @@
 'use client';
 
-import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
+import { useMemo } from 'react';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 import {
   ChartConfig,
@@ -8,6 +9,12 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
+import {
+  orderDayKey,
+  orderHour,
+  paymentChartBucket,
+  type AdOrder,
+} from '@/lib/ad/orders';
 
 const chartConfig = {
   bank: {
@@ -26,25 +33,62 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-const LAST_7_DAYS_DATA = [
-  { day: '08/19', bank: 142000, qpay: 38000 },
-  { day: '08/20', bank: 98000, qpay: 52000 },
-  { day: '08/21', bank: 176000, qpay: 41000 },
-  { day: '08/22', bank: 124000, qpay: 28000 },
-  { day: '08/23', bank: 89000, qpay: 67000 },
-  { day: '08/24', bank: 201000, qpay: 43000 },
-  { day: '08/25', bank: 171910, qpay: 0 },
-];
+function isoDay(d: Date) {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
 
-const TODAY_DATA = [
-  { day: '09:00', bank: 0, qpay: 0 },
-  { day: '12:00', bank: 0, qpay: 0 },
-  { day: '15:00', bank: 0, qpay: 0 },
-  { day: '18:00', bank: 0, qpay: 0 },
-];
+function buildTodayData(orders: AdOrder[]) {
+  const buckets = [
+    { day: '09:00', hour: 9, bank: 0, qpay: 0 },
+    { day: '12:00', hour: 12, bank: 0, qpay: 0 },
+    { day: '15:00', hour: 15, bank: 0, qpay: 0 },
+    { day: '18:00', hour: 18, bank: 0, qpay: 0 },
+    { day: '21:00', hour: 21, bank: 0, qpay: 0 },
+  ];
+  for (const order of orders) {
+    const hour = orderHour(order.date);
+    let slot = buckets[0];
+    for (const bucket of buckets) {
+      if (hour >= bucket.hour) slot = bucket;
+    }
+    slot[paymentChartBucket(order.paymentMethod)] += order.total;
+  }
+  return buckets.map(({ day, bank, qpay }) => ({ day, bank, qpay }));
+}
 
-export function PaymentMethodAreaChart({ isToday }: { isToday: boolean }) {
-  const chartData = isToday ? TODAY_DATA : LAST_7_DAYS_DATA;
+function buildWeekData(orders: AdOrder[]) {
+  const p = (n: number) => String(n).padStart(2, '0');
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setHours(12, 0, 0, 0);
+    d.setDate(d.getDate() - (6 - i));
+    return {
+      key: isoDay(d),
+      day: `${p(d.getMonth() + 1)}/${p(d.getDate())}`,
+      bank: 0,
+      qpay: 0,
+    };
+  });
+  for (const order of orders) {
+    const slot = days.find((d) => d.key === orderDayKey(order.date));
+    if (!slot) continue;
+    slot[paymentChartBucket(order.paymentMethod)] += order.total;
+  }
+  return days.map(({ day, bank, qpay }) => ({ day, bank, qpay }));
+}
+
+export function PaymentMethodAreaChart({
+  orders,
+  isToday,
+}: {
+  orders: AdOrder[];
+  isToday: boolean;
+}) {
+  const chartData = useMemo(
+    () => (isToday ? buildTodayData(orders) : buildWeekData(orders)),
+    [orders, isToday],
+  );
 
   return (
     <ChartContainer config={chartConfig} className="aspect-auto h-[240px] w-full">
@@ -61,6 +105,7 @@ export function PaymentMethodAreaChart({ isToday }: { isToday: boolean }) {
           tickMargin={8}
           fontSize={11}
         />
+        <YAxis hide domain={[0, 'auto']} />
         <ChartTooltip
           cursor={false}
           content={

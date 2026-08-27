@@ -5,7 +5,7 @@ import { Plus, Search, SquarePen, Trash2 } from 'lucide-react';
 
 import type { AppUser } from '@/lib/users/repo';
 import type { PublicUser } from '@/lib/auth/types';
-import { isLeadershipRole } from '@/lib/auth/roles';
+import { canViewSiteUsers, isLeadershipRole } from '@/lib/auth/roles';
 import { SALON_DISCOUNT_PERCENTS, salonDefaultPassword, tierBadgeLabel, tierIdForPercent } from '@/lib/auth/salon-discount';
 import { AIMAGS, districtsForCity, matchAimag } from '@/lib/ad/locations';
 import { Button } from '@/components/ui/button';
@@ -192,6 +192,8 @@ export default function AdCustomersPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [isDirector, setIsDirector] = useState(false);
+  const [seeSiteUsers, setSeeSiteUsers] = useState(false);
+  const [meReady, setMeReady] = useState(false);
   const [discountFilter, setDiscountFilter] = useState('');
   const [createSalon, setCreateSalon] = useState<CreateSalonForm | null>(null);
   const [createdSalonHint, setCreatedSalonHint] = useState('');
@@ -221,36 +223,49 @@ export default function AdCustomersPage() {
     setLoading(true);
     setError('');
     try {
-      const [salonRes, userRes] = await Promise.all([
-        fetch(`/api/auth/salon?search=${encodeURIComponent(search)}&page=${page}&limit=24&discountPercent=${encodeURIComponent(discountFilter)}`),
-        fetch(`/api/ad/users?status=ALL&q=${encodeURIComponent(search)}&page=${page}&limit=24`),
-      ]);
+      const salonRes = await fetch(
+        `/api/auth/salon?search=${encodeURIComponent(search)}&page=${page}&limit=24&discountPercent=${encodeURIComponent(discountFilter)}`,
+      );
       const salonData = await salonRes.json();
-      const userData = await userRes.json();
       setSalons(salonData.salons || []);
       setSalonTotal(salonData.total || 0);
-      setConsumers(userData.users || []);
-      setConsumerTotal(userData.total || 0);
-      if (userData.error && !userData.users?.length) setError(userData.error);
+      if (seeSiteUsers) {
+        const userRes = await fetch(`/api/ad/users?status=ALL&q=${encodeURIComponent(search)}&page=${page}&limit=24`);
+        const userData = await userRes.json();
+        setConsumers(userData.users || []);
+        setConsumerTotal(userData.total || 0);
+        if (userData.error && !userData.users?.length) setError(userData.error);
+      } else {
+        setConsumers([]);
+        setConsumerTotal(0);
+      }
     } catch {
       setError('Ачаалж чадсангүй');
     }
     setLoading(false);
-  }, [search, page, discountFilter]);
+  }, [search, page, discountFilter, seeSiteUsers]);
 
   useEffect(() => {
-    const q = (new URLSearchParams(window.location.search).get('tab') || '').toUpperCase();
-    if (q === 'CLIENT' || q === 'SALON' || q === 'ALL') setTab('CLIENT');
-    if (q === 'CONSUMER') setTab('CONSUMER');
     fetch('/api/auth/me')
       .then((res) => res.json())
-      .then((data: { user?: PublicUser | null }) => setIsDirector(isLeadershipRole(data.user?.role)));
+      .then((data: { user?: PublicUser | null }) => {
+        const role = data.user?.role;
+        const allowSiteUsers = canViewSiteUsers(role);
+        setIsDirector(isLeadershipRole(role));
+        setSeeSiteUsers(allowSiteUsers);
+        const q = (new URLSearchParams(window.location.search).get('tab') || '').toUpperCase();
+        if (allowSiteUsers && q === 'CONSUMER') setTab('CONSUMER');
+        else if (q === 'CLIENT' || q === 'SALON' || q === 'ALL' || !allowSiteUsers) setTab('CLIENT');
+        setMeReady(true);
+      })
+      .catch(() => setMeReady(true));
   }, []);
 
   useEffect(() => {
+    if (!meReady) return;
     const t = window.setTimeout(load, 200);
     return () => window.clearTimeout(t);
-  }, [load]);
+  }, [load, meReady]);
 
   async function saveSalon(e: FormEvent) {
     e.preventDefault();
@@ -406,6 +421,7 @@ export default function AdCustomersPage() {
         </div>
       </div>
 
+      {seeSiteUsers ? (
       <div className="flex flex-wrap items-center gap-1 rounded-2xl border border-border bg-card p-1 text-xs font-semibold">
         <button type="button" onClick={() => { setTab('CLIENT'); setPage(1); }} className={`px-3 py-1.5 ${tabClass(tab === 'CLIENT')}`}>
           Харилцагч ({salonTotal})
@@ -414,6 +430,7 @@ export default function AdCustomersPage() {
           Сайтын хэрэглэгч ({consumerTotal})
         </button>
       </div>
+      ) : null}
 
       {tab === 'CLIENT' ? (
       <div className="flex flex-wrap gap-2">

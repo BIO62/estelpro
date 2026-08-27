@@ -1,4 +1,4 @@
-import { listLocalProducts, listLocalTaxons } from '@/lib/ad/products-local';
+import { listLocalProducts, listLocalTaxons, localProductMap } from '@/lib/ad/products-local';
 import { isSupabaseConfigured, supabaseAdmin } from '@/lib/supabase/server';
 
 export type DbProduct = {
@@ -20,6 +20,29 @@ export type DbProduct = {
   description: string | null;
   enabled: boolean;
 };
+
+function isThinProduct(p: DbProduct) {
+  return !p.price || p.price <= 100 || (!p.description && !p.short_description) || !p.image_url || !p.brand;
+}
+
+function mergeProduct(row: DbProduct, local?: DbProduct): DbProduct {
+  if (!local) return row;
+  const price =
+    row.price > 100 ? row.price : local.price > 100 ? local.price : row.price || local.price;
+  return {
+    ...local,
+    ...row,
+    sku: row.sku && row.sku !== row.code ? row.sku : local.sku || row.sku,
+    price,
+    original_price: row.original_price || local.original_price,
+    brand: row.brand || local.brand,
+    image_url: row.image_url || local.image_url,
+    gallery: row.gallery?.length ? row.gallery : local.gallery,
+    short_description: row.short_description || local.short_description,
+    description: row.description || local.description,
+    taxons: row.taxons?.length ? row.taxons : local.taxons,
+  };
+}
 
 export async function listProducts(opts?: {
   q?: string;
@@ -51,14 +74,23 @@ export async function listProducts(opts?: {
         }
       }
       if (opts?.taxon && opts.taxon !== 'ALL') {
-        query = query.or(`taxon.eq.${opts.taxon},taxons.cs.["${opts.taxon}"]`);
+        const codes =
+          opts.taxon === 'shaping' || opts.taxon === 'styling' ? ['shaping', 'styling'] : [opts.taxon];
+        query = query.or(codes.flatMap((code) => [`taxon.eq.${code}`, `taxons.cs.["${code}"]`]).join(','));
       }
 
       const { data, error, count } = await query;
       if (!error && data && data.length > 0) {
+        const locals = localProductMap();
+        const merged = (data as DbProduct[]).map((row) => mergeProduct(row, locals.get(row.code) || locals.get(row.id)));
+        const thin = merged.filter(isThinProduct).length;
+        const local = listLocalProducts(opts);
+        if (local && (local.total > (count ?? merged.length) || thin > merged.length / 2)) {
+          return local;
+        }
         return {
-          items: data as DbProduct[],
-          total: count ?? data.length,
+          items: merged,
+          total: count ?? merged.length,
           source: 'supabase',
         };
       }

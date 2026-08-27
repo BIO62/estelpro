@@ -8,10 +8,12 @@ import { Plus } from 'lucide-react';
 import { AdOrderSearch, EMPTY_FILTERS } from '@/components/ad/ad-order-search';
 import { AdOrderTable } from '@/components/ad/ad-order-table';
 import {
+  applyOrderStatus,
   filterOrders,
   listStoredOrders,
   patchStoredOrder,
   restoreStoredOrder,
+  subscribeStoredOrders,
   trashStoredOrder,
   type AdOrder,
   type OrderFilters,
@@ -33,7 +35,9 @@ function AdOrdersPageInner() {
   const [appliedFilters, setAppliedFilters] = useState<OrderFilters>(EMPTY_FILTERS);
 
   useEffect(() => {
-    setOrders(listStoredOrders());
+    const load = () => setOrders(listStoredOrders());
+    load();
+    return subscribeStoredOrders(load);
   }, []);
 
   const visible = useMemo(
@@ -47,7 +51,11 @@ function AdOrdersPageInner() {
   );
 
   const handleUpdate = (id: string, patch: Partial<AdOrder>) => {
-    patchStoredOrder(id, patch);
+    if (patch.status && Object.keys(patch).length === 1) {
+      applyOrderStatus(id, patch.status);
+    } else {
+      patchStoredOrder(id, patch);
+    }
     setOrders(listStoredOrders());
   };
 

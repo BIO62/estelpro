@@ -1,5 +1,7 @@
 import ProductCatalog from '@/components/catalog/ProductCatalog';
 
+export const dynamic = 'force-dynamic';
+
 export default function DresserListPage({
   searchParams,
 }: {

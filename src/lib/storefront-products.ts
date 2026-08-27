@@ -2,7 +2,7 @@ import { FALLBACK_PRODUCT_IMAGE } from '@/lib/constants';
 import { DRESSER_TAXON_CODES } from '@/lib/catalog-audience';
 import { listProducts, type DbProduct } from '@/lib/ad/products-repo';
 import { MENU_BRANDS, productMatchesBrand } from '@/lib/brands';
-import type { MenuTaxon, ProductSort } from '@/lib/api/sylius';
+import { getSyliusTaxons, toMenuTaxons, type MenuTaxon, type ProductSort } from '@/lib/api/sylius';
 import type { CatalogProduct } from '@/lib/products';
 import { applySalonDiscount } from '@/lib/auth/salon-discount';
 
@@ -12,6 +12,7 @@ const TAXON_LABELS: Record<string, string> = {
   Alpha: 'Alpha',
   kids_care: 'Хүүхдийн арчилгаа',
   styling: 'Хэлбэржүүлэлт',
+  shaping: 'Хэлбэржүүлэлт',
   hair_coloring: 'Үсний будаг',
   hair_signature: 'Hair Signature',
   hair_love: 'Hair Love',
@@ -42,7 +43,27 @@ export function isDresserStorefrontProduct(product: DbProduct) {
 }
 
 export function storefrontMenuTaxons(audience: 'consumer' | 'dresser'): MenuTaxon[] {
-  return audience === 'dresser' ? DRESSER_TAXONS : CONSUMER_TAXONS;
+  if (audience === 'dresser') return [...DRESSER_TAXONS, ...CONSUMER_TAXONS];
+  return CONSUMER_TAXONS;
+}
+
+export async function getStorefrontMenuTaxons(audience: 'consumer' | 'dresser'): Promise<MenuTaxon[]> {
+  const raw = await getSyliusTaxons();
+  if (audience === 'dresser') {
+    const dresser = toMenuTaxons(raw, 'dresser');
+    const consumer = toMenuTaxons(raw, 'consumer').filter((item) => item.code !== 'all_products');
+    return [
+      ...(dresser.length ? dresser : DRESSER_TAXONS),
+      ...(consumer.length ? consumer : CONSUMER_TAXONS),
+    ];
+  }
+  const fetched = toMenuTaxons(raw, 'consumer');
+  return fetched.length ? fetched : CONSUMER_TAXONS;
+}
+
+export function menuHasTaxon(menu: MenuTaxon[], code?: string) {
+  if (!code) return false;
+  return menu.some((item) => item.code === code || item.children.some((child) => child.code === code));
 }
 
 export async function getStorefrontProducts(options?: {
@@ -56,9 +77,10 @@ export async function getStorefrontProducts(options?: {
   });
   return {
     source,
-    items: items.filter((product) =>
-      audience === 'dresser' ? isDresserStorefrontProduct(product) : !isDresserStorefrontProduct(product),
-    ),
+    items:
+      audience === 'dresser'
+        ? items
+        : items.filter((product) => !isDresserStorefrontProduct(product)),
   };
 }
 

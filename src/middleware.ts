@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 import { COOKIE, verifySessionToken } from '@/lib/auth/token-edge';
-import { isLeadershipRole, isStaffRole } from '@/lib/auth/roles';
+import { canViewActivityLog, canViewAdminReports, canViewSiteUsers, isLeadershipRole, isStaffRole } from '@/lib/auth/roles';
 
 const PUBLIC_PREFIXES = ['/login', '/register', '/verify', '/forgot-password', '/api/auth'];
 
@@ -32,11 +32,29 @@ export async function middleware(request: NextRequest) {
     if (!session || !isStaffRole(session.role)) {
       return loginRedirect(request, '/login/staff');
     }
-    if (
-      pathname.startsWith('/ad/staff') &&
-      !isLeadershipRole(session.role)
-    ) {
+    if (pathname.startsWith('/ad/staff') && !isLeadershipRole(session.role)) {
       return loginRedirect(request, session.role === 'operator' ? '/ad/orders' : '/ad');
+    }
+    if (!canViewActivityLog(session.role) && pathname.startsWith('/ad/activity')) {
+      return loginRedirect(request, session.role === 'operator' ? '/ad/orders' : '/ad');
+    }
+    if (!canViewSiteUsers(session.role) && pathname.startsWith('/ad/users')) {
+      return loginRedirect(request, '/ad/customers');
+    }
+    if (
+      !canViewSiteUsers(session.role) &&
+      pathname.startsWith('/ad/customers') &&
+      (request.nextUrl.searchParams.get('tab') || '').toUpperCase() === 'CONSUMER'
+    ) {
+      return loginRedirect(request, '/ad/customers');
+    }
+    if (
+      !canViewAdminReports(session.role) &&
+      pathname.startsWith('/ad/orders') &&
+      (request.nextUrl.searchParams.get('section') === 'order-report' ||
+        request.nextUrl.searchParams.get('section') === 'staff-report')
+    ) {
+      return loginRedirect(request, '/ad/orders');
     }
     return NextResponse.next();
   }

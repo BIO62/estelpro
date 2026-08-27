@@ -9,7 +9,7 @@ import './wrap.css';
 import './globals.css';
 import ClientLayout from '@/components/layout/ClientLayout';
 import { ASSET_BASE } from '@/lib/constants';
-import { storefrontMenuTaxons } from '@/lib/storefront-products';
+import { getStorefrontMenuTaxons } from '@/lib/storefront-products';
 
 export const revalidate = 300;
 
@@ -26,7 +26,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const taxons = storefrontMenuTaxons('consumer');
+  const taxons = await getStorefrontMenuTaxons('consumer');
   return (
     <html lang="mn">
       <head>

@@ -11,14 +11,14 @@ import {
   updateAppUser,
   type AppUserStatus,
 } from '@/lib/users/repo';
-import { canDeleteUsers, isStaffRole } from '@/lib/auth/roles';
+import { canDeleteUsers, canViewSiteUsers, isStaffRole } from '@/lib/auth/roles';
 import { hashPassword } from '@/lib/auth/password';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   const session = await getSessionUser();
-  if (!session || !isStaffRole(session.role)) {
+  if (!session || !isStaffRole(session.role) || !canViewSiteUsers(session.role)) {
     return NextResponse.json({ error: 'Хандах эрхгүй.' }, { status: 401 });
   }
 
@@ -56,7 +56,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const session = await getSessionUser();
-  if (!session || !isStaffRole(session.role)) {
+  if (!session || !isStaffRole(session.role) || !canViewSiteUsers(session.role)) {
     return NextResponse.json({ error: 'Хандах эрхгүй.' }, { status: 403 });
   }
 
@@ -105,7 +105,7 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
   const session = await getSessionUser();
-  if (!session || !isStaffRole(session.role)) {
+  if (!session || !isStaffRole(session.role) || !canViewSiteUsers(session.role)) {
     return NextResponse.json({ error: 'Хандах эрхгүй.' }, { status: 403 });
   }
 

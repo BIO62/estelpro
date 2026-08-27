@@ -128,7 +128,7 @@ function amount(priceInCents) {
   if (priceInCents == null || priceInCents === '') return 0;
   const n = Number(priceInCents);
   if (!Number.isFinite(n)) return 0;
-  return n > 1_000_000 ? Math.round(n / 100) : n;
+  return n > 1_000_000 || n >= 400000 ? Math.round(n / 100) : n;
 }
 
 async function ensureBucket() {

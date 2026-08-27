@@ -12,6 +12,7 @@ const TAXON_IMAGES: Record<string, string> = {
   Alpha: 'images/taxon/Alpha.jpg',
   kids_care: 'images/taxon/хүүхдийн арчилгаа.jpg',
   styling: 'images/taxon/хэлбэржүүлэлт.jpg',
+  shaping: 'images/taxon/хэлбэржүүлэлт.jpg',
   all_products: 'images/taxon/бүх бүтээгдэхүүн.jpg',
 };
 

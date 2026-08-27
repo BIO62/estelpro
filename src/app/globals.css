@@ -385,6 +385,39 @@ header .btn {
   visibility: visible;
 }
 
+.navigationLevelOne .singleNav .singleNavImage,
+.navigationLevelTwo .singleNav .singleNavImage {
+  position: relative;
+  background-color: #fff;
+}
+
+.navigationLevelOne .singleNav .singleNavImage img,
+.navigationLevelTwo .singleNav .singleNavImage img {
+  display: block;
+  transition: filter 0.2s ease;
+}
+
+.navigationLevelOne .singleNav .singleNavImage::after,
+.navigationLevelTwo .singleNav .singleNavImage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #4a4a4a;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+@media (hover: hover) {
+  .navTileGrid:hover .singleNav .singleNavImage::after {
+    opacity: 0.72;
+  }
+
+  .navTileGrid:hover .singleNav:hover .singleNavImage::after {
+    opacity: 0;
+  }
+}
+
 .thumbSlider .swiper-slide video {
   width: 100%;
   height: auto;
@@ -4628,7 +4661,12 @@ body.ad-dark-body {
 }
 
 .admin-scope .ad-od-badge--unpaid {
-  background: hsl(0 0% 70%);
+  background: hsl(38 92% 50%);
+  color: #fff;
+}
+
+.admin-scope .ad-od-badge--refunded {
+  background: hsl(0 72% 51%);
   color: #fff;
 }
 

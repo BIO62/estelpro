@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/breadcrumb';
 import { cn } from '@/lib/utils';
 import type { PublicUser } from '@/lib/auth/types';
-import { isLeadershipRole, isStaffRole } from '@/lib/auth/roles';
+import { canViewActivityLog, canViewSiteUsers, isLeadershipRole, isStaffRole } from '@/lib/auth/roles';
 
 interface AdLayoutProps {
   children: React.ReactNode;
@@ -43,11 +43,17 @@ export default function AdLayout({ children }: AdLayoutProps) {
           router.replace('/login/staff');
           return;
         }
-        if (
-          pathname.startsWith('/ad/staff') &&
-          !isLeadershipRole(next.role)
-        ) {
-          router.replace(next.role === 'operator' ? '/ad/orders' : '/ad');
+        const home = next.role === 'operator' ? '/ad/orders' : '/ad';
+        if (pathname.startsWith('/ad/staff') && !isLeadershipRole(next.role)) {
+          router.replace(home);
+          return;
+        }
+        if (pathname.startsWith('/ad/activity') && !canViewActivityLog(next.role)) {
+          router.replace(home);
+          return;
+        }
+        if (pathname.startsWith('/ad/users') && !canViewSiteUsers(next.role)) {
+          router.replace('/ad/customers');
           return;
         }
         setUser(next);

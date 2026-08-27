@@ -2,6 +2,8 @@ import {
   DEMO_ORDERS,
   ORDER_SOURCE_LABELS,
   ORDER_STATUS_LABELS,
+  PAYMENT_STATUS_LABELS,
+  orderPaymentStatus,
   type AdOrder,
   type OrderStatus,
 } from '@/lib/ad/orders';
@@ -124,7 +126,7 @@ function fieldValue(order: AdOrder, key: ExportFieldKey, itemIndex = 0): string 
     case 'order_status':
       return ORDER_STATUS_LABELS[order.status];
     case 'is_paid':
-      return order.paymentStatus === 'paid' ? 'Төлсөн' : 'Төлөөгүй';
+      return PAYMENT_STATUS_LABELS[orderPaymentStatus(order)];
     case 'payment_id':
       return order.paymentMethod;
     case 'delivery_id':
@@ -167,8 +169,8 @@ export function filterExportOrders(input: BuildExportInput): AdOrder[] {
     if (input.startDate && day < input.startDate) return false;
     if (input.endDate && day > input.endDate) return false;
     if (input.status && order.status !== (input.status as OrderStatus)) return false;
-    if (input.paid === '1' && order.paymentStatus !== 'paid') return false;
-    if (input.paid === '0' && order.paymentStatus !== 'unpaid') return false;
+    if (input.paid === '1' && orderPaymentStatus(order) !== 'paid') return false;
+    if (input.paid === '0' && orderPaymentStatus(order) !== 'unpaid') return false;
     return true;
   });
 }

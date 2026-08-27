@@ -54,7 +54,7 @@ export default function DresserPage() {
                   Мэргэжлийн каталог үзэх
                 </Link>
                 <Link
-                  href="/products"
+                  href="/dresser/list?taxon=hair_care"
                   className="btn px-4 py-3 fw-semibold rounded-3 text-decoration-none"
                   style={{ background: 'rgba(255,255,255,.12)', color: '#fff', border: '1.5px solid rgba(255,255,255,.25)' }}
                 >

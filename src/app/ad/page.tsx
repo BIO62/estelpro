@@ -6,7 +6,17 @@ import { Download } from 'lucide-react';
 import { formatPrice } from '@/lib/cart';
 import { PaymentMethodAreaChart } from '@/components/ad/payment-method-area-chart';
 import { Button } from '@/components/ui/button';
-import { listStoredOrders, ORDER_SOURCE_LABELS, type AdOrder } from '@/lib/ad/orders';
+import {
+  isDashboardOrder,
+  listStoredOrders,
+  ORDER_SOURCE_LABELS,
+  PAYMENT_STATUS_LABELS,
+  orderDayKey,
+  orderPaidAmount,
+  orderPaymentStatus,
+  subscribeStoredOrders,
+  type AdOrder,
+} from '@/lib/ad/orders';
 
 const PANEL_CLASS = 'rounded-xl border border-border bg-card p-5';
 
@@ -15,12 +25,16 @@ function isoDay(d: Date) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
+const ONLINE_SOURCES = new Set(['web', 'api', 'mobile', 'web_form', 'chatbot']);
+
 export default function AdOverviewPage() {
   const [period, setPeriod] = useState<'today' | 'last_7_days'>('today');
   const [all, setAll] = useState<AdOrder[]>([]);
 
   useEffect(() => {
-    setAll(listStoredOrders().filter((o) => !o.deletedAt));
+    const load = () => setAll(listStoredOrders().filter(isDashboardOrder));
+    load();
+    return subscribeStoredOrders(load);
   }, []);
 
   const todayStr = isoDay(new Date());
@@ -28,27 +42,35 @@ export default function AdOverviewPage() {
 
   const filtered = useMemo(() => {
     return all.filter((o) => {
-      const day = o.date.slice(0, 10);
+      const day = orderDayKey(o.date);
       if (period === 'today') return day === todayStr;
       return day >= weekStart && day <= todayStr;
     });
   }, [all, period, todayStr, weekStart]);
 
   const isToday = period === 'today';
-  const paidOrders = filtered.filter((o) => o.paymentStatus === 'paid');
-  const unpaidOrders = filtered.filter((o) => o.paymentStatus !== 'paid');
-  const revenue = paidOrders.reduce((sum, o) => sum + o.total, 0);
+  const paidOrders = filtered.filter((o) => orderPaymentStatus(o) === 'paid');
+  const unpaidOrders = filtered.filter((o) => orderPaymentStatus(o) === 'unpaid');
+  const salesTotal = filtered.reduce((sum, o) => sum + o.total, 0);
+  const collected = filtered.reduce((sum, o) => sum + orderPaidAmount(o), 0);
   const paidCount = paidOrders.length;
   const unpaidCount = unpaidOrders.length;
   const totalCount = filtered.length;
-  const avgPrice = totalCount > 0 ? Math.round(revenue / Math.max(paidCount, 1)) : 0;
+  const avgPrice = totalCount > 0 ? Math.round(salesTotal / totalCount) : 0;
   const recent = all.slice(0, 5);
+
+  const manualTotal = filtered
+    .filter((o) => !ONLINE_SOURCES.has(o.source))
+    .reduce((sum, o) => sum + o.total, 0);
+  const onlineTotal = filtered
+    .filter((o) => ONLINE_SOURCES.has(o.source))
+    .reduce((sum, o) => sum + o.total, 0);
+  const channelBase = salesTotal || 1;
+  const manualPct = Math.round((manualTotal / channelBase) * 100);
+  const onlinePct = Math.round((onlineTotal / channelBase) * 100);
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-5 text-foreground">
-      {/* ========================================================================= */}
-      {/* 1. Header Toolbar (Dashboard title + Date filters + Export)               */}
-      {/* ========================================================================= */}
       <div className="flex flex-wrap items-center justify-end gap-4">
         <div className="flex items-center gap-3">
           <div className="inline-flex h-9 overflow-hidden rounded-full border border-border shadow-xs">
@@ -81,16 +103,13 @@ export default function AdOverviewPage() {
         </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* 2. Top 4 Stat Cards (.dashboard-stat-card style)                          */}
-      {/* ========================================================================= */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <div className={`${PANEL_CLASS} ad-stat-card ad-stat-card--primary flex min-h-[110px] flex-col justify-between`}>
           <div className="text-[13px] font-medium uppercase tracking-wide text-muted-foreground">
             {isToday ? 'Өнөөдрийн орлого' : 'Сүүлийн 7 хоногийн орлого'}
           </div>
           <div className="my-1 flex items-baseline text-[32px] font-bold leading-none text-primary">
-            <span>{revenue.toLocaleString('mn-MN')}</span>
+            <span>{salesTotal.toLocaleString('mn-MN')}</span>
             <span className="ml-1 text-lg font-normal text-muted-foreground">₮</span>
           </div>
         </div>
@@ -105,6 +124,7 @@ export default function AdOverviewPage() {
               ({totalCount > 0 ? ((paidCount / totalCount) * 100).toFixed(1) : 0}%)
             </span>
           </div>
+          <div className="text-xs text-muted-foreground">{collected.toLocaleString('mn-MN')}₮</div>
         </div>
 
         <div className={`${PANEL_CLASS} ad-stat-card ad-stat-card--warning flex min-h-[110px] flex-col justify-between`}>
@@ -116,6 +136,9 @@ export default function AdOverviewPage() {
             <span className="ml-2 text-sm font-normal text-muted-foreground">
               ({totalCount > 0 ? ((unpaidCount / totalCount) * 100).toFixed(1) : 0}%)
             </span>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {Math.max(0, salesTotal - collected).toLocaleString('mn-MN')}₮
           </div>
         </div>
 
@@ -130,9 +153,6 @@ export default function AdOverviewPage() {
         </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* 3. Сүүлийн 5 захиалга Table (1:1 GreenSoft exact table)                   */}
-      {/* ========================================================================= */}
       <div className={PANEL_CLASS}>
         <div className="mb-4 text-[13px] font-medium uppercase tracking-wide text-muted-foreground">
           СҮҮЛИЙН 5 ЗАХИАЛГА
@@ -173,16 +193,18 @@ export default function AdOverviewPage() {
                   <td className="p-3">
                     <span
                       className={`inline-block rounded px-2 py-0.5 text-[11px] font-medium ${
-                        o.paymentStatus === 'paid'
+                        orderPaymentStatus(o) === 'paid'
                           ? 'bg-emerald-600 text-white'
-                          : 'bg-amber-400 text-foreground'
+                          : orderPaymentStatus(o) === 'refunded'
+                            ? 'bg-red-600 text-white'
+                            : 'bg-amber-400 text-foreground'
                       }`}
                     >
-                      {o.paymentStatus === 'paid' ? 'Төлсөн' : 'Төлөөгүй'}
+                      {PAYMENT_STATUS_LABELS[orderPaymentStatus(o)]}
                     </span>
                   </td>
-                  <td className="p-3 text-muted-foreground">{o.paymentMethod}</td>
-                  <td className="p-3 text-muted-foreground">{ORDER_SOURCE_LABELS[o.source]}</td>
+                  <td className="p-3 text-muted-foreground">{o.paymentMethod || 'Дансаар шилжүүлэх'}</td>
+                  <td className="p-3 text-muted-foreground">{ORDER_SOURCE_LABELS[o.source] || o.source}</td>
                   <td className="whitespace-nowrap p-3 text-xs text-muted-foreground">{o.date}</td>
                 </tr>
                 ))
@@ -192,9 +214,6 @@ export default function AdOverviewPage() {
         </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* 4. Bottom 2 Panels: Төлбөрийн хэлбэрийн тайлан & Хаанаас                 */}
-      {/* ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className={`${PANEL_CLASS} flex min-h-[320px] flex-col`}>
           <div className="mb-4 border-b border-border pb-3 text-[13px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -202,7 +221,7 @@ export default function AdOverviewPage() {
           </div>
 
           <div className="flex flex-1 flex-col rounded-lg border border-border bg-muted/20 p-3">
-            <PaymentMethodAreaChart isToday={isToday} />
+            <PaymentMethodAreaChart orders={filtered} isToday={isToday} />
           </div>
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
@@ -229,20 +248,27 @@ export default function AdOverviewPage() {
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs font-semibold">
                 <span>Гараар нэмсэн (POS / Менежер)</span>
-                <span className="text-primary">1,270,910₮ (100%)</span>
+                <span className="text-primary">
+                  {manualTotal.toLocaleString('mn-MN')}₮ ({salesTotal ? manualPct : 0}%)
+                </span>
               </div>
               <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
-                <div className="h-full rounded-full bg-primary" style={{ width: '100%' }} />
+                <div className="h-full rounded-full bg-primary" style={{ width: `${salesTotal ? manualPct : 0}%` }} />
               </div>
             </div>
 
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs font-semibold">
                 <span>Онлайн дэлгүүр (estelpro.mn)</span>
-                <span className="text-muted-foreground">0₮ (0%)</span>
+                <span className="text-muted-foreground">
+                  {onlineTotal.toLocaleString('mn-MN')}₮ ({salesTotal ? onlinePct : 0}%)
+                </span>
               </div>
               <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
-                <div className="h-full rounded-full bg-muted-foreground/40" style={{ width: '0%' }} />
+                <div
+                  className="h-full rounded-full bg-muted-foreground/40"
+                  style={{ width: `${salesTotal ? onlinePct : 0}%` }}
+                />
               </div>
             </div>
           </div>

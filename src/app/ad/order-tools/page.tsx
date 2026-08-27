@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
-import { listStoredOrders, ORDER_STATUS_LABELS, type AdOrder, type OrderStatus } from '@/lib/ad/orders';
+import { listStoredOrders, ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, orderPaymentStatus, type AdOrder, type OrderStatus } from '@/lib/ad/orders';
 import { formatPrice } from '@/lib/cart';
 import {
   DEFAULT_EXPORT_FIELDS,
@@ -244,8 +244,14 @@ export default function AdOrderToolsPage() {
                   <td className="whitespace-nowrap px-3 py-2 font-semibold">{formatPrice(order.total)}</td>
                   <td className="whitespace-nowrap px-3 py-2">{ORDER_STATUS_LABELS[order.status]}</td>
                   <td className="whitespace-nowrap px-3 py-2">
-                    <span className={`inline-flex rounded px-2 py-0.5 text-[11px] font-semibold ${order.paymentStatus === 'paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                      {order.paymentStatus === 'paid' ? 'Төлсөн' : 'Төлөөгүй'}
+                    <span className={`inline-flex rounded px-2 py-0.5 text-[11px] font-semibold ${
+                      orderPaymentStatus(order) === 'paid'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : orderPaymentStatus(order) === 'refunded'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {PAYMENT_STATUS_LABELS[orderPaymentStatus(order)]}
                     </span>
                   </td>
                 </tr>

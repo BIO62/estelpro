@@ -25,6 +25,16 @@ function readCache(): CacheFile | null {
   }
 }
 
+function taxonMatchCodes(taxon: string) {
+  if (taxon === 'shaping' || taxon === 'styling') return ['shaping', 'styling'];
+  return [taxon];
+}
+
+function productHasTaxon(p: DbProduct, taxon: string) {
+  const codes = taxonMatchCodes(taxon);
+  return codes.some((code) => p.taxon === code || (Array.isArray(p.taxons) && p.taxons.includes(code)));
+}
+
 function toDb(p: CacheFile['products'][number]): DbProduct {
   return {
     id: p.id || p.code,
@@ -67,10 +77,7 @@ export function listLocalProducts(opts?: {
     );
   }
   if (opts?.taxon && opts.taxon !== 'ALL') {
-    const t = opts.taxon;
-    items = items.filter(
-      (p) => p.taxon === t || (Array.isArray(p.taxons) && p.taxons.includes(t)),
-    );
+    items = items.filter((p) => productHasTaxon(p, opts.taxon!));
   }
 
   items.sort((a, b) => a.name.localeCompare(b.name, 'mn'));
@@ -78,6 +85,25 @@ export function listLocalProducts(opts?: {
   const offset = opts?.offset ?? 0;
   const limit = opts?.limit ?? 100;
   return { items: items.slice(offset, offset + limit), total, source: 'local' };
+}
+
+export function localProductByCode(code: string): DbProduct | undefined {
+  const cache = readCache();
+  if (!cache) return undefined;
+  const hit = cache.products.find((p) => p.code === code || p.id === code);
+  return hit ? toDb(hit) : undefined;
+}
+
+export function localProductMap(): Map<string, DbProduct> {
+  const cache = readCache();
+  const map = new Map<string, DbProduct>();
+  if (!cache) return map;
+  for (const p of cache.products) {
+    const row = toDb(p);
+    map.set(row.code, row);
+    if (row.id) map.set(row.id, row);
+  }
+  return map;
 }
 
 export function listLocalTaxons(): string[] {

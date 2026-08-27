@@ -1,4 +1,4 @@
-export type OrderPaymentStatus = 'paid' | 'unpaid';
+export type OrderPaymentStatus = 'paid' | 'unpaid' | 'refunded';
 export type OrderStatus =
   | 'pending_payment'
   | 'preparing'
@@ -210,7 +210,7 @@ export function getProgressCount(order: AdOrder): number {
     case 'preparing':
       return 3;
     case 'pending_payment':
-      return order.paymentStatus === 'paid' ? 2 : 1;
+      return 1;
     default:
       return 1;
   }
@@ -237,14 +237,121 @@ export function listStoredOrders(): AdOrder[] {
     const raw = localStorage.getItem(ORDERS_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as AdOrder[];
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(syncOrderPayment);
   } catch {
     return [];
   }
 }
 
+export const ORDERS_CHANGED_EVENT = 'estel-ad-orders-changed';
+
 function writeOrders(orders: AdOrder[]) {
   localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(ORDERS_CHANGED_EVENT));
+  }
+}
+
+export function subscribeStoredOrders(onChange: () => void) {
+  if (typeof window === 'undefined') return () => {};
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === ORDERS_KEY || e.key === null) onChange();
+  };
+  window.addEventListener(ORDERS_CHANGED_EVENT, onChange);
+  window.addEventListener('storage', onStorage);
+  window.addEventListener('focus', onChange);
+  document.addEventListener('visibilitychange', onChange);
+  return () => {
+    window.removeEventListener(ORDERS_CHANGED_EVENT, onChange);
+    window.removeEventListener('storage', onStorage);
+    window.removeEventListener('focus', onChange);
+    document.removeEventListener('visibilitychange', onChange);
+  };
+}
+
+export function orderDayKey(date: string): string {
+  const iso = date.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (iso) return iso[1];
+  const parsed = new Date(date);
+  if (!Number.isNaN(parsed.getTime())) {
+    const p = (n: number) => String(n).padStart(2, '0');
+    return `${parsed.getFullYear()}-${p(parsed.getMonth() + 1)}-${p(parsed.getDate())}`;
+  }
+  return date.slice(0, 10);
+}
+
+export function orderHour(date: string): number {
+  const m = date.match(/\d{4}-\d{2}-\d{2}[ T](\d{2})/);
+  if (m) return Number(m[1]);
+  const parsed = new Date(date);
+  return Number.isNaN(parsed.getTime()) ? 0 : parsed.getHours();
+}
+
+export function isDashboardOrder(order: AdOrder) {
+  if (order.deletedAt) return false;
+  return order.status !== 'cancelled' && order.status !== 'returned' && order.status !== 'fake';
+}
+
+export function paymentFromStatus(status: OrderStatus): OrderPaymentStatus {
+  if (status === 'success') return 'paid';
+  if (status === 'returned' || status === 'cancelled') return 'refunded';
+  return 'unpaid';
+}
+
+export const PAYMENT_STATUS_LABELS: Record<OrderPaymentStatus, string> = {
+  paid: 'Төлсөн',
+  unpaid: 'Төлөөгүй',
+  refunded: 'Буцаасан',
+};
+
+export function orderPaymentStatus(order: AdOrder): OrderPaymentStatus {
+  return paymentFromStatus(order.status);
+}
+
+export function syncOrderPayment(order: AdOrder): AdOrder {
+  return { ...order, paymentStatus: paymentFromStatus(order.status) };
+}
+
+export function isOrderPaid(order: AdOrder) {
+  return orderPaymentStatus(order) === 'paid';
+}
+
+export function orderPaidAmount(order: AdOrder) {
+  return isOrderPaid(order) ? order.total : 0;
+}
+
+export function paymentChartBucket(method: string): 'bank' | 'qpay' {
+  const m = (method || '').toLowerCase();
+  if (/qpay|socialpay|lend|pocket|store\s*pay|sono|digipay|most/.test(m)) return 'qpay';
+  return 'bank';
+}
+
+export function setOrderPaid(id: string, paid: boolean) {
+  return applyOrderStatus(id, paid ? 'success' : 'pending_payment');
+}
+
+export function applyOrderStatus(id: string, status: OrderStatus) {
+  const order = getOrderById(id);
+  if (!order) return;
+  const paymentStatus = paymentFromStatus(status);
+  const patch: Partial<AdOrder> = { status, paymentStatus };
+  if (paymentStatus === 'paid') {
+    const hasPay = (order.payments ?? []).some((p) => p.amount > 0);
+    if (!hasPay) {
+      patch.payments = [
+        {
+          id: `p-${id}`,
+          method: order.paymentMethod || 'Дансаар шилжүүлэх',
+          date: formatOrderDate(),
+          amount: order.total,
+        },
+      ];
+    }
+  } else if (paymentStatus === 'unpaid') {
+    patch.payments = [];
+  }
+  return patchStoredOrder(id, patch);
 }
 
 export function nextOrderNumber(): string {
@@ -559,8 +666,8 @@ export function filterOrders(orders: AdOrder[], filters: OrderFilters): AdOrder[
     if (filters.orderPhone && !order.phone.includes(filters.orderPhone)) return false;
     if (filters.nameQuery && !order.customerName.toLowerCase().includes(filters.nameQuery.toLowerCase())) return false;
     if (filters.extraPhone && order.extraPhone && !order.extraPhone.includes(filters.extraPhone)) return false;
-    if (filters.isPaid === '1' && order.paymentStatus !== 'paid') return false;
-    if (filters.isPaid === '-1' && order.paymentStatus !== 'unpaid') return false;
+    if (filters.isPaid === '1' && orderPaymentStatus(order) !== 'paid') return false;
+    if (filters.isPaid === '-1' && orderPaymentStatus(order) !== 'unpaid') return false;
     if (filters.source) {
       const sourceMap: Record<string, OrderSource> = {
         '0': 'web',
