@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { ChevronRight, type LucideIcon } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
@@ -22,7 +22,7 @@ import { isNavHrefActive } from '@/lib/ad/nav-active';
 export type NavMainItem = {
   title: string;
   url?: string;
-  icon?: LucideIcon;
+  icon?: string;
   items?: { title: string; url: string }[];
 };
 
@@ -38,8 +38,6 @@ function NavCollapsibleItem({
   const groupActive =
     item.items?.some((sub) => isNavHrefActive(sub.url, pathname, searchParams)) ?? false;
   const [open, setOpen] = React.useState(false);
-  const Icon = item.icon;
-
   React.useEffect(() => {
     setOpen(groupActive);
   }, [groupActive]);
@@ -51,7 +49,7 @@ function NavCollapsibleItem({
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
           <SidebarMenuButton tooltip={item.title} isActive={groupActive}>
-            {Icon ? <Icon /> : null}
+            {item.icon ? <i className={item.icon} aria-hidden /> : null}
             <span>{item.title}</span>
             <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
           </SidebarMenuButton>
@@ -87,7 +85,6 @@ function NavMainInner({ items }: { items: NavMainItem[] }) {
       <SidebarMenu>
         {items.map((item) => {
           if (item.url && !item.items?.length) {
-            const Icon = item.icon;
             return (
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton
@@ -96,7 +93,7 @@ function NavMainInner({ items }: { items: NavMainItem[] }) {
                   tooltip={item.title}
                 >
                   <Link href={item.url}>
-                    {Icon ? <Icon /> : null}
+                    {item.icon ? <i className={item.icon} aria-hidden /> : null}
                     <span>{item.title}</span>
                   </Link>
                 </SidebarMenuButton>

@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Montserrat } from 'next/font/google';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -11,12 +10,6 @@ import './globals.css';
 import ClientLayout from '@/components/layout/ClientLayout';
 import { ASSET_BASE } from '@/lib/constants';
 import { storefrontMenuTaxons } from '@/lib/storefront-products';
-
-const montserrat = Montserrat({
-  subsets: ['latin', 'cyrillic'],
-  variable: '--font-montserrat',
-  display: 'swap',
-});
 
 export const revalidate = 300;
 
@@ -38,8 +31,9 @@ export default async function RootLayout({
     <html lang="mn">
       <head>
         <link rel="icon" href={`${ASSET_BASE}/images/favicon.svg`} />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700&subset=cyrillic,latin" />
       </head>
-      <body className={montserrat.className}>
+      <body>
         <ClientLayout taxons={taxons}>{children}</ClientLayout>
       </body>
     </html>

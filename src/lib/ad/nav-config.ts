@@ -1,42 +1,33 @@
-import {
-  ClipboardList,
-  Gauge,
-  Lightbulb,
-  Package,
-  UserCog,
-  Users,
-  ShoppingBag,
-  type LucideIcon,
-} from 'lucide-react';
 import type { UserRole } from '@/lib/auth/types';
 
 export type NavSubItem = {
   title: string;
   url: string;
+  icon?: string;
   roles?: UserRole[];
 };
 
 export type NavItem = {
   title: string;
   url?: string;
-  icon?: LucideIcon;
+  icon?: string;
   roles?: UserRole[];
   items?: NavSubItem[];
 };
 
 export const primaryNav: NavItem[] = [
-  { title: 'Dashboard', url: '/ad', icon: Gauge },
+  { title: 'Dashboard', url: '/ad', icon: 'icon-speedometer' },
   {
     title: 'Захиалгууд',
-    icon: ShoppingBag,
+    icon: 'icon-bag',
     items: [
-      { title: 'Бүх захиалга', url: '/ad/orders' },
-      { title: 'Шинэ захиалга (POS)', url: '/ad/create-order' },
+      { title: 'Захиалгууд', url: '/ad/orders', icon: 'icon-bag' },
+      { title: 'Устгагдсан', url: '/ad/orders?trashed=1', icon: 'icon-trash' },
     ],
   },
   {
     title: 'Тайлан',
-    icon: Lightbulb,
+    icon: 'icon-bulb',
     items: [
       { title: 'Захиалгын тайлан', url: '/ad/orders?section=order-report' },
       { title: 'Ажилтны тайлан', url: '/ad/orders?section=staff-report' },
@@ -44,15 +35,16 @@ export const primaryNav: NavItem[] = [
   },
   {
     title: 'Бүтээгдэхүүн',
-    icon: Package,
+    icon: 'icon-bag',
     items: [
       { title: 'Бүх бараа', url: '/ad/products' },
       { title: 'Үлдэгдэл хяналт', url: '/ad/products?section=stock' },
     ],
   },
-  { title: 'Хэрэглэгчид', url: '/ad/customers', icon: Users },
-  { title: 'Ажилчид', url: '/ad/staff', icon: UserCog, roles: ['owner', 'director'] },
-  { title: 'Түүх', url: '/ad/activity', icon: ClipboardList },
+  { title: 'Захиалга экспорт', url: '/ad/order-tools', icon: 'icon-cloud-download' },
+  { title: 'Хэрэглэгчид', url: '/ad/customers', icon: 'fa fa-users' },
+  { title: 'Ажилчид', url: '/ad/staff', icon: 'icon-user', roles: ['owner', 'director'] },
+  { title: 'Түүх', url: '/ad/activity', icon: 'icon-list' },
 ];
 
 export const secondaryNav: NavItem[] = [];

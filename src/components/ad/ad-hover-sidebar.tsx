@@ -11,7 +11,6 @@ import {
   Menu,
   PanelLeft,
   X,
-  type LucideIcon,
 } from 'lucide-react';
 
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -92,16 +91,21 @@ export function AdSidebarProvider({
   );
 }
 
+function SidebarIcon({ name }: { name?: string }) {
+  if (!name) return null;
+  return <i className={cn('ad-sidebar-link__icon', name)} aria-hidden />;
+}
+
 function SidebarNavLink({
   href,
-  icon: Icon,
+  icon,
   label,
   active,
   expanded,
   onNavigate,
 }: {
   href: string;
-  icon: LucideIcon;
+  icon: string;
   label: string;
   active: boolean;
   expanded: boolean;
@@ -118,7 +122,7 @@ function SidebarNavLink({
         active && 'ad-sidebar-link--active'
       )}
     >
-      <Icon className="ad-sidebar-link__icon" strokeWidth={1.75} />
+      <SidebarIcon name={icon} />
       {expanded ? <span className="ad-sidebar-link__label">{label}</span> : null}
     </Link>
   );
@@ -140,8 +144,6 @@ function SidebarNavGroup({
   const groupActive =
     item.items?.some((sub) => isNavHrefActive(sub.url, pathname, searchParams)) ?? false;
   const [open, setOpen] = React.useState(groupActive);
-  const Icon = item.icon;
-
   React.useEffect(() => {
     setOpen(groupActive);
   }, [groupActive]);
@@ -150,7 +152,7 @@ function SidebarNavGroup({
     if (!expanded) setOpen(false);
   }, [expanded]);
 
-  if (!item.items?.length || !Icon) return null;
+  if (!item.items?.length || !item.icon) return null;
 
   const firstChildUrl = item.items[0]?.url;
 
@@ -165,7 +167,7 @@ function SidebarNavGroup({
           groupActive && 'ad-sidebar-link--active'
         )}
       >
-        <Icon className="ad-sidebar-link__icon" strokeWidth={1.75} />
+        <SidebarIcon name={item.icon} />
       </Link>
     );
   }
@@ -180,7 +182,7 @@ function SidebarNavGroup({
           groupActive && 'ad-sidebar-link--active'
         )}
       >
-        <Icon className="ad-sidebar-link__icon" strokeWidth={1.75} />
+        <SidebarIcon name={item.icon} />
         <span className="ad-sidebar-link__label">{item.title}</span>
         <ChevronDown
           className={cn(
@@ -210,6 +212,7 @@ function SidebarNavGroup({
                     isNavHrefActive(sub.url, pathname, searchParams) && 'ad-sidebar-link--active'
                   )}
                 >
+                  {sub.icon ? <SidebarIcon name={sub.icon} /> : null}
                   <span className="ad-sidebar-link__label">{sub.title}</span>
                 </Link>
               ))}

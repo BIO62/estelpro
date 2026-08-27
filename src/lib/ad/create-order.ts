@@ -1,5 +1,4 @@
 import { DEMO_PRODUCTS } from '@/lib/constants';
-import { DEMO_ORDERS } from '@/lib/ad/orders';
 
 export type CatalogProduct = {
   id: string;
@@ -8,6 +7,7 @@ export type CatalogProduct = {
   price: number;
   isTax: boolean;
   stock?: number;
+  image?: string;
 };
 
 export type DemoMember = {
@@ -30,17 +30,6 @@ export const ORDER_CATALOG: CatalogProduct[] = [
     isTax: true,
     stock: 24,
   })),
-  ...DEMO_ORDERS.flatMap(
-    (o) =>
-      o.items?.map((item) => ({
-        id: item.sku,
-        sku: item.sku,
-        title: item.name,
-        price: item.price,
-        isTax: true,
-        stock: 12,
-      })) ?? [],
-  ),
 ].filter((p, i, arr) => arr.findIndex((x) => x.id === p.id) === i);
 
 export const DEMO_MEMBERS: DemoMember[] = [
@@ -111,12 +100,4 @@ export const CREATE_ORDER_PAYMENTS = [
   { value: '5', label: 'ХХБ онлайн мерчантаар' },
   { value: '6', label: 'QPay ээр хялбар төлөх' },
   { value: '7', label: 'Lend.mn мерчантаар' },
-];
-
-export const CREATE_ORDER_CURRENCIES = [
-  { value: '1', label: 'Төгрөг' },
-  { value: '2', label: 'Ам.доллар' },
-  { value: '3', label: 'Euro' },
-  { value: '4', label: 'Cn.Yuan' },
-  { value: '5', label: 'Рубль' },
 ];

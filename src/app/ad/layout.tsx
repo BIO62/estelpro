@@ -76,10 +76,13 @@ function AdLayoutShell({
 
   const getBreadcrumbTitle = () => {
     if (pathname === '/ad') return 'Dashboard';
+    if (pathname.match(/^\/ad\/orders\/[^/]+\/print$/)) return 'Хэвлэх';
     if (pathname.match(/^\/ad\/invoices\/[^/]+$/)) return 'Нэхэмжлэл';
+    if (pathname.match(/^\/ad\/orders\/[^/]+\/edit$/)) return 'Нэхэмжлэх засах';
     if (pathname.match(/^\/ad\/orders\/[^/]+$/)) return 'Захиалгын дэлгэрэнгүй';
+    if (pathname.startsWith('/ad/order-tools')) return 'Захиалгын масс экспорт';
     if (pathname.startsWith('/ad/orders')) return 'Захиалгууд';
-    if (pathname.startsWith('/ad/create-order')) return 'Шинэ захиалга бүртгэх';
+    if (pathname.startsWith('/ad/create-order')) return 'Шинэ захиалга үүсгэх';
     if (pathname.startsWith('/ad/users')) return 'Сайтын хэрэглэгчид';
     if (pathname.startsWith('/ad/customers')) return 'Харилцагч';
     if (pathname.startsWith('/ad/products')) return 'Бүтээгдэхүүн';
@@ -88,10 +91,17 @@ function AdLayoutShell({
     return 'Удирдлага';
   };
 
+  if (/\/ad\/orders\/[^/]+\/print\/?$/.test(pathname)) {
+    return <div className={cn('admin-scope', ready && theme === 'dark' ? 'dark' : '')}>{children}</div>;
+  }
+
   return (
     <AdSidebarProvider
       className={cn('admin-scope min-h-svh w-full bg-background', ready && theme === 'dark' ? 'dark' : '')}
-    >      <AdHoverSidebar user={user} />
+    >
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/simple-line-icons/2.5.5/css/simple-line-icons.min.css" />
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+      <AdHoverSidebar user={user} />
       <AdSidebarInset>
         <header className="ad-shell-header sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b bg-background">
           <div className="flex h-full w-full items-center gap-2 px-4">

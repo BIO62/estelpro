@@ -22,6 +22,7 @@ export type OrderSource =
   | 'chatbot';
 
 export type AdOrderItem = {
+  id?: string;
   sku: string;
   name: string;
   price: number;
@@ -39,7 +40,9 @@ export type AdOrderPayment = {
 export type AdOrderTimeline = {
   text: string;
   meta: string;
-  tone?: 'default' | 'blue' | 'green' | 'red';
+  kind?: 'note' | 'system';
+  image?: string;
+  onSheet?: boolean;
 };
 
 export type AdOrder = {
@@ -62,9 +65,11 @@ export type AdOrder = {
   paymentStatus: OrderPaymentStatus;
   status: OrderStatus;
   date: string;
+  note?: string;
   items?: AdOrderItem[];
   payments?: AdOrderPayment[];
   timeline?: AdOrderTimeline[];
+  deletedAt?: string | null;
 };
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
@@ -150,15 +155,8 @@ export const SOURCE_OPTIONS = [
 export const STATUS_FILTER_OPTIONS = [
   { value: '', label: 'Бүгд' },
   { value: '0', label: 'Төлбөр хүлээгдэж байгаа' },
-  { value: '3', label: 'Бэлтгэж байгаа' },
-  { value: '4', label: 'Хүргэлтэнд бэлэн' },
-  { value: '5', label: 'Хүргэлтийн ажилтан хүлээж авсан' },
-  { value: '1', label: 'Хүргэлт хийгдэж байгаа' },
   { value: '2', label: 'Амжилттай' },
-  { value: '-1', label: 'Цуцлагдсан' },
-  { value: '-2', label: 'Хуурамч' },
   { value: '-8', label: 'Буцаалт хийсэн' },
-  { value: '-10', label: 'Хүргэлт амжилтгүй' },
 ];
 
 export const ORDER_STATUS_CHANGE_OPTIONS = STATUS_FILTER_OPTIONS.filter((opt) => opt.value !== '');
@@ -224,12 +222,115 @@ export function lineTotal(item: AdOrderItem): number {
   return Math.round(raw * (1 - item.discountPercent / 100));
 }
 
+const ORDERS_KEY = 'estel-ad-orders';
+const SEQ_KEY = 'estel-ad-order-seq';
+const ORDER_SEQ_START = 1000;
+
+export function formatOrderDate(d = new Date()) {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+export function listStoredOrders(): AdOrder[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(ORDERS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as AdOrder[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeOrders(orders: AdOrder[]) {
+  localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+}
+
+export function nextOrderNumber(): string {
+  const existing = listStoredOrders()
+    .map((o) => Number(o.id))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  const storedSeq = Number(localStorage.getItem(SEQ_KEY) || ORDER_SEQ_START);
+  const next = Math.max(ORDER_SEQ_START, storedSeq, ...existing) + 1;
+  localStorage.setItem(SEQ_KEY, String(next));
+  return String(next);
+}
+
+export function saveStoredOrder(order: AdOrder) {
+  const orders = listStoredOrders();
+  const i = orders.findIndex((o) => o.id === order.id);
+  if (i >= 0) orders[i] = order;
+  else orders.unshift(order);
+  writeOrders(orders);
+}
+
+export function patchStoredOrder(id: string, patch: Partial<AdOrder>) {
+  const orders = listStoredOrders().map((o) => (o.id === id ? { ...o, ...patch } : o));
+  writeOrders(orders);
+  return orders.find((o) => o.id === id);
+}
+
+export function trashStoredOrder(id: string) {
+  return patchStoredOrder(id, { deletedAt: formatOrderDate() });
+}
+
+export function restoreStoredOrder(id: string) {
+  return patchStoredOrder(id, { deletedAt: null });
+}
+
 export function getOrderById(id: string): AdOrder | undefined {
-  return DEMO_ORDERS.find((order) => order.id === id);
+  return listStoredOrders().find((order) => order.id === id);
 }
 
 export function getOrderByInvoiceId(invoiceId: string): AdOrder | undefined {
-  return DEMO_ORDERS.find((order) => order.invoiceId === invoiceId);
+  return listStoredOrders().find((order) => order.invoiceId === invoiceId);
+}
+
+export function staffDisplayName(user?: { name?: string; lastName?: string } | null) {
+  if (!user) return 'Ажилтан';
+  return [user.lastName, user.name].filter(Boolean).join(' ').trim() || user.name || 'Ажилтан';
+}
+
+export function appendOrderTimeline(
+  id: string,
+  text: string,
+  actor: string,
+  extra?: { image?: string; onSheet?: boolean; kind?: AdOrderTimeline['kind']; ip?: string },
+) {
+  const order = getOrderById(id);
+  if (!order) return;
+  const date = formatOrderDate();
+  const shortName = actor.trim().split(/\s+/)[0] || actor;
+  const ip = extra?.ip || 'local';
+  const entry: AdOrderTimeline = {
+    text,
+    meta: `${shortName} / ${ip} / ${date}`,
+    kind: extra?.kind || 'system',
+    image: extra?.image,
+    onSheet: extra?.onSheet,
+  };
+  const patch: Partial<AdOrder> = {
+    timeline: [entry, ...(order.timeline ?? [])],
+  };
+  if (extra?.onSheet && extra.kind === 'note' && text.trim()) {
+    patch.note = [order.note, text.trim()].filter(Boolean).join('\n');
+  }
+  return patchStoredOrder(id, patch);
+}
+
+export function listOrdersByCustomer(order: AdOrder): AdOrder[] {
+  const phone = (order.phone || '').replace(/\D/g, '');
+  const email = (order.email || '').trim().toLowerCase();
+  return listStoredOrders()
+    .filter((o) => !o.deletedAt)
+    .filter((o) => {
+      const p = (o.phone || '').replace(/\D/g, '');
+      if (phone && p && (p.includes(phone) || phone.includes(p))) return true;
+      if (email && (o.email || '').trim().toLowerCase() === email) return true;
+      return false;
+    })
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)));
 }
 
 export const INVOICE_MAIL_OPTIONS = [
@@ -263,7 +364,7 @@ export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
   cancelled: 'Цуцлагдсан',
 };
 
-export const DEMO_ORDERS: AdOrder[] = [
+export const DEMO_ORDERS: AdOrder[] = []; /*
   {
     id: '1333300',
     customerName: 'Б.Бадмаараа Silver member 20107 Бамбаараа Увс',
@@ -418,9 +519,7 @@ export const DEMO_ORDERS: AdOrder[] = [
     total: 58000,
     paymentStatus: 'unpaid',
     status: 'pending_payment',
-    date: '2026-08-22 17:20:33',
-  },
-];
+*/
 
 export type OrderFilters = {
   orderId: string;

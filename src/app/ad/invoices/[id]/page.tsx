@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, Download, ExternalLink, Send, X } from 'lucide-react';
@@ -55,7 +55,11 @@ function toEditable(items: AdOrderItem[]): EditableItem[] {
 export default function AdInvoicePage() {
   const params = useParams<{ id: string }>();
   const invoiceId = params.id;
-  const found = getOrderByInvoiceId(invoiceId) ?? getOrderById(invoiceId);
+  const [found, setFound] = useState(() => getOrderByInvoiceId(invoiceId) ?? getOrderById(invoiceId));
+
+  useEffect(() => {
+    setFound(getOrderByInvoiceId(invoiceId) ?? getOrderById(invoiceId));
+  }, [invoiceId]);
 
   const [tab, setTab] = useState<InvTab>('home');
   const [invoiceStatus, setInvoiceStatus] = useState<InvoiceStatus>(() =>

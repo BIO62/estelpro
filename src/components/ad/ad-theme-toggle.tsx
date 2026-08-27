@@ -20,14 +20,8 @@ export function AdThemeProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useLayoutEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as AdTheme | null;
-    const initial =
-      stored === 'light' || stored === 'dark'
-        ? stored
-        : window.matchMedia('(prefers-color-scheme: dark)').matches
-          ? 'dark'
-          : 'light';
-    setTheme(initial);
+    const stored = localStorage.getItem(STORAGE_KEY);
+    setTheme(stored === 'dark' ? 'dark' : 'light');
     setReady(true);
   }, []);
 

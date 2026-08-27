@@ -20,13 +20,10 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get('q') || '').trim();
+  const kind = searchParams.get('kind') || 'salon';
 
   try {
-    const [salonsRes, usersRes] = await Promise.all([
-      listSalons({ search: q, limit: q ? 25 : 12 }),
-      listAppUsers({ q, limit: q ? 25 : 12, kind: 'consumer' }),
-    ]);
-
+    const salonsRes = await listSalons({ search: q, limit: q ? 25 : 12 });
     const salons = (salonsRes.salons || []).map((s) => ({
       id: `salon-${s.id}`,
       rawId: s.id,
@@ -45,6 +42,11 @@ export async function GET(req: Request) {
       discountTier: s.discountTier,
     }));
 
+    if (kind !== 'all') {
+      return NextResponse.json({ customers: salons, total: salonsRes.total || 0 });
+    }
+
+    const usersRes = await listAppUsers({ q, limit: q ? 25 : 12, kind: 'consumer' });
     const consumers = (usersRes.items || []).map((u) => ({
       id: `user-${u.id}`,
       rawId: u.id,

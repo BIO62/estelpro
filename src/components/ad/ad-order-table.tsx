@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ChevronDown,
   ChevronUp,
@@ -9,6 +10,7 @@ import {
   ExternalLink,
   FileText,
   Printer,
+  RefreshCw,
   Trash2,
 } from 'lucide-react';
 
@@ -168,14 +170,21 @@ function OrderQuickEdit({
 function OrderRow({
   order,
   striped,
+  trashed,
   onUpdate,
+  onTrash,
+  onRestore,
 }: {
   order: AdOrder;
   striped?: boolean;
+  trashed?: boolean;
   onUpdate: (id: string, patch: Partial<AdOrder>) => void;
+  onTrash?: (id: string) => void;
+  onRestore?: (id: string) => void;
 }) {
   const [quickEditOpen, setQuickEditOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
+  const router = useRouter();
 
   return (
     <>
@@ -205,7 +214,8 @@ function OrderRow({
             </li>
           </ul>
           <div className="ad-order-customer-extra">
-            <span className="ad-order-meta-label">Төлбөрийн нөхцөл:</span> <span>{order.paymentMethod}</span>
+            <span className="ad-order-meta-label">Төлбөрийн нөхцөл:</span>{' '}
+            <span>{order.paymentMethod || 'Дансаар шилжүүлэх'}</span>
           </div>
           <div className="ad-order-customer-extra">
             <span className="ad-order-meta-label">Хариуцсан менежер:</span>{' '}
@@ -241,24 +251,23 @@ function OrderRow({
                 <ChevronDown className="size-3" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="ad-order-dropdown">
-              <DropdownMenuItem asChild>
-                <Link href={`/ad/orders/${order.id}`}>
-                  <ExternalLink className="size-3.5" />
-                  Дэлгэрэнгүй үзэх
-                </Link>
+            <DropdownMenuContent align="end" className="admin-scope ad-order-dropdown">
+              <DropdownMenuItem onClick={() => router.push(`/ad/orders/${order.id}`)}>
+                <ExternalLink className="size-3.5" />
+                Дэлгэрэнгүй үзэх
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.print()}>
+              <DropdownMenuItem onClick={() => window.open(`/ad/orders/${order.id}/print`, '_blank')}>
                 <Printer className="size-3.5" />
                 Хэвлэх
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href={`/ad/invoices/${order.invoiceId || order.id}`}>
-                  <FileText className="size-3.5" />
-                  Нэхэмжлэл үзэх
-                </Link>
+              <DropdownMenuItem onClick={() => router.push(`/ad/invoices/${order.invoiceId || order.id}`)}>
+                <FileText className="size-3.5" />
+                Нэхэмжлэл үзэх
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setStatusOpen(true)}>Статус өөрчлөх</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusOpen(true)}>
+                <RefreshCw className="size-3.5" />
+                Статус өөрчлөх
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -279,11 +288,20 @@ function OrderRow({
                 <EllipsisVertical className="size-4" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="ad-order-dropdown">
-              <DropdownMenuItem variant="destructive">
+            <DropdownMenuContent align="end" className="admin-scope ad-order-dropdown">
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => {
+                  if (trashed) return;
+                  onTrash?.(order.id);
+                }}
+              >
                 <Trash2 className="size-3.5" />
                 Устгах
               </DropdownMenuItem>
+              {trashed ? (
+                <DropdownMenuItem onClick={() => onRestore?.(order.id)}>Сэргээх</DropdownMenuItem>
+              ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
         </td>
@@ -311,14 +329,20 @@ function OrderRow({
 export function AdOrderTable({
   orders,
   onUpdate,
+  onTrash,
+  onRestore,
+  trashed,
 }: {
   orders: AdOrder[];
   onUpdate: (id: string, patch: Partial<AdOrder>) => void;
+  onTrash?: (id: string) => void;
+  onRestore?: (id: string) => void;
+  trashed?: boolean;
 }) {
   if (orders.length === 0) {
     return (
       <div className="ad-order-empty">
-        <p>Захиалга олдсонгүй</p>
+        <p>{trashed ? 'Устгагдсан захиалга алга' : 'Захиалга олдсонгүй. Шинэ захиалга үүсгэнэ үү.'}</p>
       </div>
     );
   }
@@ -339,7 +363,15 @@ export function AdOrderTable({
         </thead>
         <tbody>
           {orders.map((order, index) => (
-            <OrderRow key={order.id} order={order} striped={index % 2 === 1} onUpdate={onUpdate} />
+            <OrderRow
+              key={order.id}
+              order={order}
+              striped={index % 2 === 1}
+              trashed={trashed}
+              onUpdate={onUpdate}
+              onTrash={onTrash}
+              onRestore={onRestore}
+            />
           ))}
         </tbody>
       </table>

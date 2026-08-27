@@ -23,8 +23,6 @@ type AdOrderStatusModalProps = {
 export function AdOrderStatusModal({ open, order, onClose, onSave }: AdOrderStatusModalProps) {
   const [mounted, setMounted] = useState(false);
   const [selected, setSelected] = useState(STATUS_TO_VALUE[order.status]);
-  const [emailNotify, setEmailNotify] = useState(false);
-  const [smsNotify, setSmsNotify] = useState(false);
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -34,8 +32,6 @@ export function AdOrderStatusModal({ open, order, onClose, onSave }: AdOrderStat
   useEffect(() => {
     if (open) {
       setSelected(STATUS_TO_VALUE[order.status]);
-      setEmailNotify(false);
-      setSmsNotify(false);
       setIsDark(document.documentElement.classList.contains('dark'));
     }
   }, [open, order.status]);
@@ -100,31 +96,6 @@ export function AdOrderStatusModal({ open, order, onClose, onSave }: AdOrderStat
               </label>
             ))}
           </div>
-
-          <label className="ad-modal-check">
-            <input type="checkbox" checked={emailNotify} onChange={(e) => setEmailNotify(e.target.checked)} />
-            И-Мэйл сонордуулга илгээх
-          </label>
-          {emailNotify && (
-            <textarea
-              className="ad-order-textarea"
-              rows={3}
-              defaultValue={`Сайн байна уу, Таны #${order.id} дугаартай захиалга %order_status% төлөвт орлоо. Биднийг сонгож үйлчлүүлсэнд танд баярлалаа.`}
-            />
-          )}
-
-          <label className="ad-modal-check">
-            <input type="checkbox" checked={smsNotify} onChange={(e) => setSmsNotify(e.target.checked)} />
-            SMS сонордуулга илгээх
-          </label>
-          <p className="ad-modal-hint">8:00 - 20:00 цагийн хооронд явах боломжтой.</p>
-          {smsNotify && (
-            <textarea
-              className="ad-order-textarea"
-              rows={3}
-              defaultValue={`Sain bnu, Tanii #${order.id} dugaartai zahialgiin tuluv uurchlugdluu. Ta zahialgiin yavtsaiig %tracking_link% hayagaar orj uzne uu.`}
-            />
-          )}
         </div>
         <div className="ad-modal__footer">
           <button type="button" className="ad-order-btn ad-order-btn--default" onClick={onClose}>

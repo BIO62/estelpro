@@ -1,27 +1,24 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, History, Printer, Send, Truck } from 'lucide-react';
+import { ArrowLeft, History, ImagePlus, Printer, Send, X } from 'lucide-react';
 
 import { AdOrderStatusModal } from '@/components/ad/ad-order-status-modal';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  MANAGERS,
   ORDER_PROGRESS_STEPS,
   ORDER_STATUS_LABELS,
+  appendOrderTimeline,
   getOrderById,
   getProgressCount,
   lineTotal,
+  listOrdersByCustomer,
+  patchStoredOrder,
+  staffDisplayName,
   type AdOrder,
-  type OrderStatus,
 } from '@/lib/ad/orders';
+import type { PublicUser } from '@/lib/auth/types';
 import { formatPrice } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
@@ -30,13 +27,6 @@ const EMAIL_TEMPLATES = [
   'Захиалга хүргэлтэнд гарсан',
   'Захиалга амжилттай',
   'Захиалга цуцлагдсан',
-];
-
-const SMS_TEMPLATES = [
-  (id: string) => `Sain bn uu tand #${id} dugaartai zahialga uuslee.`,
-  (id: string) => `Tanii #${id} dugaartai zahialga hurgeltend garlaa.`,
-  (id: string) => `Tanii #${id} dugaartai zahialga amjilttai hurgegdlee. Tand bayarlalaa.`,
-  (id: string) => `Tanii #${id} dugaartai zahialga tsutslagdlaa.`,
 ];
 
 function money(n: number) {
@@ -82,18 +72,36 @@ function KvTable({ rows }: { rows: { label: React.ReactNode; value: React.ReactN
 
 export default function AdOrderDetailPage() {
   const params = useParams<{ id: string }>();
-  const found = getOrderById(params.id);
-  const [status, setStatus] = useState<OrderStatus | null>(null);
+  const [order, setOrder] = useState<AdOrder | undefined>();
+  const [ready, setReady] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
-  const [sideTab, setSideTab] = useState<'history' | 'sms'>('history');
-  const [sms, setSms] = useState('');
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [emailTpl, setEmailTpl] = useState(EMAIL_TEMPLATES[0]);
   const [note, setNote] = useState('');
-  const [managerLabel, setManagerLabel] = useState<string | null>(null);
+  const [onSheet, setOnSheet] = useState(false);
+  const [noteImage, setNoteImage] = useState<{ name: string; data: string } | null>(null);
+  const [noteError, setNoteError] = useState('');
+  const [clientIp, setClientIp] = useState('local');
+  const [staffUser, setStaffUser] = useState<PublicUser | null>(null);
 
-  const order: AdOrder | undefined = useMemo(() => {
-    if (!found) return undefined;
-    return { ...found, status: status ?? found.status };
-  }, [found, status]);
+  useEffect(() => {
+    setOrder(getOrderById(params.id));
+    setReady(true);
+  }, [params.id]);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((data: { user?: PublicUser | null }) => setStaffUser(data.user || null));
+    fetch('https://api.ipify.org?format=json')
+      .then((r) => r.json())
+      .then((d: { ip?: string }) => {
+        if (d.ip) setClientIp(d.ip);
+      })
+      .catch(() => {});
+  }, []);
+
+  if (!ready) return null;
 
   if (!order) {
     return (
@@ -106,22 +114,41 @@ export default function AdOrderDetailPage() {
     );
   }
 
+  const isTrashed = !!order.deletedAt;
+  const actor = staffDisplayName(staffUser);
+  const managerName = order.manager || actor;
+  const customerOrders = listOrdersByCustomer(order);
   const progress = getProgressCount(order);
   const items = order.items ?? [];
   const invoiceTotal = items.length ? items.reduce((sum, item) => sum + lineTotal(item), 0) : order.total;
+  const payMethod = order.paymentMethod?.trim() || 'Дансаар шилжүүлэх';
+  const payRows =
+    order.payments && order.payments.length > 0
+      ? order.payments
+      : [{ id: '—', method: payMethod, date: order.date, amount: 0 }];
   const paid = order.payments?.reduce((sum, p) => sum + p.amount, 0) ?? (order.paymentStatus === 'paid' ? order.total : 0);
-  const assigned = managerLabel ?? order.manager ?? '';
+
+  const logAction = (text: string, extra?: { image?: string; onSheet?: boolean; kind?: 'note' | 'system' }) => {
+    const next = appendOrderTimeline(order.id, text, actor, { ip: clientIp, ...extra });
+    if (next) setOrder(next);
+  };
 
   return (
-    <div className="ad-od">
+    <div className={cn('ad-od', isTrashed && 'ad-od--trashed')}>
+      {isTrashed ? (
+        <>
+          <div className="ad-od-trashed-veil" />
+          <div className="ad-od-trashed-stamp">Устгагдсан захиалга</div>
+        </>
+      ) : null}
       <div className="ad-od-top">
         <h1 className="ad-od-title">Захиалгын дугаар # {order.id}</h1>
         <div className="ad-od-top-actions">
-          <button type="button" className="ad-order-btn ad-order-btn--default" onClick={() => window.print()}>
-            <Printer className="size-3.5" />
-            Захиалгыг хэвлэх
-          </button>
-          <button type="button" className="ad-order-btn ad-order-btn--default" onClick={() => window.print()}>
+          <button
+            type="button"
+            className="ad-order-btn ad-order-btn--default"
+            onClick={() => window.open(`/ad/orders/${order.id}/print`, '_blank', 'noopener,noreferrer')}
+          >
             <Printer className="size-3.5" />
             Захиалга хэвлэх (Нарийн)
           </button>
@@ -158,7 +185,11 @@ export default function AdOrderDetailPage() {
                         <a href="#" className="ad-od-link">
                           CRM харилцагчийн профайл үзэх
                         </a>
-                        <button type="button" className="ad-order-btn ad-order-btn--info ad-order-btn--sm">
+                        <button
+                          type="button"
+                          className="ad-order-btn ad-order-btn--info ad-order-btn--sm"
+                          onClick={() => setHistoryOpen(true)}
+                        >
                           <History className="size-3" />
                           Захиалгын түүх харах
                         </button>
@@ -178,7 +209,7 @@ export default function AdOrderDetailPage() {
                   { label: 'Хүргэлтийн төрөл:', value: order.deliveryType || '' },
                   { label: 'Үнэ:', value: `${order.deliveryFee ? money(order.deliveryFee) : 'Үнэгүй₮'}` },
                   { label: 'Хаяг:', value: order.address || '' },
-                  { label: 'Төлбөрийн нөхцөл', value: order.paymentMethod },
+                  { label: 'Төлбөрийн нөхцөл', value: order.paymentMethod || 'Дансаар шилжүүлэх' },
                   { label: 'НӨАТ', value: order.vatType || 'хувь хүн' },
                 ]}
               />
@@ -218,7 +249,7 @@ export default function AdOrderDetailPage() {
                 </button>
               </div>
               <Link
-                href={`/ad/invoices/${order.invoiceId || order.id}`}
+                href={`/ad/orders/${order.id}/edit`}
                 className="ad-order-btn ad-order-btn--warning ad-order-btn--sm"
               >
                 Нэхэмжлэх засах
@@ -241,8 +272,8 @@ export default function AdOrderDetailPage() {
                     <td colSpan={5}>Бараа бүртгэгдээгүй</td>
                   </tr>
                 ) : (
-                  items.map((item) => (
-                    <tr key={item.sku}>
+                  items.map((item, i) => (
+                    <tr key={`${item.id || item.sku}-${i}`}>
                       <td>
                         <a href="#" className="ad-od-link">
                           {item.sku}
@@ -292,11 +323,11 @@ export default function AdOrderDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {(order.payments ?? []).map((p) => (
+                {payRows.map((p) => (
                   <tr key={p.id}>
                     <td>{p.id}</td>
                     <td>
-                      <span className="ad-od-pay-label">{p.method}</span>
+                      <span className="ad-od-pay-label">{p.method || payMethod}</span>
                     </td>
                     <td>{p.date}</td>
                     <td className="text-right">{money(p.amount).replace(' ', '')}</td>
@@ -317,106 +348,135 @@ export default function AdOrderDetailPage() {
           <DetailPanel title="Захиалгыг удирдах">
             <div className="ad-od-manage">
               <strong>Хариуцсан менежер</strong>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button type="button" className="ad-order-btn ad-order-btn--default ad-order-btn--block">
-                    Захиалгыг менежерт хувиарлах
-                    <span className="ad-od-caret" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="ad-order-dropdown w-64">
-                  {MANAGERS.filter((m) => m.value).map((m) => (
-                    <DropdownMenuItem key={m.value} onClick={() => setManagerLabel(m.label)}>
-                      {m.label} -т хувиарлах
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-              {assigned ? (
-                <p className="ad-od-help">
-                  Энэ захиалга <strong>{assigned}</strong> хэрэглэгчид хувиарлагдсан байна.
-                </p>
-              ) : null}
-
-              <strong>Хариуцсан хүргэлтийн ажилтан</strong>
-              <button type="button" className="ad-order-btn ad-order-btn--info ad-order-btn--block">
-                <Truck className="size-3.5" />
-                Хүргэлтийн ажилтанд хувиарлах
-              </button>
+              <p className="ad-od-help ">
+                Энэ захиалга <strong className='text-purple-500'>{managerName}</strong> -д хувиарлагдсан байна.
+              </p>
 
               <div className="ad-od-title-action">Төлөв өөрчилж хадгалах</div>
-              <button type="button" className="ad-order-btn ad-order-btn--success ad-order-btn--block" onClick={() => setStatusOpen(true)}>
+              <button
+                type="button"
+                className="ad-order-btn ad-order-btn--success ad-order-btn--block"
+                onClick={() => setStatusOpen(true)}
+              >
                 Захиалгын статус өөрчлөх
               </button>
 
-              <div className="ad-od-title-action">N-мэйл илгээх</div>
+              <div className="ad-od-title-action">И-мэйл илгээх</div>
               <div className="ad-od-inline-send">
-                <select className="ad-order-select">
+                <select className="ad-order-select" value={emailTpl} onChange={(e) => setEmailTpl(e.target.value)}>
                   {EMAIL_TEMPLATES.map((t) => (
                     <option key={t}>{t}</option>
                   ))}
                 </select>
-                <button type="button" className="ad-order-btn ad-order-btn--default ad-order-btn--sm">
+                <button
+                  type="button"
+                  className="ad-order-btn ad-order-btn--default ad-order-btn--sm"
+                  onClick={() =>
+                    logAction(`(#${actor}) хэрэглэгч #${order.id} захиалгад "${emailTpl}" и-мэйл илгээлээ.`)
+                  }
+                >
                   Илгээх <Send className="size-3" />
                 </button>
               </div>
             </div>
           </DetailPanel>
 
-          <div className="ad-od-tabs">
-            <div className="ad-od-tabs__list">
-              <button
-                type="button"
-                className={cn('ad-od-tabs__tab', sideTab === 'history' && 'ad-od-tabs__tab--active')}
-                onClick={() => setSideTab('history')}
-              >
-                Үйлдлийн түүх
-              </button>
-              <button
-                type="button"
-                className={cn('ad-od-tabs__tab', sideTab === 'sms' && 'ad-od-tabs__tab--active')}
-                onClick={() => setSideTab('sms')}
-              >
-                SMS илгээх
-              </button>
+          <DetailPanel title="Үйлдлийн түүх">
+            <div className="ad-od-feed">
+            <ul className="ad-od-timeline">
+              {(order.timeline ?? []).map((item, i) => (
+                <li key={i}>
+                  <div className={cn('ad-od-bubble', item.kind === 'note' && 'ad-od-bubble--note')}>
+                    {item.text}
+                    {item.image ? (
+                      <a href={item.image} target="_blank" rel="noopener noreferrer" className="ad-od-bubble__img-wrap">
+                        <img src={item.image} alt="" className="ad-od-bubble__img" />
+                      </a>
+                    ) : null}
+                  </div>
+                  <div className="ad-od-exact">{item.meta}</div>
+                </li>
+              ))}
+            </ul>
             </div>
-            {sideTab === 'history' ? (
-              <div className="ad-od-tabs__panel">
-                <ul className="ad-od-timeline">
-                  {(order.timeline ?? []).map((item, i) => (
-                    <li key={i}>
-                      <div className="ad-od-bubble">{item.text}</div>
-                      <div className="ad-od-exact">{item.meta}</div>
-                    </li>
-                  ))}
-                </ul>
-                <div className="ad-od-title-action">Тэмдэгдэл нэмэх</div>
-                <label className="ad-modal-check">
-                  <input type="checkbox" /> Захиалгын хуудас дээр гарах тэмдэглэл
-                </label>
-                <textarea className="ad-order-textarea" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
-                <button type="button" className="ad-order-btn ad-order-btn--default ad-order-btn--block">
-                  Бичих <Send className="size-3" />
-                </button>
-              </div>
-            ) : (
-              <div className="ad-od-tabs__panel">
-                <div className="ad-od-title-action">SMS илгээх</div>
-                <textarea className="ad-order-textarea" rows={3} value={sms} onChange={(e) => setSms(e.target.value)} />
-                <p className="ad-modal-hint">160 тэмдэгт байх ёстой</p>
-                <button type="button" className="ad-order-btn ad-order-btn--success ad-order-btn--block">
-                  Илгээх
-                </button>
-                <div className="ad-od-sms-list">
-                  {SMS_TEMPLATES.map((tpl, i) => (
-                    <button key={i} type="button" className="ad-od-sms-tpl" onClick={() => setSms(tpl(order.id))}>
-                      {tpl(order.id)}
+            <div className="ad-od-composer">
+            <div className="ad-od-composer__title">Тэмдэгдэл нэмэх</div>
+            <label className="ad-modal-check">
+              <input type="checkbox" checked={onSheet} onChange={(e) => setOnSheet(e.target.checked)} /> Захиалгын хуудас
+              дээр гарах тэмдэглэл
+            </label>
+            <textarea
+                className="ad-order-textarea ad-od-composer__text"
+                rows={4}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Тэмдэглэл бичих..."
+              />
+              {noteImage ? (
+                <div className="ad-od-upload-preview">
+                  <img src={noteImage.data} alt="" />
+                  <div>
+                    <strong>{noteImage.name}</strong>
+                    <button type="button" onClick={() => setNoteImage(null)}>
+                      <X className="size-3.5" />
+                      Хасах
                     </button>
-                  ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              ) : (
+                <label className="ad-od-upload">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,.jpg,.jpeg,.png,.gif"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = '';
+                      if (!file) return;
+                      if (!/^image\/(jpeg|png|gif)$/i.test(file.type)) {
+                        setNoteError('JPG, PNG, GIF зөвхөн');
+                        return;
+                      }
+                      if (file.size > 1_500_000) {
+                        setNoteError('Зураг 1.5MB-аас бага байх ёстой');
+                        return;
+                      }
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        setNoteImage({ name: file.name, data: String(reader.result || '') });
+                        setNoteError('');
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                  <ImagePlus className="size-5" />
+                  <span>
+                    <b>Зураг нэмэх</b>
+                    <small>JPG, PNG, GIF · 1.5MB хүртэл</small>
+                  </span>
+                </label>
+              )}
+              {noteError ? <span className="ad-od-note-file__err">{noteError}</span> : null}
+            <button
+              type="button"
+              className="ad-order-btn ad-order-btn--default ad-order-btn--block"
+              onClick={() => {
+                const text = note.trim();
+                if (!text && !noteImage) return;
+                logAction(text || 'Зураг нэмэв', {
+                  kind: 'note',
+                  onSheet,
+                  image: noteImage?.data,
+                });
+                setNote('');
+                setNoteImage(null);
+                setOnSheet(false);
+                setNoteError('');
+              }}
+            >
+              Бичих <Send className="size-3" />
+            </button>
+            </div>
+          </DetailPanel>
 
           <section className="ad-od-extra">
             <div className="ad-od-extra__head">Нэмэлт мэдээлэл</div>
@@ -429,12 +489,79 @@ export default function AdOrderDetailPage() {
         </aside>
       </div>
 
-      <AdOrderStatusModal
-        open={statusOpen}
-        order={order}
-        onClose={() => setStatusOpen(false)}
-        onSave={setStatus}
-      />
+      {isTrashed ? null : (
+        <AdOrderStatusModal
+          open={statusOpen}
+          order={order}
+          onClose={() => setStatusOpen(false)}
+          onSave={(status) => {
+            const next = patchStoredOrder(order.id, { status });
+            if (next) setOrder(next);
+            appendOrderTimeline(
+              order.id,
+              `(#${actor}) хэрэглэгч (#${order.id}) дугаартай захиалгын төлөвийг "${ORDER_STATUS_LABELS[status]}" болгож өөрчиллөө.`,
+              actor,
+            );
+            const refreshed = getOrderById(order.id);
+            if (refreshed) setOrder(refreshed);
+          }}
+        />
+      )}
+
+      {historyOpen ? (
+        <div className="admin-scope ad-modal-overlay" onClick={() => setHistoryOpen(false)} role="presentation">
+          <div className="ad-modal ad-modal--wide" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+            <div className="ad-modal__header">
+              <h4>Харилцагчийн захиалгын түүх</h4>
+            </div>
+            <div className="ad-modal__body">
+              <table className="ad-cust-hist">
+                <thead>
+                  <tr>
+                    <th>Захиалгын #</th>
+                    <th>Огноо</th>
+                    <th>Нийт дүн</th>
+                    <th>Төлбөр</th>
+                    <th>Төлөв</th>
+                    <th>Үйлдэл</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {customerOrders.length === 0 ? (
+                    <tr>
+                      <td colSpan={6}>Захиалга олдсонгүй</td>
+                    </tr>
+                  ) : (
+                    customerOrders.map((o) => (
+                      <tr key={o.id}>
+                        <td>#{o.id}</td>
+                        <td>{o.date}</td>
+                        <td>{money(o.total)}</td>
+                        <td>
+                          <span className={cn('ad-cust-hist__pay', o.paymentStatus === 'paid' && 'is-paid')}>
+                            {o.paymentStatus === 'paid' ? 'Төлсөн' : 'Төлөөгүй'}
+                          </span>
+                        </td>
+                        <td>{ORDER_STATUS_LABELS[o.status]}</td>
+                        <td>
+                          <Link href={`/ad/orders/${o.id}`} className="ad-order-btn ad-order-btn--info ad-order-btn--sm" onClick={() => setHistoryOpen(false)}>
+                            Харах
+                          </Link>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="ad-modal__footer">
+              <button type="button" className="ad-order-btn ad-order-btn--default" onClick={() => setHistoryOpen(false)}>
+                Хаах
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
