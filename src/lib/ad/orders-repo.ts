@@ -7,6 +7,7 @@ import {
   type AdOrderTimeline,
   type OrderStatus,
 } from '@/lib/ad/orders';
+import { notifyTelegramNewOrder } from '@/lib/telegram/bot';
 
 type OrderRow = {
   id: string;
@@ -133,8 +134,15 @@ export async function upsertOrder(order: AdOrder): Promise<AdOrder> {
 }
 
 export async function createOrder(input: Omit<AdOrder, 'id'> & { id?: string }): Promise<AdOrder> {
-    const id = input.id?.trim() ? input.id.trim() : await nextOrderId();
-  return upsertOrder({ ...input, id, invoiceId: input.invoiceId || id });
+  const id = input.id?.trim() ? input.id.trim() : await nextOrderId();
+  const created = await upsertOrder({ ...input, id, invoiceId: input.invoiceId || id });
+
+  // Async Telegram Notification
+  notifyTelegramNewOrder(created).catch((err) =>
+    console.error('[Telegram] Failed to notify order:', err),
+  );
+
+  return created;
 }
 
 export async function patchOrder(id: string, patch: Partial<AdOrder>): Promise<AdOrder | null> {
