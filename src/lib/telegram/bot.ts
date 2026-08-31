@@ -437,7 +437,7 @@ ${list}
     }
   }
 
-  // 11. AI Universal Integration (Groq Llama 3.3 / Gemini)
+  // 11. AI Universal Integration (Groq AI / Gemini)
   const aiKey = process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY || '';
   if (aiKey) {
     try {
