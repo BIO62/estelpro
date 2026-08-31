@@ -493,13 +493,13 @@ async function callUniversalAI(prompt: string, apiKey: string): Promise<string |
         'Authorization': `Bearer ${key}`,
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         messages: [
           { role: 'system', content: systemInstruction },
           { role: 'user', content: prompt },
         ],
         temperature: 0.5,
-        max_tokens: 600,
+        max_tokens: 700,
       }),
     });
     const data = await res.json();
