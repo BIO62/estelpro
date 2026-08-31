@@ -6,7 +6,6 @@ import { SALON_DISCOUNT_TIERS } from '@/lib/auth/salon-discount';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8853756606:AAHgf0_kiA373mqyvi5mAxR49IDPPJb4Www';
 const DEFAULT_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '-5573060380';
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
 export async function sendTelegramMessage(
   chatId: string | number,
@@ -95,7 +94,7 @@ ${itemsText || '  • Бүтээгдэхүүний мэдээлэл байхгү
 }
 
 /**
- * Generates an instant daily sales report
+ * Generates the official daily operational report (for 18:00 auto-trigger or on-demand)
  */
 export async function getTodayReportMessage() {
   try {
@@ -109,6 +108,8 @@ export async function getTodayReportMessage() {
     const totalRevenue = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
     const paidOrders = todayOrders.filter((o) => o.paymentStatus === 'paid');
     const paidRevenue = paidOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+    const unpaidOrders = todayOrders.filter((o) => o.paymentStatus !== 'paid');
+    const unpaidRevenue = unpaidOrders.reduce((sum, o) => sum + (o.total || 0), 0);
 
     let ubCount = 0, ubRev = 0;
     let darkhanCount = 0, darkhanRev = 0;
@@ -128,39 +129,42 @@ export async function getTodayReportMessage() {
       }
     });
 
-    const productMap: Record<string, number> = {};
+    const productMap: Record<string, { qty: number; total: number }> = {};
     todayOrders.forEach((o) => {
       o.items?.forEach((it: AdOrderItem) => {
         const q = it.qty || (it as { quantity?: number }).quantity || 1;
-        productMap[it.name] = (productMap[it.name] || 0) + q;
+        const sub = Number(it.price || 0) * q;
+        if (!productMap[it.name]) {
+          productMap[it.name] = { qty: 0, total: 0 };
+        }
+        productMap[it.name].qty += q;
+        productMap[it.name].total += sub;
       });
     });
 
-    const topProducts = Object.entries(productMap)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
+    const productEntries = Object.entries(productMap).sort((a, b) => b[1].qty - a[1].qty);
 
-    const topProductsText = topProducts.length > 0
-      ? topProducts.map(([name, qty], idx) => `  ${idx + 1}. <b>${escapeHtml(name)}</b> — ${qty} ширхэг`).join('\n')
+    const productsListText = productEntries.length > 0
+      ? productEntries.map(([name, data], idx) => `  ${idx + 1}. <b>${escapeHtml(name)}</b> — ${data.qty} ширхэг <i>(${data.total.toLocaleString()}₮)</i>`).join('\n')
       : '  (Өнөөдөр хараахан бүтээгдэхүүн гараагүй байна)';
 
     return `
-📊 <b>ӨДРИЙН НЭГДСЭН ТАЙЛАН (${todayStr})</b>
+📊 <b>ӨДРИЙН НЭГДСЭН ТАЙЛАН (18:00 ЦАГИЙН ХААЛТ)</b>
+📅 <b>Огноо:</b> ${todayStr}
 ━━━━━━━━━━━━━━━━━━━━
-📦 <b>Нийт захиалга:</b> ${todayOrders.length} захиалга
-💰 <b>Нийт борлуулалт:</b> <b>${totalRevenue.toLocaleString()}₮</b>
-✅ <b>Төлбөр төлөгдсөн:</b> ${paidRevenue.toLocaleString()}₮ (${paidOrders.length} захиалга)
-⏳ <b>Төлбөр хүлээгдэж буй:</b> ${(totalRevenue - paidRevenue).toLocaleString()}₮
+💰 <b>Нийт борлуулалт:</b> <b>${totalRevenue.toLocaleString()}₮</b> (${todayOrders.length} захиалга)
+  • ✅ <b>Төлбөр төлөгдсөн:</b> ${paidRevenue.toLocaleString()}₮ (${paidOrders.length} захиалга)
+  • ⏳ <b>Төлбөр хүлээгдэж буй:</b> ${unpaidRevenue.toLocaleString()}₮ (${unpaidOrders.length} захиалга)
 
 📍 <b>Салбаруудаар:</b>
   • 🟣 <b>Улаанбаатар:</b> ${ubRev.toLocaleString()}₮ (${ubCount} захиалга)
-  • 🟢 <b>Дархан:</b> ${darkhanRev.toLocaleString()}₮ (${darkhanCount} захиалга)
-  • 🔵 <b>Эрдэнэт:</b> ${erdenetRev.toLocaleString()}₮ (${erdenetCount} захиалга)
+  • 🟢 <b>Дархан салбар:</b> ${darkhanRev.toLocaleString()}₮ (${darkhanCount} захиалга)
+  • 🔵 <b>Эрдэнэт салбар:</b> ${erdenetRev.toLocaleString()}₮ (${erdenetCount} захиалга)
 
-🔥 <b>Хамгийн их зарагдсан ТОП бүтээгдэхүүн:</b>
-${topProductsText}
+🛍️ <b>Өнөөдөр гарсан бүтээгдэхүүнүүд:</b>
+${productsListText}
 ━━━━━━━━━━━━━━━━━━━━
-🤖 <i>ESTEL AI Assistant · Бодит цагийн дата</i>
+🏢 <i>ESTEL Professional Mongolia · Удирдлагын систем</i>
     `.trim();
   } catch (err) {
     return `❌ Тайлан бодоход алдаа гарлаа: ${err instanceof Error ? err.message : 'Алдаа'}`;
@@ -202,7 +206,7 @@ ${listText}
 }
 
 /**
- * Handles incoming bot webhook events (Commands, Chatbot, AI Queries)
+ * Handles incoming bot webhook events (Executive Assistant & AI Queries)
  */
 export async function handleTelegramWebhook(body: {
   message?: {
@@ -218,273 +222,109 @@ export async function handleTelegramWebhook(body: {
   const rawText = msg.text.trim();
   const lower = rawText.toLowerCase();
 
-  // 1. Greetings (сайн уу, sainuu, hi, hello)
-  const greetingWords = ['сайн уу', 'сайна уу', 'sainuu', 'sn uu', 'сайн байна уу', 'өглөөний мэнд', 'өдрийн мэнд', 'оройн мэнд', 'hi', 'hello', 'hey'];
-  if (greetingWords.some((g) => lower === g || lower.startsWith(g + ' ') || lower.endsWith(' ' + g))) {
-    const greetMsg = `
-👋 Сайн байна уу, <b>${escapeHtml(msg.from?.first_name || 'Танд')}</b> өдрийн мэнд хүргэе! ✨
-Би бол <b>ESTEL Professional Mongolia</b>-ийн ухаалаг AI туслах байна.
-
-Танд юугаар туслах вэ?
-• 🛍️ <b>Бүтээгдэхүүний үнэ, үлдэгдэл асуух</b> <i>(Жишээ: "Otium шампунь хэд вэ?", "Будаг байна уу?")</i>
-• 📦 <b>Захиалга шалгах</b> <i>(Жишээ: "Захиалга 1332401")</i>
-• 🚚 <b>Хүргэлтийн нөхцөл</b> <i>(Жишээ: "Хүргэлт ямар үнэтэй вэ?")</i>
-• 🏢 <b>Салбарын хаяг, цагийн хуваарь</b> <i>(Жишээ: "Салбарууд хаана байдаг вэ?")</i>
-• 💇‍♀️ <b>Салоны хөнгөлөлт</b> <i>(Жишээ: "Салоны гэрээ ямар хөнгөлөлттэй вэ?")</i>
-• 📊 <b>Борлуулалтын тайлан</b> <i>(Бичих: /today эсвэл "өнөөдөр")</i>
-    `.trim();
-    await sendTelegramMessage(chatId, greetMsg);
-    return { handled: true, command: 'greeting' };
-  }
-
-  // 2. /start or /help or тусламж
-  if (lower.startsWith('/start') || lower.startsWith('/help') || lower === 'тусламж') {
-    const helpMsg = `
-👋 Сайн байна уу, <b>${escapeHtml(msg.from?.first_name || 'Менежер')}</b>!
-Би бол <b>ESTEL Professional Mongolia</b>-ийн ухаалаг AI туслах бот юм. Та сайт, бүтээгдэхүүн, захиалгатай холбоотой хүссэн бүхнээ надаас асууж болно!
-
-📌 <b>Ашиглаж болох тушаалууд:</b>
-• <b>/today</b> эсвэл <code>өнөөдөр</code> — Өнөөдрийн нийт борлуулалт, салбаруудын тайлан
-• <b>/stock</b> эсвэл <code>үлдэгдэл</code> — Нөөц дуусаж буй бүтээгдэхүүнүүд
-• <b>/orders</b> эсвэл <code>захиалга</code> — Сүүлийн захиалгуудыг харах
-• <b>/branches</b> эсвэл <code>салбар</code> — Салбаруудын хаяг, цагийн хуваарь
-• <b>/delivery</b> эсвэл <code>хүргэлт</code> — Хүргэлтийн үнэ, нөхцөл
-• <b>/salon</b> эсвэл <code>салон</code> — Салоны хамтын ажиллагаа, хөнгөлөлтийн хувь
-
-💡 <b>Энгийн яриагаар асуух жишээ:</b>
-• <i>"Otium шампунь үнэ хэд вэ?"</i>
-• <i>"Princess Essex будаг ямар үнэтэй вэ?"</i>
-• <i>"Манай салбарууд хаана хаана байдаг вэ?"</i>
-• <i>"Хүргэлт хэдэн төгрөгөөс дээш үнэгүй билээ?"</i>
-• <i>"Захиалга 1332401 шалгаад өгөөч"</i>
-    `.trim();
-    await sendTelegramMessage(chatId, helpMsg);
-    return { handled: true, command: 'help' };
-  }
-
-  // 3. /today or "өнөөдөр" / "борлуулалт" / "тайлан"
-  if (lower.startsWith('/today') || lower.includes('өнөөдөр') || lower.includes('тайлан') || lower.includes('борлуулалт')) {
+  // 1. Direct explicit /today command
+  if (lower === '/today' || lower === 'тайлан' || lower === 'өдрийн тайлан' || lower === '/report') {
     const report = await getTodayReportMessage();
     await sendTelegramMessage(chatId, report);
     return { handled: true, command: 'today' };
   }
 
-  // 4. /stock or "үлдэгдэл" / "нөөц" / "дуусаж"
-  if (lower.startsWith('/stock') || lower.includes('үлдэгдэл') || lower.includes('нөөц') || lower.includes('дуусаж')) {
+  // 2. Direct explicit /stock command
+  if (lower === '/stock' || lower === 'нөөц') {
     const stock = await getStockReportMessage();
     await sendTelegramMessage(chatId, stock);
     return { handled: true, command: 'stock' };
   }
 
-  // 5. Specific Order Lookup (e.g., #1332401 or 1332401)
-  const orderNumMatch = rawText.match(/#?(\d{6,8})/);
-  if (orderNumMatch && (lower.includes('захиалга') || lower.includes('order') || lower.includes('шалга') || rawText.startsWith('#'))) {
-    const orderId = orderNumMatch[1];
-    const order = await getOrder(orderId);
-    if (order) {
-      const branch = detectBranch(order);
-      const items = (order.items || [])
-        .map((it: AdOrderItem) => `  • ${it.name} × ${it.qty || (it as { quantity?: number }).quantity || 1} (${(it.price * (it.qty || 1)).toLocaleString()}₮)`)
-        .join('\n');
-
-      const text = `
-📋 <b>ЗАХИАЛГЫН ДЭЛГЭРЭНГҮЙ [№${order.id}]</b>
-━━━━━━━━━━━━━━━━━━━━
-📍 <b>Салбар:</b> ${branch.label}
-👤 <b>Харилцагч:</b> ${escapeHtml(order.customerName)}
-📞 <b>Утас:</b> <code>${escapeHtml(order.phone || 'Байхгүй')}</code>
-📍 <b>Хаяг:</b> ${escapeHtml(order.address || 'Тодорхойгүй')}
-💳 <b>Төлбөрийн хэлбэр:</b> ${escapeHtml(order.paymentMethod || 'Бэлнээр')}
-💵 <b>Төлөв:</b> ${order.paymentStatus === 'paid' ? 'Төлөгдсөн ✅' : 'Төлөгдөөгүй ⏳'}
-🚚 <b>Хүргэлт:</b> ${(order.deliveryFee || 0).toLocaleString()}₮
-💰 <b>НИЙТ ДҮН:</b> <b>${(order.total || 0).toLocaleString()}₮</b>
-
-🛍️ <b>Бүтээгдэхүүн:</b>
-${items || '  • Мэдээлэл байхгүй'}
-━━━━━━━━━━━━━━━━━━━━
-🔗 <a href="https://estelpro.vercel.app/ad/orders/${order.id}">Систем дээр нээх</a>
-      `.trim();
-      await sendTelegramMessage(chatId, text);
-      return { handled: true, command: 'order_lookup' };
-    }
-  }
-
-  // 6. /orders or "захиалга"
-  if (lower.startsWith('/orders') || lower === 'захиалга' || lower === 'захиалгууд') {
-    const orders = await listOrders();
-    const recent = orders.slice(0, 5);
-    if (recent.length === 0) {
-      await sendTelegramMessage(chatId, 'Одоогоор захиалга байхгүй байна.');
-      return { handled: true, command: 'orders' };
-    }
-    const recentText = recent
-      .map((o) => `• <b>#${o.id}</b> — ${escapeHtml(o.customerName)}: <b>${(o.total || 0).toLocaleString()}₮</b> (${o.paymentStatus === 'paid' ? 'Төлсөн ✅' : 'Төлөөгүй ⏳'})`)
-      .join('\n');
-
-    await sendTelegramMessage(
-      chatId,
-      `📋 <b>СҮҮЛИЙН 5 ЗАХИАЛГА:</b>\n━━━━━━━━━━━━━━━━━━━━\n${recentText}\n━━━━━━━━━━━━━━━━━━━━\n<a href="https://estelpro.vercel.app/ad/orders">Бүх захиалгыг системээр харах</a>`,
-    );
-    return { handled: true, command: 'orders' };
-  }
-
-  // 7. Branch / Location Query
-  if (lower.startsWith('/branches') || lower.includes('салбар') || lower.includes('байршил') || lower.includes('хаяг') || lower.includes('хаана')) {
-    const branchList = BRANCHES.map(
-      (b, i) => `<b>${i + 1}. ${escapeHtml(b.name)}</b>\n📍 Хаяг: ${escapeHtml(b.address)}\n⏰ Цаг: ${escapeHtml(b.hours)}`,
-    ).join('\n\n');
-
-    const contact = FOOTER_LINKS.contact;
-    const branchMsg = `
-🏢 <b>ESTEL PROFESSIONAL САЛБАРУУД:</b>
-━━━━━━━━━━━━━━━━━━━━
-${branchList}
-
-📞 <b>Холбоо барих утаснууд:</b>
-${contact.phones.map((p) => `• <code>${p}</code>`).join('\n')}
-✉️ Имэйл: <code>${contact.email}</code>
-━━━━━━━━━━━━━━━━━━━━
-🔗 <a href="https://estelpro.vercel.app/about">Бидний тухай хуудас харах</a>
-    `.trim();
-
-    await sendTelegramMessage(chatId, branchMsg);
-    return { handled: true, command: 'branches' };
-  }
-
-  // 8. Delivery Terms Query
-  if (lower.startsWith('/delivery') || lower.includes('хүргэлт') || lower.includes('хүргэлтийн нөхцөл') || lower.includes('үнэгүй хүргэлт')) {
-    const deliveryMsg = `
-🚚 <b>ХҮРГЭЛТИЙН НӨХЦӨЛ & ҮНЭ ТАРИФ:</b>
-━━━━━━━━━━━━━━━━━━━━
-• 🎁 <b>Үнэгүй хүргэлт:</b> <b>100,000₮</b>-өөс дээш худалдан авалтад хүргэлт ҮНЭГҮЙ!
-• 🏙 <b>Улаанбаатар хот дотор:</b> Стандарт хүргэлт <b>5,000₮</b> (1–2 ажлын өдөр)
-• 🇲🇳 <b>Орон нутгийн унаанд тавих:</b> <b>7,000₮</b> (Хот хоорондын тээвэрт хүлээлгэн өгнө)
-• 🏢 <b>Салбараас өөрөө авах (Pickup):</b> ҮНЭГҮЙ
-
-⏰ <b>Хүргэлтийн хуваарь:</b>
-Даваа - Бямба: 10:00 - 20:00 цагийн хооронд хүргэгдэнэ.
-━━━━━━━━━━━━━━━━━━━━
-🔗 <a href="https://estelpro.vercel.app/terms/delivery">Дэлгэрэнгүй нөхцөл унших</a>
-    `.trim();
-
-    await sendTelegramMessage(chatId, deliveryMsg);
-    return { handled: true, command: 'delivery' };
-  }
-
-  // 9. Salon Partnership & Discount Query
-  if (lower.startsWith('/salon') || lower.includes('салон') || lower.includes('хөнгөлөлт') || lower.includes('үсчин') || lower.includes('гэрээ')) {
-    const tiers = SALON_DISCOUNT_TIERS.map((t) => `• <b>${t.label}:</b> Гэрээт хамтрагч салон`).join('\n');
-    const salonMsg = `
-💇‍♀️ <b>САЛОН / ҮСЧДИЙН ХӨНГӨЛӨЛТИЙН СИСТЕМ:</b>
-━━━━━━━━━━━━━━━━━━━━
-ESTEL Professional нь мэргэжлийн салон, стилистүүдтэй дараах шатлалаар онцгой хөнгөлөлттэй хамтран ажилладаг:
-
-${tiers}
-
-🌟 <b>Хамтрагч салон болохын тулд:</b>
-1. <a href="https://estelpro.vercel.app/register">estelpro.mn/register</a> хаягаар "Салон / Үсчин"-ээр бүртгүүлнэ.
-2. Манай менежер холбогдож гэрээ байгуулан системийн хөнгөлөлтийн эрх нээнэ.
-3. Системд нэвтэрч бөөний хямдралтай үнээр шууд захиалга хийх боломжтой болно.
-━━━━━━━━━━━━━━━━━━━━
-📞 Лавлах: <code>8620 7202</code>
-    `.trim();
-
-    await sendTelegramMessage(chatId, salonMsg);
-    return { handled: true, command: 'salon' };
-  }
-
-  // 10. Product Search by Name / Keyword
-  const productSearchWords = ['будаг', 'шампунь', 'маск', 'тос', 'спрей', 'ангижруулагч', 'otium', 'curex', 'essex', 'couture', 'newtone', 'alpha', 'үнэ', 'байна уу', 'хэд вэ', 'хэдтэй'];
-  const isProductSearch = productSearchWords.some((w) => lower.includes(w));
-
-  if (isProductSearch) {
-    const res = await listProducts();
-    const allProducts: DbProduct[] = res.items || [];
-
-    // Clean search terms: remove punctuation and common stop words
-    const cleanLower = lower.replace(/["'”„`?:!.,]/g, ' ');
-    const searchTerms = cleanLower
-      .replace(/үнэ|хэд|вэ|байна|уу|юу|манайд|байгаа|эсвэл|ямар|байнауу|хэдтэй/g, ' ')
-      .trim()
-      .split(/\s+/)
-      .filter((w) => w.length >= 2);
-
-    const matches = allProducts.filter((p: DbProduct) => {
-      const title = (p.name || '').toLowerCase();
-      const sku = (p.sku || '').toLowerCase();
-      return searchTerms.some((st) => title.includes(st) || sku.includes(st));
-    });
-
-    if (matches.length > 0) {
-      const list = matches.slice(0, 6).map((p: DbProduct, idx: number) => {
-        const priceStr = Number(p.price || 0).toLocaleString() + '₮';
-        const stockStr = typeof p.stock === 'number' ? `(${p.stock}ш үлдсэн)` : '(Бэлэн байгаа)';
-        return `${idx + 1}. <b>${escapeHtml(p.name)}</b>\n   💰 Үнэ: <b>${priceStr}</b> · 📦 Нөөц: ${stockStr}`;
-      }).join('\n\n');
-
-      const productMsg = `
-🛍 <b>БҮТЭЭГДЭХҮҮНИЙ МЭДЭЭЛЭЛ:</b>
-━━━━━━━━━━━━━━━━━━━━
-Таны хайсан бүтээгдэхүүнүүд:
-
-${list}
-━━━━━━━━━━━━━━━━━━━━
-🔗 <a href="https://estelpro.vercel.app/products">Сайт дээр бүх барааг үзэх</a>
-      `.trim();
-
-      await sendTelegramMessage(chatId, productMsg);
-      return { handled: true, command: 'product_search' };
-    }
-  }
-
-  // 11. AI Universal Integration (Groq AI / Gemini)
+  // 3. AI Executive Operations Query with Live Data Context
   const aiKey = process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY || '';
   if (aiKey) {
     try {
-      const aiResponse = await callUniversalAI(rawText, aiKey);
+      const aiResponse = await callExecutiveAI(rawText, aiKey);
       if (aiResponse) {
-        await sendTelegramMessage(chatId, `🤖 <b>ESTEL AI Туслах:</b>\n\n${escapeHtml(aiResponse)}`);
-        return { handled: true, command: 'ai_response' };
+        const cleanMessage = formatTelegramHtml(aiResponse);
+        await sendTelegramMessage(chatId, `🤖 <b>Удирдлагын Туслах:</b>\n\n${cleanMessage}`);
+        return { handled: true, command: 'ai_executive_response' };
       }
     } catch (err) {
       console.error('[AI Query Error]:', err);
     }
   }
 
-  // 12. Smart Helpful Fallback
+  // 4. Fallback if AI fails
   const helpReply = `
-🤖 <b>ESTEL AI ТУСЛАХ</b>
+🤖 <b>ESTEL Удирдлагын Туслах</b>
 Таны асуулт: <i>"${escapeHtml(rawText)}"</i>
 
-Би танд дараах зүйлсээр шууд тусалж чадна:
-• 🛍️ <b>Бүтээгдэхүүний үнэ, үлдэгдэл</b> <i>("Otium шампунь үнэ", "Princess Essex будаг")</i>
-• 📦 <b>Захиалга шалгах</b> <i>("Захиалга 1332401")</i>
-• 🚚 <b>Хүргэлтийн нөхцөл</b> <i>("Хүргэлтийн үнэ хэд вэ?")</i>
-• 🏢 <b>Салбаруудын байршил</b> <i>("Салбарууд хаана байдаг вэ?")</i>
-• 💇‍♀️ <b>Салоны хөнгөлөлт</b> <i>("Салоны хөнгөлөлт")</i>
-• 📊 <b>Өдрийн борлуулалтын тайлан</b> <i>(Бичих: /today)</i>
-
-💡 <i>Асуултаа дээрх түлхүүр үгсээр илүү тодорхой бичиж асууна уу!</i>
+Ашиглах боломжтой тушаалууд:
+• 📊 <b>/today</b> — Өдрийн 18:00 цагийн хаалтын нэгдсэн тайлан
+• ⚠️ <b>/stock</b> — Үлдэгдэл 10-аас доош үлдсэн бараануудын жагсаалт
+• 📦 <b>/orders</b> — Сүүлийн захиалгууд
   `.trim();
 
   await sendTelegramMessage(chatId, helpReply);
-  return { handled: true, command: 'smart_help' };
+  return { handled: true, command: 'fallback' };
 }
 
-async function callUniversalAI(prompt: string, apiKey: string): Promise<string | null> {
+/**
+ * Calls AI with full Live Database context as an Internal Executive Assistant
+ */
+async function callExecutiveAI(prompt: string, apiKey: string): Promise<string | null> {
   const key = apiKey.trim();
   if (!key) return null;
 
-  const systemInstruction = `Чи бол ESTEL Professional Mongolia (estelpro.mn) албан ёсны цахим дэлгүүрийн ухаалаг AI туслах юм.
-Монгол хэлээр эелдэг, товч тодорхой, бизнесийн соёлтой хариул.
-Компанийн мэдээлэл:
-- Брэнд: ESTEL Professional Mongolia (Мэргэжлийн үс арчилгаа, будаг, салон бүтээгдэхүүн)
-- Хүргэлт: 100,000₮ дээш үнэгүй, УБ хот дотор 5,000₮, орон нутаг 7,000₮
-- Салбарууд: УБ Баянзүрх дүүрэг Соманг плаза, Чингисийн И-март 2-р давхар, Эрдэнэт Орхон молл, Эрдэнэт Автоцентр
-- Утас: 7707 2207, 8605 7202, 8603 7202
-- Салон хөнгөлөлт: 5% - 20% хүртэл гэрээт шатлалтай.`;
+  // 1. Build Live Database Context
+  let liveContext = '';
+  try {
+    const [orders, productsRes] = await Promise.all([
+      listOrders(),
+      listProducts(),
+    ]);
 
-  // 1. If Groq API Key (starts with gsk_)
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayOrders = orders.filter((o) => (o.date || '').slice(0, 10) === todayStr);
+    const totalTodayRevenue = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+
+    const recentOrdersText = orders.slice(0, 8).map((o) => {
+      const b = detectBranch(o);
+      const items = (o.items || []).map((it) => `${it.name} x${it.qty || (it as { quantity?: number }).quantity || 1}`).join(', ');
+      return `• №${o.id}: ${o.customerName} (${o.phone}) | Дүн: ${(o.total || 0).toLocaleString()}₮ | Төлөв: ${o.paymentStatus === 'paid' ? 'Төлөгдсөн' : 'Төлөөгүй'} | Салбар: ${b.label} | Бараа: ${items || 'Тодорхойгүй'}`;
+    }).join('\n');
+
+    const products = productsRes.items || [];
+    const sampleProductsText = products.slice(0, 20).map((p) => {
+      return `• ${p.name} (SKU: ${p.sku || '-'}) | Үнэ: ${Number(p.price || 0).toLocaleString()}₮ | Нөөц: ${p.stock ?? 'Бэлэн'}`;
+    }).join('\n');
+
+    liveContext = `
+[СИСТЕМИЙН БОДИТ ЦАГИЙН МЭДЭЭЛЭЛ (LIVE DATA)]:
+- Өнөөдөр (${todayStr}): Нийт ${todayOrders.length} захиалга ирсэн, нийт дүн: ${totalTodayRevenue.toLocaleString()}₮.
+- Сүүлийн захиалгууд:
+${recentOrdersText || 'Захиалга байхгүй'}
+
+- Бүтээгдэхүүний жинхэнэ каталог (ESTEL):
+${sampleProductsText}
+
+- Салбарууд: 1. УБ Баянзүрх Соманг плаза, 2. И-март Чингис 2-р давхар, 3. Эрдэнэт Орхон молл, 4. Эрдэнэт Автоцентр
+- Хүргэлтийн нөхцөл: 100,000₮ дээш үнэгүй хүргэлт, УБ 5,000₮, Орон нутаг 7,000₮
+- Салоны гэрээт хөнгөлөлт: 5%, 10%, 15%, 20%
+    `.trim();
+  } catch (err) {
+    console.error('Failed to fetch live context for AI:', err);
+  }
+
+  const systemInstruction = `Чи бол ESTEL Professional Mongolia (estelpro.mn) компанийн ҮҮСГЭН БАЙГУУЛАГЧ / УДИРДЛАГЫН ДОТООД УХААЛАГ ТУСЛАХ AI юм.
+Чи байгууллагын эзэн болон удирдлагын багтай харьцаж байна.
+
+ЧУХАЛ ДҮРЭМ ЖУРАМ:
+1. Тэд гадны хэрэглэгч биш тул өөрийнх нь компани руу залгахыг (7707-2207 г.м утас), эсвэл харилцагчийн лавлах утас өгөхийг ХАТУУ ХОРИГЛОНО.
+2. Тэдний асуусан захиалга, өнөөдрийн борлуулалт, барааны нэр төрөл, үлдэгдэл, салбаруудын мэдээлэлд доорх [СИСТЕМИЙН БОДИТ ЦАГИЙН МЭДЭЭЛЭЛ]-ийг ашиглан шууд бодит тоо баримтаар нь товч, тодорхой, бизнесийн соёлтой тайлагна.
+3. Текстдээ ямар ч ** од тэмдэгт БҮҮ АШИГЛА! Тодруулах үгээ <b>үг</b> тагаар бич. Жагсаалтад • тэмдэг ашигла.
+4. Хэрэглэгч латин монголоор бичсэн бол (жишээ нь: "onoodor manaid zahialga orj irsen uu") "Өнөөдөр манайд захиалга орж ирсэн үү" гэж ойлгоод монгол кириллээр шууд бодит хариулт өг.
+
+${liveContext}`;
+
+  // 1. Groq AI (Llama 3.3 / GPT-120B)
   if (key.startsWith('gsk_')) {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -498,8 +338,8 @@ async function callUniversalAI(prompt: string, apiKey: string): Promise<string |
           { role: 'system', content: systemInstruction },
           { role: 'user', content: prompt },
         ],
-        temperature: 0.5,
-        max_tokens: 700,
+        temperature: 0.3,
+        max_tokens: 800,
       }),
     });
     const data = await res.json();
@@ -512,11 +352,29 @@ async function callUniversalAI(prompt: string, apiKey: string): Promise<string |
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      contents: [{ role: 'user', parts: [{ text: `${systemInstruction}\n\nХэрэглэгчийн асуулт: ${prompt}` }] }],
+      contents: [{ role: 'user', parts: [{ text: `${systemInstruction}\n\nУдирдлагын асуулт: ${prompt}` }] }],
     }),
   });
   const data = await res.json();
   return data?.candidates?.[0]?.content?.parts?.[0]?.text || null;
+}
+
+/**
+ * Cleans markdown asterisks and converts to clean Telegram HTML
+ */
+function formatTelegramHtml(text: string): string {
+  if (!text) return '';
+  return text
+    // Replace **bold** with <b>bold</b>
+    .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+    // Replace *italic* with <i>italic</i>
+    .replace(/\*([^*]+)\*/g, '<i>$1</i>')
+    // Replace markdown headers ### with bold
+    .replace(/^#{1,4}\s+(.+)$/gm, '<b>$1</b>')
+    // Replace markdown bullets * or - with •
+    .replace(/^[\*\-]\s+/gm, '• ')
+    // Remove any remaining raw asterisks
+    .replace(/\*{1,2}/g, '');
 }
 
 function escapeHtml(text: string): string {
