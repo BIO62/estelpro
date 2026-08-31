@@ -218,11 +218,30 @@ export async function handleTelegramWebhook(body: {
   const rawText = msg.text.trim();
   const lower = rawText.toLowerCase();
 
-  // 1. /start or /help
+  // 1. Greetings (сайн уу, sainuu, hi, hello)
+  const greetingWords = ['сайн уу', 'сайна уу', 'sainuu', 'sn uu', 'сайн байна уу', 'өглөөний мэнд', 'өдрийн мэнд', 'оройн мэнд', 'hi', 'hello', 'hey'];
+  if (greetingWords.some((g) => lower === g || lower.startsWith(g + ' ') || lower.endsWith(' ' + g))) {
+    const greetMsg = `
+👋 Сайн байна уу, <b>${escapeHtml(msg.from?.first_name || 'Танд')}</b> өдрийн мэнд хүргэе! ✨
+Би бол <b>ESTEL Professional Mongolia</b>-ийн ухаалаг AI туслах байна.
+
+Танд юугаар туслах вэ?
+• 🛍️ <b>Бүтээгдэхүүний үнэ, үлдэгдэл асуух</b> <i>(Жишээ: "Otium шампунь хэд вэ?", "Будаг байна уу?")</i>
+• 📦 <b>Захиалга шалгах</b> <i>(Жишээ: "Захиалга 1332401")</i>
+• 🚚 <b>Хүргэлтийн нөхцөл</b> <i>(Жишээ: "Хүргэлт ямар үнэтэй вэ?")</i>
+• 🏢 <b>Салбарын хаяг, цагийн хуваарь</b> <i>(Жишээ: "Салбарууд хаана байдаг вэ?")</i>
+• 💇‍♀️ <b>Салоны хөнгөлөлт</b> <i>(Жишээ: "Салоны гэрээ ямар хөнгөлөлттэй вэ?")</i>
+• 📊 <b>Борлуулалтын тайлан</b> <i>(Бичих: /today эсвэл "өнөөдөр")</i>
+    `.trim();
+    await sendTelegramMessage(chatId, greetMsg);
+    return { handled: true, command: 'greeting' };
+  }
+
+  // 2. /start or /help or тусламж
   if (lower.startsWith('/start') || lower.startsWith('/help') || lower === 'тусламж') {
     const helpMsg = `
 👋 Сайн байна уу, <b>${escapeHtml(msg.from?.first_name || 'Менежер')}</b>!
-Би бол <b>ESTEL Professional Mongolia</b>-ийн ухаалаг AI туслах бот юм. Та сайтад болон бүтээгдэхүүн, захиалгатай холбоотой хүссэн бүхнээ надаас асууж болно!
+Би бол <b>ESTEL Professional Mongolia</b>-ийн ухаалаг AI туслах бот юм. Та сайт, бүтээгдэхүүн, захиалгатай холбоотой хүссэн бүхнээ надаас асууж болно!
 
 📌 <b>Ашиглаж болох тушаалууд:</b>
 • <b>/today</b> эсвэл <code>өнөөдөр</code> — Өнөөдрийн нийт борлуулалт, салбаруудын тайлан
@@ -243,21 +262,21 @@ export async function handleTelegramWebhook(body: {
     return { handled: true, command: 'help' };
   }
 
-  // 2. /today or "өнөөдөр" / "борлуулалт" / "тайлан"
+  // 3. /today or "өнөөдөр" / "борлуулалт" / "тайлан"
   if (lower.startsWith('/today') || lower.includes('өнөөдөр') || lower.includes('тайлан') || lower.includes('борлуулалт')) {
     const report = await getTodayReportMessage();
     await sendTelegramMessage(chatId, report);
     return { handled: true, command: 'today' };
   }
 
-  // 3. /stock or "үлдэгдэл" / "нөөц"
+  // 4. /stock or "үлдэгдэл" / "нөөц" / "дуусаж"
   if (lower.startsWith('/stock') || lower.includes('үлдэгдэл') || lower.includes('нөөц') || lower.includes('дуусаж')) {
     const stock = await getStockReportMessage();
     await sendTelegramMessage(chatId, stock);
     return { handled: true, command: 'stock' };
   }
 
-  // 4. Specific Order Lookup (e.g., #1332401 or 1332401)
+  // 5. Specific Order Lookup (e.g., #1332401 or 1332401)
   const orderNumMatch = rawText.match(/#?(\d{6,8})/);
   if (orderNumMatch && (lower.includes('захиалга') || lower.includes('order') || lower.includes('шалга') || rawText.startsWith('#'))) {
     const orderId = orderNumMatch[1];
@@ -290,7 +309,7 @@ ${items || '  • Мэдээлэл байхгүй'}
     }
   }
 
-  // 5. /orders or "захиалга"
+  // 6. /orders or "захиалга"
   if (lower.startsWith('/orders') || lower === 'захиалга' || lower === 'захиалгууд') {
     const orders = await listOrders();
     const recent = orders.slice(0, 5);
@@ -309,7 +328,7 @@ ${items || '  • Мэдээлэл байхгүй'}
     return { handled: true, command: 'orders' };
   }
 
-  // 6. Branch / Location Query
+  // 7. Branch / Location Query
   if (lower.startsWith('/branches') || lower.includes('салбар') || lower.includes('байршил') || lower.includes('хаяг') || lower.includes('хаана')) {
     const branchList = BRANCHES.map(
       (b, i) => `<b>${i + 1}. ${escapeHtml(b.name)}</b>\n📍 Хаяг: ${escapeHtml(b.address)}\n⏰ Цаг: ${escapeHtml(b.hours)}`,
@@ -332,7 +351,7 @@ ${contact.phones.map((p) => `• <code>${p}</code>`).join('\n')}
     return { handled: true, command: 'branches' };
   }
 
-  // 7. Delivery Terms Query
+  // 8. Delivery Terms Query
   if (lower.startsWith('/delivery') || lower.includes('хүргэлт') || lower.includes('хүргэлтийн нөхцөл') || lower.includes('үнэгүй хүргэлт')) {
     const deliveryMsg = `
 🚚 <b>ХҮРГЭЛТИЙН НӨХЦӨЛ & ҮНЭ ТАРИФ:</b>
@@ -352,7 +371,7 @@ ${contact.phones.map((p) => `• <code>${p}</code>`).join('\n')}
     return { handled: true, command: 'delivery' };
   }
 
-  // 8. Salon Partnership & Discount Query
+  // 9. Salon Partnership & Discount Query
   if (lower.startsWith('/salon') || lower.includes('салон') || lower.includes('хөнгөлөлт') || lower.includes('үсчин') || lower.includes('гэрээ')) {
     const tiers = SALON_DISCOUNT_TIERS.map((t) => `• <b>${t.label}:</b> Гэрээт хамтрагч салон`).join('\n');
     const salonMsg = `
@@ -374,17 +393,18 @@ ${tiers}
     return { handled: true, command: 'salon' };
   }
 
-  // 9. Product Search by Name / Keyword (e.g. "otium", "будаг", "шампунь", "curex", "тос", "маск")
-  const productSearchWords = ['будаг', 'шампунь', 'маск', 'тос', 'спрей', 'ангижруулагч', 'otium', 'curex', 'essex', 'couture', 'newtone', 'alpha', 'үнэ', 'байна уу', 'хэд вэ'];
+  // 10. Product Search by Name / Keyword
+  const productSearchWords = ['будаг', 'шампунь', 'маск', 'тос', 'спрей', 'ангижруулагч', 'otium', 'curex', 'essex', 'couture', 'newtone', 'alpha', 'үнэ', 'байна уу', 'хэд вэ', 'хэдтэй'];
   const isProductSearch = productSearchWords.some((w) => lower.includes(w));
 
   if (isProductSearch) {
     const res = await listProducts();
     const allProducts: DbProduct[] = res.items || [];
 
-    // Filter products matching search keywords
-    const searchTerms = lower
-      .replace(/үнэ|хэд|вэ|байна|уу|юу|манайд|байгаа|/g, '')
+    // Clean search terms: remove punctuation and common stop words
+    const cleanLower = lower.replace(/["'”„`?:!.,]/g, ' ');
+    const searchTerms = cleanLower
+      .replace(/үнэ|хэд|вэ|байна|уу|юу|манайд|байгаа|эсвэл|ямар|байнауу|хэдтэй/g, ' ')
       .trim()
       .split(/\s+/)
       .filter((w) => w.length >= 2);
@@ -417,7 +437,7 @@ ${list}
     }
   }
 
-  // 10. AI Fallback (Gemini integration if key exists, otherwise smart business responder)
+  // 11. AI Gemini Integration (If GEMINI_API_KEY is configured)
   if (GEMINI_API_KEY) {
     try {
       const aiResponse = await callGeminiAI(rawText);
@@ -430,20 +450,24 @@ ${list}
     }
   }
 
-  // Smart Context Fallback
-  const summary = await getTodayReportMessage();
-  const smartReply = `
+  // 12. Smart Helpful Fallback
+  const helpReply = `
 🤖 <b>ESTEL AI ТУСЛАХ</b>
 Таны асуулт: <i>"${escapeHtml(rawText)}"</i>
 
-Одоогийн бодит системийн мэдээллээр:
-${summary}
+Би танд дараах зүйлсээр шууд тусалж чадна:
+• 🛍️ <b>Бүтээгдэхүүний үнэ, үлдэгдэл</b> <i>("Otium шампунь үнэ", "Princess Essex будаг")</i>
+• 📦 <b>Захиалга шалгах</b> <i>("Захиалга 1332401")</i>
+• 🚚 <b>Хүргэлтийн нөхцөл</b> <i>("Хүргэлтийн үнэ хэд вэ?")</i>
+• 🏢 <b>Салбаруудын байршил</b> <i>("Салбарууд хаана байдаг вэ?")</i>
+• 💇‍♀️ <b>Салоны хөнгөлөлт</b> <i>("Салоны хөнгөлөлт")</i>
+• 📊 <b>Өдрийн борлуулалтын тайлан</b> <i>(Бичих: /today)</i>
 
-💡 <i>Танд бүтээгдэхүүний үнэ, үлдэгдэл, салбарын байршил, хүргэлтийн нөхцөл, захиалгын талаар мэдээлэл хэрэгтэй бол тодорхой асуугаарай!</i>
+💡 <i>Асуултаа дээрх түлхүүр үгсээр илүү тодорхой бичиж асууна уу!</i>
   `.trim();
 
-  await sendTelegramMessage(chatId, smartReply);
-  return { handled: true, command: 'smart_fallback' };
+  await sendTelegramMessage(chatId, helpReply);
+  return { handled: true, command: 'smart_help' };
 }
 
 async function callGeminiAI(prompt: string): Promise<string | null> {
