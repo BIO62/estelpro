@@ -437,16 +437,17 @@ ${list}
     }
   }
 
-  // 11. AI Gemini Integration (If GEMINI_API_KEY is configured)
-  if (GEMINI_API_KEY) {
+  // 11. AI Universal Integration (Groq Llama 3.3 / Gemini)
+  const aiKey = process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY || '';
+  if (aiKey) {
     try {
-      const aiResponse = await callGeminiAI(rawText);
+      const aiResponse = await callUniversalAI(rawText, aiKey);
       if (aiResponse) {
         await sendTelegramMessage(chatId, `🤖 <b>ESTEL AI Туслах:</b>\n\n${escapeHtml(aiResponse)}`);
-        return { handled: true, command: 'gemini_ai' };
+        return { handled: true, command: 'ai_response' };
       }
     } catch (err) {
-      console.error('[Gemini AI Error]:', err);
+      console.error('[AI Query Error]:', err);
     }
   }
 
@@ -470,9 +471,10 @@ ${list}
   return { handled: true, command: 'smart_help' };
 }
 
-async function callGeminiAI(prompt: string): Promise<string | null> {
-  if (!GEMINI_API_KEY) return null;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+async function callUniversalAI(prompt: string, apiKey: string): Promise<string | null> {
+  const key = apiKey.trim();
+  if (!key) return null;
+
   const systemInstruction = `Чи бол ESTEL Professional Mongolia (estelpro.mn) албан ёсны цахим дэлгүүрийн ухаалаг AI туслах юм.
 Монгол хэлээр эелдэг, товч тодорхой, бизнесийн соёлтой хариул.
 Компанийн мэдээлэл:
@@ -482,6 +484,30 @@ async function callGeminiAI(prompt: string): Promise<string | null> {
 - Утас: 7707 2207, 8605 7202, 8603 7202
 - Салон хөнгөлөлт: 5% - 20% хүртэл гэрээт шатлалтай.`;
 
+  // 1. If Groq API Key (starts with gsk_)
+  if (key.startsWith('gsk_')) {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: systemInstruction },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.5,
+        max_tokens: 600,
+      }),
+    });
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content || null;
+  }
+
+  // 2. Google Gemini API
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
