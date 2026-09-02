@@ -24,7 +24,8 @@ type CartContextValue = {
   total: number;
   subtotal: number;
   discount: number;
-  addItem: (product: CatalogProduct, selection?: CartSelection) => void;
+  ready: boolean;
+  addItem: (product: CatalogProduct, selection?: CartSelection, qty?: number) => void;
   setQty: (key: string, qty: number) => void;
   updateItemSelection: (key: string, selection: CartSelection) => void;
   removeItem: (key: string) => void;
@@ -38,6 +39,7 @@ const CartContext = createContext<CartContextValue>({
   total: 0,
   subtotal: 0,
   discount: 0,
+  ready: false,
   addItem: () => undefined,
   setQty: () => undefined,
   updateItemSelection: () => undefined,
@@ -64,8 +66,8 @@ export default function CartProvider({ children }: { children: ReactNode }) {
     writeCart(items);
   }, [items, ready]);
 
-  const addItem = useCallback((product: CatalogProduct, selection: CartSelection = {}) => {
-    setItems((current) => mergeCartItem(current, toCartItem(product, selection)));
+  const addItem = useCallback((product: CatalogProduct, selection: CartSelection = {}, qty = 1) => {
+    setItems((current) => mergeCartItem(current, toCartItem(product, selection, qty)));
   }, []);
 
   const setQty = useCallback((key: string, qty: number) => {
@@ -125,6 +127,7 @@ export default function CartProvider({ children }: { children: ReactNode }) {
       total: cartTotal(items),
       subtotal: cartSubtotal(items),
       discount: cartDiscount(items),
+      ready,
       addItem,
       setQty,
       updateItemSelection,
@@ -132,7 +135,7 @@ export default function CartProvider({ children }: { children: ReactNode }) {
       removeByProductId,
       clearCart,
     }),
-    [items, addItem, setQty, updateItemSelection, removeItem, removeByProductId, clearCart]
+    [items, ready, addItem, setQty, updateItemSelection, removeItem, removeByProductId, clearCart]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

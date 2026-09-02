@@ -27,6 +27,7 @@ export interface SyliusVariant {
   inStock?: boolean;
   onHand?: number;
   promotionPercentage?: number;
+  optionValues?: Array<string | { '@id'?: string; code?: string; value?: string }>;
 }
 
 export interface SyliusTaxon {
@@ -168,11 +169,118 @@ export function toMenuTaxons(
     }));
 }
 
+const VOLUME_RE = /(\d+(?:[.,]\d+)?)\s*(мл|ml|л|l|г|g)(?![a-zа-яё])/i;
+
+function formatVolume(amount: string, unit: string) {
+  const normalized = unit.toLowerCase();
+  const mapped = normalized === 'ml' ? 'мл' : normalized === 'l' ? 'л' : normalized === 'g' ? 'г' : unit;
+  return `${amount}${mapped}`;
+}
+
+function volumeFromText(text?: string | null) {
+  const match = String(text || '').match(VOLUME_RE);
+  return match ? formatVolume(match[1], match[2]) : '';
+}
+
+function volumeFromOption(variant: SyliusVariant) {
+  const refs = (variant.optionValues || []).map(optionValueRef).join(' ');
+  const fromText = volumeFromText(refs);
+  if (fromText) return fromText;
+  const dash = refs.match(/[-_/](\d{2,4})(?:ml|мл)?$/i);
+  if (!dash) return '';
+  const amount = Number(dash[1]);
+  if (!Number.isFinite(amount) || amount <= 0) return '';
+  if (amount >= 1000 && amount % 1000 === 0) return `${amount / 1000}л`;
+  return `${amount}мл`;
+}
+
 function variantLabel(variant: SyliusVariant): string {
-  const source = [variant?.name, variant?.code].find((value) => typeof value === 'string' && value.trim()) || '';
-  if (!source) return variant?.id ? String(variant.id) : '';
-  const match = source.match(/(\d+(?:[.,]\d+)?\s*(?:мл|ml|л|l))/i);
-  return match ? match[1].replace(/\s+/g, '') : source;
+  return (
+    volumeFromText(variant?.name) ||
+    volumeFromOption(variant) ||
+    volumeFromText(variant?.code) ||
+    ''
+  );
+}
+
+function optionValueRef(value: string | { '@id'?: string; code?: string; value?: string } | undefined) {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  return value.code || value.value || value['@id'] || '';
+}
+
+function isEmbeddedVariant(value: unknown): value is SyliusVariant {
+  if (!value || typeof value !== 'object') return false;
+  const variant = value as SyliusVariant;
+  return Boolean(variant.code) && typeof variant.price === 'number';
+}
+
+function isShadeVariant(variant: SyliusVariant): boolean {
+  const refs = (variant.optionValues || []).map(optionValueRef).join(' ');
+  if (/hair_color|colour|color|shade|өнгө/i.test(refs)) return true;
+  const name = String(variant.name || '').trim();
+  return /^\d{1,2}\s*[/.]\s*\d/.test(name);
+}
+
+function isSizeVariant(variant: SyliusVariant): boolean {
+  return Boolean(variantLabel(variant));
+}
+
+const HAIR_LEVEL_HEX = [
+  '#1a1a1a',
+  '#1c1410',
+  '#2a1b12',
+  '#3d2317',
+  '#5a3218',
+  '#7a4a22',
+  '#8f5d32',
+  '#c4a06a',
+  '#d4b896',
+  '#e6d0ae',
+  '#f0e2c4',
+  '#f5ecd6',
+  '#faf6ea',
+];
+
+export function shadeHexFromName(name: string): string {
+  const match = String(name || '').match(/(\d{1,2})\s*[/.]\s*\d+/);
+  if (match) {
+    const level = Math.min(HAIR_LEVEL_HEX.length - 1, Number(match[1]));
+    return HAIR_LEVEL_HEX[level] || HAIR_LEVEL_HEX[6];
+  }
+  let hash = 2166136261;
+  for (let i = 0; i < name.length; i += 1) hash = Math.imul(hash ^ name.charCodeAt(i), 16777619);
+  return HAIR_LEVEL_HEX[(hash >>> 0) % HAIR_LEVEL_HEX.length];
+}
+
+export async function getSyliusVariantsForProduct(code: string): Promise<SyliusVariant[]> {
+  const items: SyliusVariant[] = [];
+  let page = 1;
+  while (page <= 20) {
+    const params = new URLSearchParams();
+    params.set('product', `/api/v2/shop/products/${code}`);
+    params.set('itemsPerPage', '100');
+    params.set('page', String(page));
+    const res = await fetch(`${SYLIUS_BASE_URL}/api/v2/shop/product-variants?${params.toString()}`, {
+      headers: { Accept: 'application/ld+json, application/json' },
+    });
+    if (!res.ok) break;
+    const data = await res.json();
+    const batch = unwrapList<SyliusVariant>(data).filter(isEmbeddedVariant);
+    items.push(...batch);
+    const total = unwrapTotal(data, items.length);
+    if (batch.length === 0 || items.length >= total) break;
+    page += 1;
+  }
+  return items;
+}
+
+export async function expandSyliusProduct(product: SyliusProduct): Promise<SyliusProduct> {
+  const embedded = (product.variants || []).filter(isEmbeddedVariant);
+  if (embedded.length > 0) return { ...product, variants: embedded };
+  if (!product.code) return product;
+  const variants = await getSyliusVariantsForProduct(product.code);
+  return { ...product, variants };
 }
 
 function productTime(product: SyliusProduct): number {
@@ -231,15 +339,39 @@ function seededShuffle<T>(items: T[], seed: string): T[] {
   return copy;
 }
 
-function richTextToHtml(value?: string) {
-  const raw = (value || '').trim();
+export function richTextToHtml(value?: string | null) {
+  const raw = String(value || '')
+    .replace(/[\u200B\u200C\u200D\uFEFF]/g, '')
+    .trim();
   if (!raw) return '';
-  if (raw.startsWith('[')) {
+  const jsonStart = raw.search(/[\[{]/);
+  const looksLikeBlocks = jsonStart >= 0 && /monsieurbiz\.text|"content"\s*:/.test(raw);
+  if (looksLikeBlocks || raw.startsWith('[') || raw.startsWith('{')) {
     try {
-      const blocks = JSON.parse(raw) as Array<{ data?: { content?: string } }>;
-      return blocks.map((block) => block?.data?.content || '').join(' ');
+      const parsed = JSON.parse(jsonStart > 0 ? raw.slice(jsonStart) : raw) as
+        | Array<{ data?: { content?: string }; content?: string }>
+        | { data?: { content?: string }; content?: string };
+      const blocks = Array.isArray(parsed) ? parsed : [parsed];
+      const html = blocks
+        .map((block) => String(block?.data?.content ?? block?.content ?? '').trim())
+        .filter(Boolean)
+        .join('');
+      if (html) {
+        if (/<[a-z][\s\S]*>/i.test(html)) return html;
+        return html
+          .split(/\n{2,}/)
+          .map((paragraph) => `<p>${paragraph.replace(/\n/g, '<br/>')}</p>`)
+          .join('');
+      }
     } catch {
-      return raw;
+      const nested = raw.match(/"content"\s*:\s*"((?:\\.|[^"\\])*)"/);
+      if (nested) {
+        try {
+          return JSON.parse(`"${nested[1]}"`);
+        } catch {
+          return nested[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+        }
+      }
     }
   }
   return raw;
@@ -259,7 +391,8 @@ export function toCatalogProduct(
   opts?: { forceNew?: boolean; contractPercent?: number },
 ): CatalogProduct {
   const variants = (product.variants || []).filter(Boolean);
-  const first = variants[0];
+  const embedded = variants.filter(isEmbeddedVariant);
+  const first = embedded[0];
   const percent = opts?.contractPercent || 0;
   const saleAmount = (amount: number) => (percent ? applySalonDiscount(amount, percent) : amount);
   const price = first ? formatSyliusPrice(saleAmount(first.price)) : '0₮';
@@ -272,7 +405,10 @@ export function toCatalogProduct(
     : undefined;
   const pct = first?.promotionPercentage || 0;
   const images = (product.images || []).map(syliusImageUrl).filter(Boolean);
-  const sizes: ProductSize[] = variants
+  const shadeVariants = embedded.filter(isShadeVariant);
+  const sizeVariants = embedded.filter((variant) => !isShadeVariant(variant) && (isSizeVariant(variant) || shadeVariants.length === 0));
+  const sizes: ProductSize[] = (shadeVariants.length ? sizeVariants : embedded)
+    .filter((variant) => !isShadeVariant(variant) || shadeVariants.length === 0)
     .map((variant) => ({
       label: variantLabel(variant),
       price: formatSyliusPrice(saleAmount(variant.price ?? 0)),
@@ -283,6 +419,25 @@ export function toCatalogProduct(
           : undefined,
     }))
     .filter((size) => size.label);
+  const uniqueSizes = sizes.filter((size, index, list) => list.findIndex((entry) => entry.label === size.label) === index);
+  const shades = shadeVariants
+    .map((variant) => {
+      const name = String(variant.name || variant.code || '').trim();
+      const shadePrice = formatSyliusPrice(saleAmount(variant.price ?? 0));
+      return {
+        id: variant.code,
+        name,
+        hex: shadeHexFromName(name),
+        price: shadePrice,
+        originalPrice: percent
+          ? formatSyliusPrice(variant.price ?? 0)
+          : variant.originalPrice && variant.originalPrice > variant.price
+            ? formatSyliusPrice(variant.originalPrice)
+            : undefined,
+      };
+    })
+    .filter((shade) => shade.name)
+    .sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
 
   return {
     id: product.code,
@@ -296,7 +451,8 @@ export function toCatalogProduct(
     isNew: Boolean(opts?.forceNew) || isRecentlyCreated(product.createdAt),
     image: images[0] || FALLBACK_PRODUCT_IMAGE,
     gallery: images.length ? images : [FALLBACK_PRODUCT_IMAGE],
-    sizes: sizes.length ? sizes : undefined,
+    sizes: shadeVariants.length ? (uniqueSizes.length > 1 ? uniqueSizes : undefined) : uniqueSizes.length ? uniqueSizes : undefined,
+    shades: shades.length ? shades : undefined,
     shortDescription: stripHtml(product.shortDescription || product.description),
   };
 }
@@ -439,7 +595,8 @@ export async function getSyliusProductByCode(code: string): Promise<SyliusProduc
   try {
     const res = await fetch(`${SYLIUS_BASE_URL}/api/v2/shop/products/${encodeURIComponent(code)}`, fetchOpts());
     if (!res.ok) return null;
-    return await res.json();
+    const product = (await res.json()) as SyliusProduct;
+    return expandSyliusProduct(product);
   } catch (error) {
     console.error(`Error fetching Sylius product ${code}:`, error);
     return null;

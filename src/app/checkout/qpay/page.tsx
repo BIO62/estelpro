@@ -1,9 +1,28 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { assetUrl } from '@/lib/constants';
+import { formatPrice } from '@/lib/cart';
+import { useCart } from '@/components/providers/CartProvider';
 
 export default function QpayPage() {
+  const { total } = useCart();
+  const [payTotal, setPayTotal] = useState(total);
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('estel-checkout');
+      const data = raw ? (JSON.parse(raw) as { payTotal?: number }) : null;
+      if (typeof data?.payTotal === 'number') {
+        setPayTotal(data.payTotal);
+        return;
+      }
+    } catch {
+      /* ignore */
+    }
+    setPayTotal(total);
+  }, [total]);
 
   return (
     <>
@@ -19,7 +38,7 @@ export default function QpayPage() {
                     <h5 className="fw-bold mb-4">Төлбөр төлөх</h5>
                     <div className="text-center mb-4">
                       <span className="d-block fs-11 fw-bold text-uppercase fc-secondary mb-2" style={{letterSpacing:".12em"}}>Нийт дүн</span>
-                      <strong className="d-block fc-dark" style={{fontSize:"36px",letterSpacing:"-.02em"}}>51,000₮</strong>
+                      <strong className="d-block fc-dark" style={{fontSize:"36px",letterSpacing:"-.02em"}}>{formatPrice(payTotal)}</strong>
                     </div>
                     
                     <div className="mb-4 mx-auto" style={{width:"200px",height:"200px"}}>

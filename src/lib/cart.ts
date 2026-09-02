@@ -29,30 +29,47 @@ export function defaultSelection(product: CatalogProduct): CartSelection {
   };
 }
 
+type BootstrapOffcanvas = {
+  getOrCreateInstance: (node: Element) => { show: () => void; hide: () => void };
+};
+
+function cartOffcanvasApi() {
+  return (
+    window as Window & {
+      bootstrap?: { Offcanvas?: BootstrapOffcanvas };
+    }
+  ).bootstrap?.Offcanvas;
+}
+
 export function openCartDrawer() {
   if (typeof window === 'undefined') return;
   const el = document.getElementById('cartCanvas');
   if (!el) return;
-  const show = (Offcanvas?: { getOrCreateInstance: (node: Element) => { show: () => void } }) => {
+  const show = (Offcanvas?: BootstrapOffcanvas) => {
     Offcanvas?.getOrCreateInstance(el).show();
   };
-  const existing = (
-    window as Window & {
-      bootstrap?: { Offcanvas?: { getOrCreateInstance: (node: Element) => { show: () => void } } };
-    }
-  ).bootstrap?.Offcanvas;
+  const existing = cartOffcanvasApi();
   if (existing) {
     show(existing);
     return;
   }
   void import('bootstrap/dist/js/bootstrap.bundle.min.js').then(() => {
-    const loaded = (
-      window as Window & {
-        bootstrap?: { Offcanvas?: { getOrCreateInstance: (node: Element) => { show: () => void } } };
-      }
-    ).bootstrap?.Offcanvas;
-    show(loaded);
+    show(cartOffcanvasApi());
   });
+}
+
+export function hideCartDrawer() {
+  if (typeof window === 'undefined') return;
+  const el = document.getElementById('cartCanvas');
+  if (el) {
+    cartOffcanvasApi()?.getOrCreateInstance(el).hide();
+    el.classList.remove('show', 'showing');
+    el.setAttribute('aria-hidden', 'true');
+  }
+  document.querySelectorAll('.offcanvas-backdrop').forEach((node) => node.remove());
+  document.body.classList.remove('offcanvas-open', 'modal-open');
+  document.body.style.removeProperty('overflow');
+  document.body.style.removeProperty('padding-right');
 }
 
 export function parsePrice(label: string) {
@@ -69,12 +86,14 @@ export function cartItemKey(productId: string, selection: CartSelection = {}) {
 
 export function priceForProduct(product: CatalogProduct, selection: CartSelection = {}) {
   const size = product.sizes?.find((item) => item.label === selection.size);
-  return parsePrice(size?.price || product.price);
+  const shade = product.shades?.find((item) => item.name === selection.shade || item.id === selection.shade);
+  return parsePrice(size?.price || shade?.price || product.price);
 }
 
 export function originalPriceForProduct(product: CatalogProduct, selection: CartSelection = {}) {
   const size = product.sizes?.find((item) => item.label === selection.size);
-  const label = size?.originalPrice || product.originalPrice;
+  const shade = product.shades?.find((item) => item.name === selection.shade || item.id === selection.shade);
+  const label = size?.originalPrice || shade?.originalPrice || product.originalPrice;
   return label ? parsePrice(label) : priceForProduct(product, selection);
 }
 
@@ -92,7 +111,10 @@ export function toCartItem(product: CatalogProduct, selection: CartSelection = {
     size: selection.size,
     shade: selection.shade,
     sizes: product.sizes,
-    shades: product.shades,
+    shades:
+      product.shades && product.shades.length > 8
+        ? product.shades.filter((item) => item.name === selection.shade || item.id === selection.shade)
+        : product.shades,
   };
 }
 

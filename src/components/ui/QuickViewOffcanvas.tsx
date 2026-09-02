@@ -33,8 +33,8 @@ export default function QuickViewOffcanvas({ product, onClose, onAdd }: Props) {
   const gallery = product?.gallery?.length ? product.gallery : product ? [product.image] : [];
   const size = product?.sizes?.[sizeIdx];
   const shade = product?.shades?.[shadeIdx];
-  const price = size?.price || product?.price || '';
-  const original = size?.originalPrice || product?.originalPrice;
+  const price = size?.price || shade?.price || product?.price || '';
+  const original = size?.originalPrice || shade?.originalPrice || product?.originalPrice;
 
   return (
     <>

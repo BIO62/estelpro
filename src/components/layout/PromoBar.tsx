@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { assetUrl } from '@/lib/constants';
@@ -43,49 +43,50 @@ export default function PromoBar() {
   }, []);
 
   const isSalon = user?.role === 'salon' || user?.kind === 'salon';
+  const message =
+    isSalon && typeof user?.discountPercent === 'number'
+      ? `Салоны хөнгөлөлт ${user.discountPercent}%`
+      : PROMO_MESSAGES[index];
+
+  let action: ReactNode = null;
+  if (isSalon) {
+    action = (
+      <button
+        type="button"
+        className="promo-bar-action btn px-2 py-1 d-flex align-items-center justify-content-center gap-1 border-0 rounded-0 text-decoration-none"
+        onClick={async () => {
+          await fetch('/api/auth/logout', { method: 'POST' });
+          document.cookie = `${DRESSER_COOKIE}=; path=/; max-age=0; samesite=lax`;
+          setUser(null);
+          router.push('/');
+          router.refresh();
+        }}
+      >
+        <span className="fc-white fs-12 text-nowrap">Гарах</span>
+      </button>
+    );
+  } else if (!user) {
+    action = (
+      <Link
+        href="/login?kind=salon"
+        className="promo-bar-action btn px-2 py-1 d-flex align-items-center justify-content-center gap-1 border-0 rounded-0 text-decoration-none"
+        aria-label="Салон нэвтрэх"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={assetUrl('images/icons/loginWhite.svg')} alt="" />
+        <span className="fc-white fs-12 text-nowrap promo-bar-action-label">Салон нэвтрэх</span>
+      </Link>
+    );
+  }
 
   return (
-    <section className="bg-dark">
-      <div className="container-fluid">
-        <div className="d-flex align-items-center">
-          {/* Ticker text identical to home page */}
-          <div className="d-flex justify-content-center flex-grow-1 fc-white fw-semibold align-items-center overflow-hidden ps-sm-5">
-            <span
-              className={`ticker-text fs-12 d-block lh-sm my-1 ms-sm-5 ps-sm-5${fading ? ' fading' : ''}`}
-              id="promo-ticker"
-            >
-              {isSalon && typeof user?.discountPercent === 'number'
-                ? `Салоны хөнгөлөлт ${user.discountPercent}%`
-                : PROMO_MESSAGES[index]}
-            </span>
-          </div>
-
-          {/* Right Action */}
-          {isSalon ? (
-            <button
-              type="button"
-              className="btn px-2 py-1 d-flex align-items-center justify-content-center gap-1 border-0 rounded-0 ms-auto text-decoration-none"
-              onClick={async () => {
-                await fetch('/api/auth/logout', { method: 'POST' });
-                document.cookie = `${DRESSER_COOKIE}=; path=/; max-age=0; samesite=lax`;
-                setUser(null);
-                router.push('/');
-                router.refresh();
-              }}
-            >
-              <span className="fc-white fs-12 text-nowrap">Гарах</span>
-            </button>
-          ) : user ? null : (
-            <Link
-              href="/login?kind=salon"
-              className="btn px-2 py-1 d-flex align-items-center justify-content-center gap-1 border-0 rounded-0 ms-auto text-decoration-none"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={assetUrl('images/icons/loginWhite.svg')} alt="" />
-              <span className="fc-white fs-12 text-nowrap">Салон нэвтрэх</span>
-            </Link>
-          )}
+    <section className="promo-bar bg-dark">
+      <div className="promo-bar-inner">
+        <div className="promo-bar-side" aria-hidden="true" inert>
+          {action}
         </div>
+        <span className={`promo-bar-msg ticker-text${fading ? ' fading' : ''}`}>{message}</span>
+        <div className="promo-bar-side promo-bar-side--end">{action}</div>
       </div>
     </section>
   );

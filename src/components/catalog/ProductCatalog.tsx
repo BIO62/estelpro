@@ -36,9 +36,10 @@ function firstParam(value: string | string[] | undefined) {
 
 function catalogHref(
   basePath: string,
-  params: { taxon?: string; brand?: string; sort?: string; page?: number }
+  params: { taxon?: string; brand?: string; sort?: string; page?: number; q?: string }
 ) {
   const query = new URLSearchParams();
+  if (params.q) query.set('q', params.q);
   if (params.taxon) query.set('taxon', params.taxon);
   if (params.brand) query.set('brand', params.brand);
   if (params.sort && params.sort !== 'random') query.set('sort', params.sort);
@@ -70,12 +71,14 @@ export default async function ProductCatalog({
   if (audience === 'dresser' && taxon && !menuHasTaxon(menuTaxons, taxon)) {
     taxon = undefined;
   }
+  const q = firstParam(sp.q)?.trim() || undefined;
   const brand = getMenuBrand(firstParam(sp.brand))?.slug;
   const sort = ((firstParam(sp.sort) as ProductSort) || (forceNew ? 'newest' : 'random')) as ProductSort;
   const page = Math.max(1, Number(firstParam(sp.page)) || 1);
 
   const { items: allProducts } = await getStorefrontProducts({
     taxon,
+    q,
     audience,
   });
   const currentTaxon =
@@ -86,7 +89,7 @@ export default async function ProductCatalog({
   const sorted = sortStorefrontProducts(
     branded,
     forceNew ? 'newest' : sort,
-    `${taxon || 'all'}:${brand || 'all'}:${branded.length}`
+    `${taxon || 'all'}:${brand || 'all'}:${q || ''}:${branded.length}`
   );
   const knownTotal = sorted.length;
   const totalPages = Math.max(1, Math.ceil(knownTotal / PAGE_SIZE));
@@ -95,7 +98,7 @@ export default async function ProductCatalog({
     .slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
     .map((item) => toStorefrontProduct(item, { forceNew, contractPercent }));
   const countLabel = knownTotal;
-  const title = currentBrand?.name || currentTaxon?.name || defaultTitle;
+  const title = q ? `«${q}»` : currentBrand?.name || currentTaxon?.name || defaultTitle;
   const sortOptions: { value: ProductSort; label: string }[] = forceNew
     ? [
         { value: 'newest', label: 'Шинэ эхэндээ' },
@@ -114,7 +117,7 @@ export default async function ProductCatalog({
   const taxonLinks = menuTaxons.map((item) => (
     <Link
       key={item.code}
-      href={catalogHref(basePath, { taxon: item.code, brand, sort })}
+      href={catalogHref(basePath, { taxon: item.code, brand, sort, q })}
       className="filter-check text-decoration-none"
     >
       <span className={`filter-check-box${taxon === item.code ? ' bg-main' : ''}`} />
@@ -161,7 +164,7 @@ export default async function ProductCatalog({
                   {sortOptions.map((option) => (
                     <li key={option.value}>
                       <Link
-                        href={catalogHref(basePath, { taxon, brand, sort: option.value })}
+                        href={catalogHref(basePath, { taxon, brand, sort: option.value, q })}
                         className={`dropdown-item d-flex align-items-center justify-content-between px-3 py-2 fs-13${sort === option.value ? ' fw-semibold fc-main' : ''}`}
                       >
                         {option.label}
@@ -203,7 +206,7 @@ export default async function ProductCatalog({
           {totalPages > 1 && (
             <div className="d-flex justify-content-center align-items-center gap-2 mt-5">
               <Link
-                href={catalogHref(basePath, { taxon, brand, sort, page: Math.max(1, safePage - 1) })}
+                href={catalogHref(basePath, { taxon, brand, sort, page: Math.max(1, safePage - 1), q })}
                 className={`btn btn-outline-secondary btn-sm px-3${safePage <= 1 ? ' disabled' : ''}`}
               >
                 Өмнөх
@@ -212,7 +215,7 @@ export default async function ProductCatalog({
                 {safePage} / {totalPages}
               </span>
               <Link
-                href={catalogHref(basePath, { taxon, brand, sort, page: Math.min(totalPages, safePage + 1) })}
+                href={catalogHref(basePath, { taxon, brand, sort, page: Math.min(totalPages, safePage + 1), q })}
                 className={`btn btn-outline-secondary btn-sm px-3${safePage >= totalPages ? ' disabled' : ''}`}
               >
                 Дараах
@@ -242,7 +245,7 @@ export default async function ProductCatalog({
               {MENU_BRANDS.map((item) => (
                 <Link
                   key={item.slug}
-                  href={catalogHref(basePath, { taxon, brand: item.slug, sort })}
+                  href={catalogHref(basePath, { taxon, brand: item.slug, sort, q })}
                   className="filter-check text-decoration-none"
                 >
                   <span className={`filter-check-box${brand === item.slug ? ' bg-main' : ''}`} />

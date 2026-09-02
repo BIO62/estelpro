@@ -9,6 +9,8 @@ export type ProductShade = {
   name: string;
   hex: string;
   image?: string;
+  price?: string;
+  originalPrice?: string;
 };
 
 export type CatalogProduct = {

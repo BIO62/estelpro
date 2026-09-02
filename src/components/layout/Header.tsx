@@ -64,6 +64,8 @@ export default function Header() {
               data-bs-toggle="offcanvas"
               data-bs-target="#mainMenuCanvas"
               aria-controls="mainMenuCanvas"
+              data-search-open
+              aria-label="Хайх"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={assetUrl('images/icons/search.svg')} alt="" />

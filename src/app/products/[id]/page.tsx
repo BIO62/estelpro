@@ -1,14 +1,14 @@
 import { notFound } from 'next/navigation';
-import { cookies } from 'next/headers';
 import ProductDetailView from './ProductDetailView';
 import {
+  getStorefrontCatalogProduct,
   getStorefrontProduct,
   getStorefrontProducts,
   isDresserStorefrontProduct,
   toStorefrontProduct,
 } from '@/lib/storefront-products';
-import { DRESSER_COOKIE } from '@/lib/catalog-audience';
 import { getSalonContractPercent } from '@/lib/auth/session';
+import { richTextToHtml } from '@/lib/api/sylius';
 
 export default async function ProductDetailPage({
   params,
@@ -16,29 +16,28 @@ export default async function ProductDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const product = await getStorefrontProduct(decodeURIComponent(id));
+  const code = decodeURIComponent(id);
+  const row = await getStorefrontProduct(code);
+  const contractPercent = await getSalonContractPercent();
+  const product = await getStorefrontCatalogProduct(code, { contractPercent, row });
   if (!product) notFound();
 
-  const dresserSession = (await cookies()).get(DRESSER_COOKIE)?.value === '1';
-  if (isDresserStorefrontProduct(product) && !dresserSession) notFound();
-
-  const audience = isDresserStorefrontProduct(product) ? 'dresser' : 'consumer';
-  const contractPercent = await getSalonContractPercent();
+  const audience = row && isDresserStorefrontProduct(row) ? 'dresser' : 'consumer';
   const { items: relatedRaw } = await getStorefrontProducts({
-    taxon: product.taxon || undefined,
+    taxon: row?.taxon || undefined,
     audience,
   });
   const related = relatedRaw
-    .filter((item) => item.code !== product.code)
+    .filter((item) => item.code !== (row?.code || code))
     .slice(0, 4)
     .map((item) => toStorefrontProduct(item, { contractPercent }));
 
   return (
     <ProductDetailView
-      product={toStorefrontProduct(product, { contractPercent })}
+      product={product}
       related={related}
-      description={product.description || product.short_description || undefined}
-      inStock={product.stock}
+      description={richTextToHtml(row?.description || row?.short_description || product.shortDescription)}
+      inStock={row?.stock}
     />
   );
 }

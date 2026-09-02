@@ -19,6 +19,7 @@ const TAXON_IMAGES: Record<string, string> = {
 const TAXON_FALLBACK = 'images/taxon/бүх бүтээгдэхүүн.jpg';
 
 import { MENU_BRANDS } from '@/lib/brands';
+import { MenuSearchField, MenuSearchPanel, MenuSearchRoot } from '@/components/layout/MenuSearch';
 
 function closeMainMenu() {
   const el = document.getElementById('mainMenuCanvas');
@@ -84,18 +85,16 @@ export default function MainMenuOffcanvas({ taxons = [] }: { taxons?: MenuTaxon[
       aria-labelledby="mainMenuCanvasLabel"
     >
       <div className="offcanvas-body d-flex flex-column">
+        <MenuSearchRoot>
         <div className="d-flex flex-column flex-grow-1 mb-3">
           <div className="d-flex mb-3 gap-2">
-            <div className="d-flex border align-items-center rounded-3 flex-grow-1">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={assetUrl('images/icons/search.svg')} alt="" className="w-20 h-20 ms-3" />
-              <input type="search" className="form-control border-0 flex-grow-1 shadow-none fs-14 p-3" placeholder="Хайх..." />
-            </div>
+            <MenuSearchField />
             <button type="button" className="btn btn-light p-3" data-bs-dismiss="offcanvas" aria-label="Close">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={assetUrl('images/icons/times.svg')} alt="" />
             </button>
           </div>
+          <MenuSearchPanel>
           <div className="position-relative d-flex flex-column flex-grow-1">
             <MenuLink href="/list" className="btn text-start d-flex align-items-center border-0 p-3">
               <span className="flex-grow-1 fs-12 text-uppercase">Бүх бүтээгдэхүүн</span>
@@ -239,6 +238,7 @@ export default function MainMenuOffcanvas({ taxons = [] }: { taxons?: MenuTaxon[
               <span className="flex-grow-1 fs-12 text-uppercase">Академи</span>
             </MenuLink>
           </div>
+          </MenuSearchPanel>
           <hr className="my-1 opacity-10" />
           <MenuLink href="/login" className="btn text-start d-flex align-items-center border-0 p-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -246,6 +246,7 @@ export default function MainMenuOffcanvas({ taxons = [] }: { taxons?: MenuTaxon[
             <span className="flex-grow-1 fs-12 text-uppercase">Нэвтрэх</span>
           </MenuLink>
         </div>
+        </MenuSearchRoot>
       </div>
     </div>
   );

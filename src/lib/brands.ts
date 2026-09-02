@@ -13,7 +13,34 @@ export const MENU_BRANDS = [
   { slug: 'airex', name: 'Airex', img: 'images/brands/500x500px logo 12.jpg', aliases: ['airex'] },
 ] as const;
 
-export type MenuBrand = (typeof MENU_BRANDS)[number];
+export const EXTRA_BRANDS = [
+  { slug: 'peptides', name: 'Peptides', img: 'images/demo/product10.png', aliases: ['peptides', 'пептид'] },
+  { slug: 'genevie', name: 'Genevie', img: 'images/demo/product7.png', aliases: ['genevie'] },
+] as const;
+
+export type MenuBrand =
+  | (typeof MENU_BRANDS)[number]
+  | (typeof EXTRA_BRANDS)[number];
+
+const ALL_BRANDS: readonly MenuBrand[] = [...MENU_BRANDS, ...EXTRA_BRANDS];
+
+export const DRESSER_EVERYDAY_BRANDS: { slug: string; name: string; img: string }[] = [
+  { slug: 'couture-luxury', name: 'Couture' },
+  { slug: 'otium', name: 'Otium' },
+  { slug: 'obnimi', name: 'Обними' },
+  { slug: 'prima-blonde', name: 'Prima blonde' },
+  { slug: 'estel-18', name: '18 Plus' },
+  { slug: 'keratin-plus', name: 'Keratin' },
+  { slug: 'peptides', name: 'Peptides' },
+  { slug: 'genevie', name: 'Genevie' },
+  { slug: 'q3-comfort', name: 'Q3 comfort' },
+  { slug: 'lissage', name: 'Lissage' },
+  { slug: 'rehair', name: 'reHair' },
+  { slug: 'little-me', name: 'Little me' },
+].map((item) => {
+  const brand = ALL_BRANDS.find((entry) => entry.slug === item.slug);
+  return { slug: item.slug, name: item.name, img: brand?.img || 'images/demo/product6.jpg' };
+});
 
 function normalizeBrandKey(value: string) {
   return value
@@ -26,7 +53,7 @@ function normalizeBrandKey(value: string) {
 
 export function getMenuBrand(slug?: string) {
   if (!slug) return undefined;
-  return MENU_BRANDS.find((brand) => brand.slug === slug);
+  return ALL_BRANDS.find((brand) => brand.slug === slug);
 }
 
 export function productMatchesBrand(

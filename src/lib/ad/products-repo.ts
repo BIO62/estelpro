@@ -70,7 +70,9 @@ export async function listProducts(opts?: {
       if (q) {
         const cleanQ = q.replace(/[,()]/g, ' ').trim();
         if (cleanQ) {
-          query = query.or(`name.ilike.%${cleanQ}%,sku.ilike.%${cleanQ}%,code.ilike.%${cleanQ}%`);
+          query = query.or(
+            `name.ilike.%${cleanQ}%,sku.ilike.%${cleanQ}%,code.ilike.%${cleanQ}%,brand.ilike.%${cleanQ}%`,
+          );
         }
       }
       if (opts?.taxon && opts.taxon !== 'ALL') {

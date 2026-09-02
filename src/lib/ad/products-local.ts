@@ -73,7 +73,8 @@ export function listLocalProducts(opts?: {
       (p) =>
         p.name.toLowerCase().includes(q) ||
         (p.sku || '').toLowerCase().includes(q) ||
-        p.code.toLowerCase().includes(q),
+        p.code.toLowerCase().includes(q) ||
+        (p.brand || '').toLowerCase().includes(q),
     );
   }
   if (opts?.taxon && opts.taxon !== 'ALL') {

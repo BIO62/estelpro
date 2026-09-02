@@ -1,9 +1,6 @@
 export const DRESSER_COOKIE = 'estel_dresser';
 
-export const DRESSER_TAXON_CODES = [
-  'hair_signature',
-  'hair_love',
-] as const;
+export const DRESSER_TAXON_CODES = ['hairdresser_category'] as const;
 
 const DRESSER_SET = new Set<string>(DRESSER_TAXON_CODES);
 

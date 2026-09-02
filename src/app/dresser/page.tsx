@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { assetUrl } from '@/lib/constants';
+import { DRESSER_EVERYDAY_BRANDS } from '@/lib/brands';
 
 export default function DresserPage() {
   return (
@@ -54,7 +55,7 @@ export default function DresserPage() {
                   Мэргэжлийн каталог үзэх
                 </Link>
                 <Link
-                  href="/dresser/list?taxon=hair_care"
+                  href="#everyday-products"
                   className="btn px-4 py-3 fw-semibold rounded-3 text-decoration-none"
                   style={{ background: 'rgba(255,255,255,.12)', color: '#fff', border: '1.5px solid rgba(255,255,255,.25)' }}
                 >
@@ -227,6 +228,23 @@ export default function DresserPage() {
               <div className="col"><Link href="/dresser/list" className="line-pill" title="Collagen"><img src={assetUrl('images/demo/product6.jpg')} alt="Collagen" /></Link></div>
               <div className="col"><Link href="/dresser/list" className="line-pill" title="Q3"><img src={assetUrl('images/demo/product7.png')} alt="Q3" /></Link></div>
               <div className="col"><Link href="/dresser/list" className="line-pill" title="ХЕК"><img src={assetUrl('images/demo/product8.png')} alt="ХЕК" /></Link></div>
+            </div>
+          </div>
+          <div className="mb-4" id="everyday-products">
+            <div className="d-flex align-items-center justify-content-between mb-3 pb-2" style={{ borderBottom: '1.5px solid #E0E8EF' }}>
+              <strong className="fs-14 fc-dark">Энгийн хэрэглээний бараа</strong>
+              <Link href="/dresser/list" className="fs-12 text-muted text-decoration-none">Цуврал үзэх →</Link>
+            </div>
+            <div className="row row-cols-4 row-cols-sm-5 row-cols-md-6 row-cols-lg-6 g-2">
+              {DRESSER_EVERYDAY_BRANDS.map((brand) => (
+                <div className="col" key={brand.slug}>
+                  <Link href={`/dresser/list?brand=${encodeURIComponent(brand.slug)}`} className="line-pill" title={brand.name}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={assetUrl(brand.img)} alt={brand.name} />
+                    <span className="d-block fs-11 text-center mt-1 fc-dark text-truncate">{brand.name}</span>
+                  </Link>
+                </div>
+              ))}
             </div>
           </div>
 

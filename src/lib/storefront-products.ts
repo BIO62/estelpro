@@ -2,7 +2,15 @@ import { FALLBACK_PRODUCT_IMAGE } from '@/lib/constants';
 import { DRESSER_TAXON_CODES } from '@/lib/catalog-audience';
 import { listProducts, type DbProduct } from '@/lib/ad/products-repo';
 import { MENU_BRANDS, productMatchesBrand } from '@/lib/brands';
-import { getSyliusTaxons, indexTaxons, toMenuTaxons, type MenuTaxon, type ProductSort } from '@/lib/api/sylius';
+import {
+  getSyliusProductByCode,
+  getSyliusTaxons,
+  indexTaxons,
+  toCatalogProduct,
+  toMenuTaxons,
+  type MenuTaxon,
+  type ProductSort,
+} from '@/lib/api/sylius';
 import type { CatalogProduct } from '@/lib/products';
 import { applySalonDiscount } from '@/lib/auth/salon-discount';
 
@@ -28,10 +36,18 @@ const CONSUMER_TAXONS: MenuTaxon[] = [
   { code: 'styling', name: TAXON_LABELS.styling, children: [] },
 ];
 
-const DRESSER_TAXONS: MenuTaxon[] = [
-  { code: 'hair_signature', name: TAXON_LABELS.hair_signature, children: [] },
-  { code: 'hair_love', name: TAXON_LABELS.hair_love, children: [] },
+const HAIR_COLOR_CHILDREN: { code: string; name: string }[] = [
+  { code: 'hair_signature', name: 'Signature' },
+  { code: 'hair_love', name: 'Love' },
 ];
+
+function withHairColorChildren(item: MenuTaxon): MenuTaxon {
+  if (item.code !== 'hair_coloring') return item;
+  const have = new Set(item.children.map((child) => child.code));
+  const missing = HAIR_COLOR_CHILDREN.filter((child) => !have.has(child.code));
+  if (!missing.length) return item;
+  return { ...item, children: [...item.children, ...missing] };
+}
 
 function productTaxons(product: DbProduct) {
   return new Set([product.taxon, ...(product.taxons || [])].filter((value): value is string => Boolean(value)));
@@ -42,20 +58,19 @@ export function isDresserStorefrontProduct(product: DbProduct) {
   return DRESSER_TAXON_CODES.some((code) => taxons.has(code));
 }
 
-export function storefrontMenuTaxons(audience: 'consumer' | 'dresser'): MenuTaxon[] {
-  if (audience === 'dresser') return [...DRESSER_TAXONS, ...CONSUMER_TAXONS];
-  return CONSUMER_TAXONS;
+export function storefrontMenuTaxons(_audience: 'consumer' | 'dresser' = 'consumer'): MenuTaxon[] {
+  return CONSUMER_TAXONS.map(withHairColorChildren);
 }
 
 export async function getStorefrontMenuTaxons(audience: 'consumer' | 'dresser'): Promise<MenuTaxon[]> {
   const raw = await getSyliusTaxons();
   const byCode = indexTaxons(raw);
+  const consumer = CONSUMER_TAXONS.map((item) => withHairColorChildren(byCode.get(item.code) || item));
   if (audience === 'dresser') {
     const dresser = toMenuTaxons(raw, 'dresser');
-    const consumer = CONSUMER_TAXONS.map((item) => byCode.get(item.code) || item);
-    return [...(dresser.length ? dresser : DRESSER_TAXONS), ...consumer];
+    return dresser.length ? [...dresser, ...consumer] : consumer;
   }
-  return CONSUMER_TAXONS.map((item) => byCode.get(item.code) || item);
+  return consumer;
 }
 
 export function menuHasTaxon(menu: MenuTaxon[], code?: string) {
@@ -65,12 +80,15 @@ export function menuHasTaxon(menu: MenuTaxon[], code?: string) {
 
 export async function getStorefrontProducts(options?: {
   taxon?: string;
+  q?: string;
   audience?: 'consumer' | 'dresser';
+  limit?: number;
 }) {
   const audience = options?.audience || 'consumer';
   const { items, source } = await listProducts({
     taxon: options?.taxon,
-    limit: 2000,
+    q: options?.q,
+    limit: options?.limit ?? 2000,
   });
   return {
     source,
@@ -84,6 +102,25 @@ export async function getStorefrontProducts(options?: {
 export async function getStorefrontProduct(code: string) {
   const { items } = await listProducts({ q: code, limit: 50 });
   return items.find((product) => product.code === code || product.id === code) || null;
+}
+
+export async function getStorefrontCatalogProduct(
+  code: string,
+  options?: { contractPercent?: number; row?: DbProduct | null },
+): Promise<CatalogProduct | null> {
+  const row = options && 'row' in options ? options.row || null : await getStorefrontProduct(code);
+  const sylius = await getSyliusProductByCode(code);
+  if (!row && !sylius) return null;
+  const fromDb = row ? toStorefrontProduct(row, options) : null;
+  const fromSylius = sylius ? toCatalogProduct(sylius, options) : null;
+  if (fromDb && fromSylius) {
+    return {
+      ...fromDb,
+      sizes: fromSylius.sizes,
+      shades: fromSylius.shades,
+    };
+  }
+  return fromDb || fromSylius;
 }
 
 function money(value: number) {

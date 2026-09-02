@@ -1,19 +1,79 @@
 'use client';
 
-import { useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { assetUrl } from '@/lib/constants';
-import { formatPrice } from '@/lib/cart';
-import { catalog } from '@/lib/products';
+import { formatPrice, hideCartDrawer } from '@/lib/cart';
 import { useCart } from '@/components/providers/CartProvider';
+import OrderTruckButton from '@/components/cart/OrderTruckButton';
+import CartIconButton from '@/components/ui/CartIconButton';
+import WishlistButton from '@/components/ui/WishlistButton';
+import type { CatalogProduct } from '@/lib/products';
+
+const SIZE_IN_NAME = /[,\s]+(\d+(?:[.,]\d+)?\s*(?:мл|ml|л|l|г|g))\s*$/i;
+
+function splitCardName(name: string, sizeLabel?: string) {
+  const clean = name.replace(/^\s*ESTEL\s+/i, '').trim() || name;
+  const fromName = clean.match(SIZE_IN_NAME);
+  const title = fromName ? clean.slice(0, fromName.index).replace(/[,\s]+$/, '').trim() : clean;
+  const fromLabel = (sizeLabel || '').trim();
+  const size =
+    fromName?.[1]?.replace(/\s+/g, ' ') ||
+    (fromLabel && /^\d/.test(fromLabel)
+      ? /(?:мл|ml|л|l|г|g)$/i.test(fromLabel)
+        ? fromLabel
+        : `${fromLabel}мл`
+      : '');
+  return { title, size };
+}
 
 export default function CartOffcanvas() {
+  const pathname = usePathname();
   const { items, count, total, subtotal, discount, setQty, updateItemSelection, removeItem, clearCart } = useCart();
-  const recs = catalog.filter((product) => !items.some((item) => item.productId === product.id)).slice(0, 8);
+  const [recs, setRecs] = useState<CatalogProduct[]>([]);
   const recsRef = useRef<HTMLDivElement>(null);
+  const excludeKey = useMemo(
+    () =>
+      [...new Set(items.map((item) => item.productId))]
+        .sort()
+        .join(','),
+    [items],
+  );
+  const catsKey = useMemo(
+    () =>
+      [...new Set(items.map((item) => item.category).filter(Boolean))]
+        .sort()
+        .join(','),
+    [items],
+  );
+  const visibleRecs = recs.filter((product) => !items.some((item) => item.productId === product.id));
   const scrollRecs = (dir: number) => {
     recsRef.current?.scrollBy({ left: dir * 180, behavior: 'smooth' });
   };
+
+  useEffect(() => {
+    hideCartDrawer();
+  }, [pathname]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const params = new URLSearchParams();
+    if (excludeKey) params.set('exclude', excludeKey);
+    if (catsKey) params.set('cats', catsKey);
+    const query = params.toString();
+    fetch(`/api/cart/recs${query ? `?${query}` : ''}`)
+      .then((res) => (res.ok ? res.json() : { products: [] }))
+      .then((data: { products?: CatalogProduct[] }) => {
+        if (!cancelled) setRecs(Array.isArray(data.products) ? data.products : []);
+      })
+      .catch(() => {
+        if (!cancelled) setRecs([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [excludeKey, catsKey]);
 
   return (
     <div className="offcanvas offcanvas-end cart-drawer" tabIndex={-1} id="cartCanvas" aria-labelledby="cartCanvasLabel">
@@ -135,28 +195,29 @@ export default function CartOffcanvas() {
             <div className="cart-sum">
               <span className="cart-sum-title">захиалгын дүн</span>
               <div className="cart-sum-row">
-                <span>барааны үнэ</span>
-                <span>{formatPrice(subtotal)}</span>
+                <span className="cart-sum-label">барааны үнэ</span>
+                <span className="cart-sum-lead" aria-hidden="true" />
+                <span className="cart-sum-val">{formatPrice(subtotal)}</span>
               </div>
               {discount > 0 && (
                 <div className="cart-sum-row">
-                  <span>хямдрал</span>
-                  <span>−{formatPrice(discount)}</span>
+                  <span className="cart-sum-label">хямдрал</span>
+                  <span className="cart-sum-lead" aria-hidden="true" />
+                  <span className="cart-sum-val">−{formatPrice(discount)}</span>
                 </div>
               )}
               <div className="cart-sum-row cart-sum-total">
-                <span>нийт</span>
-                <strong>{formatPrice(total)}</strong>
+                <span className="cart-sum-label">нийт</span>
+                <span className="cart-sum-lead" aria-hidden="true" />
+                <strong className="cart-sum-val">{formatPrice(total)}</strong>
               </div>
             </div>
 
-            <Link href="/checkout" className="cart-checkout" data-bs-dismiss="offcanvas">
-              ЗАХИАЛГА ӨГӨХ — {count} ш
-            </Link>
+            <OrderTruckButton count={count} />
           </>
         )}
 
-        {recs.length > 0 && (
+        {visibleRecs.length > 0 && (
           <div className="cart-recs">
             <div className="cart-recs-head">
               <span className="cart-recs-title">танд санал болгох</span>
@@ -170,7 +231,9 @@ export default function CartOffcanvas() {
               </div>
             </div>
             <div className="cart-recs-track" ref={recsRef}>
-              {recs.map((product) => (
+              {visibleRecs.map((product) => {
+                const { title, size } = splitCardName(product.name, product.sizes?.[0]?.label);
+                return (
                 <article key={product.id} className="cart-rec">
                   <div className="cart-rec-media">
                     {(product.discount || product.hit) && (
@@ -179,29 +242,25 @@ export default function CartOffcanvas() {
                         {product.hit && <span className="product-badge product-badge-hit">HIT</span>}
                       </div>
                     )}
-                    <button type="button" className="product-wish cart-rec-wish" aria-label="Хадгалах">
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path
-                          d="M12.1 20.3S4.5 15.2 4.5 9.8A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.2c0 5.4-7.4 10.5-7.4 10.5Z"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.6"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </button>
+                    <WishlistButton product={product} className="product-wish cart-rec-wish" />
                     <Link href={`/products/${product.id}`} data-bs-dismiss="offcanvas">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={assetUrl(product.image)} alt="" />
                     </Link>
+                    <CartIconButton
+                      product={product}
+                      className="ga-card__cart-btn cart-rec-cart"
+                    />
                   </div>
                   <Link href={`/products/${product.id}`} className="cart-rec-info" data-bs-dismiss="offcanvas">
                     <span className="product-cat">{product.category}</span>
-                    <strong className="cart-rec-name">{product.name}</strong>
+                    <strong className="cart-rec-name">{title}</strong>
+                    {size ? <span className="cart-rec-size">{size}</span> : null}
                     <span className="cart-rec-price">{product.price}</span>
                   </Link>
                 </article>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
