@@ -129,6 +129,7 @@ export default function VideoReels() {
               modules={[Pagination]}
               slidesPerView={1.15}
               spaceBetween={10}
+              centeredSlides
               speed={450}
               watchSlidesProgress
               slideToClickedSlide
@@ -137,6 +138,7 @@ export default function VideoReels() {
                 750: {
                   slidesPerView: 3,
                   spaceBetween: 17,
+                  centeredSlides: false,
                 },
               }}
               onSlideChange={onChange}

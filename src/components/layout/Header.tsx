@@ -44,7 +44,7 @@ export default function Header() {
   }
 
   return (
-    <header className="position-sticky top-0 zindex-6">
+    <header className="position-sticky top-0 zindex-6 header-glass">
       <div className="container-fluid">
         <div className="d-flex align-items-center justify-content-between">
           <div className="d-flex">
@@ -69,7 +69,7 @@ export default function Header() {
               <img src={assetUrl('images/icons/search.svg')} alt="" />
             </button>
           </div>
-          <Link href="/" className="header-logo d-block py-3">
+          <Link href="/" className="header-logo">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={assetUrl('images/logo.svg')} alt="" className="h-24" />
           </Link>

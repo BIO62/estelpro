@@ -5,8 +5,16 @@ import { assetUrl } from '@/lib/constants';
 import CartIconButton from '@/components/ui/CartIconButton';
 import type { CatalogProduct } from '@/lib/products';
 
+const SIZE_IN_NAME = /[,\s]+(\d+(?:[.,]\d+)?\s*(?:мл|ml|л|l|г|g))\s*$/i;
+
 function productHref(id: string) {
   return `/products/${encodeURIComponent(id)}`;
+}
+
+function productTitle(name: string) {
+  const clean = name.replace(/^\s*ESTEL\s+/i, '').trim() || name;
+  const match = clean.match(SIZE_IN_NAME);
+  return match ? clean.slice(0, match.index).replace(/[,\s]+$/, '').trim() : clean;
 }
 
 function ShineBackground() {
@@ -34,36 +42,46 @@ function NewTile({
   product: CatalogProduct;
   className?: string;
 }) {
+  const href = productHref(product.id);
+
   return (
     <article className={`shine-card ${className}`}>
-      <Link href={productHref(product.id)} className="shine-card__link">
-        <span className="shine-card__badge" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width={22} height={22}>
-            <path
-              d="M5.2 12.6 10.1 17.4 19.4 6.6"
-              fill="none"
-              stroke="#3EE0C4"
-              strokeWidth="3.2"
-              strokeLinecap="butt"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
-        <span className="shine-card__stage">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={assetUrl(product.image)} alt={product.name} />
-        </span>
-        <span className="shine-card__copy">
-          <span className="shine-card__cat">{product.category}</span>
-          <strong className="shine-card__name">{product.name}</strong>
-          <span className="shine-card__price">
-            {product.price}
-            {product.originalPrice && <s>{product.originalPrice}</s>}
+      <ShineBackground />
+      <div className="shine-card__body">
+        <div className="shine-card__stage">
+          <span className="shine-card__badge" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width={22} height={22}>
+              <path
+                d="M5.2 12.6 10.1 17.4 19.4 6.6"
+                fill="none"
+                stroke="#3EE0C4"
+                strokeWidth="3.2"
+                strokeLinecap="butt"
+                strokeLinejoin="round"
+              />
+            </svg>
           </span>
-        </span>
-        <ShineBackground />
-      </Link>
-      <CartIconButton product={product} />
+          <Link href={href} className="shine-card__media-link">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={assetUrl(product.image)} alt={product.name} />
+          </Link>
+        </div>
+        <div className="shine-card__foot">
+          <Link href={href} className="shine-card__link">
+            <span className="shine-card__copy">
+              <span className="shine-card__cat">{product.category}</span>
+              <strong className="shine-card__name">{productTitle(product.name)}</strong>
+              <span className="shine-card__price">
+                {product.price}
+                {product.originalPrice && <s>{product.originalPrice}</s>}
+              </span>
+            </span>
+          </Link>
+          <div className="ga-card__cart">
+            <CartIconButton product={product} className="ga-card__cart-btn" />
+          </div>
+        </div>
+      </div>
     </article>
   );
 }
@@ -71,10 +89,9 @@ function NewTile({
 export default function NewProducts({ products = [] }: { products?: CatalogProduct[] }) {
   const tiles = products.filter((item) => Boolean(item.image)).slice(0, 5);
   if (!tiles.length) return null;
-  const cta = tiles[0];
 
   return (
-    <section className="position-relative py-5">
+    <section className="position-relative">
       <div className="container position-relative">
         <div className="d-flex align-items-end justify-content-between mb-3">
           <h4 className="fw-bold fs-6 text-uppercase border-start ps-2 border-3 mb-0">Шинэ бүтээгдэхүүн</h4>
@@ -83,7 +100,7 @@ export default function NewProducts({ products = [] }: { products?: CatalogProdu
           </Link>
         </div>
 
-        <div className="row g-3 mb-4 d-none d-lg-flex">
+        <div className="row g-3 d-none d-lg-flex">
           <div className="col-lg-6">
             <NewTile product={tiles[0]} className="shine-card--hero" />
           </div>
@@ -103,7 +120,7 @@ export default function NewProducts({ products = [] }: { products?: CatalogProdu
           )}
         </div>
 
-        <div className="row g-3 mb-4 d-none d-sm-flex d-lg-none">
+        <div className="row g-3 d-none d-sm-flex d-lg-none">
           {tiles.map((product) => (
             <div className="col-sm-6" key={product.id}>
               <NewTile product={product} />
@@ -111,7 +128,7 @@ export default function NewProducts({ products = [] }: { products?: CatalogProdu
           ))}
         </div>
 
-        <div className="d-sm-none new-products-mob mb-4">
+        <div className="d-sm-none new-products-mob">
           <NewTile product={tiles[0]} className="shine-card--hero" />
           {tiles.length > 1 && (
             <div className="new-products-scroll">
@@ -120,15 +137,6 @@ export default function NewProducts({ products = [] }: { products?: CatalogProdu
               ))}
             </div>
           )}
-        </div>
-
-        <div className="text-center py-5">
-          <h3 className="fw-bold mb-3">{cta.brand || 'ESTEL'}</h3>
-          <p className="mb-4 mx-auto maxw-640">{cta.name}</p>
-          <Link href="/list" className="btn btn-main btn-swipe d-inline-flex align-items-center">
-            <span>Худалдаж авах</span>
-            <span className="btn-arrow">→</span>
-          </Link>
         </div>
       </div>
     </section>

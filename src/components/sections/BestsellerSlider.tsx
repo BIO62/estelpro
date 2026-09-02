@@ -1,11 +1,16 @@
 'use client';
 
+import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay } from 'swiper/modules';
 import { assetUrl } from '@/lib/constants';
 import { useSwiperControls } from '@/lib/useSwiperControls';
+import CartBagIcon from '@/components/ui/CartBagIcon';
+import { useCart } from '@/components/providers/CartProvider';
+import { defaultSelection } from '@/lib/cart';
+import type { CatalogProduct } from '@/lib/products';
 
-const slides = [
+const BANNERS = [
   {
     desktop: 'images/demo/bestseller 2500x1212 copy (1).jpg',
     mobile: 'images/demo/bestseller mob 800x1388 (1).jpg',
@@ -20,46 +25,61 @@ const slides = [
   },
 ];
 
-export default function BestsellerSlider() {
+export default function BestsellerSlider({ products = [] }: { products?: CatalogProduct[] }) {
   const { pagRef, ready } = useSwiperControls();
+  const { addItem } = useCart();
+  const slides = BANNERS.map((banner, index) => ({
+    ...banner,
+    product: products[index] || products[0],
+  })).filter((slide) => slide.product);
+
+  if (!slides.length) return null;
 
   return (
     <section className="position-relative">
       <Swiper
         modules={[Pagination, Autoplay]}
-        loop
+        loop={slides.length > 1}
         autoplay={{ delay: 5000, disableOnInteraction: false }}
         pagination={ready ? { el: pagRef.current, clickable: true, dynamicBullets: true } : false}
         className="swiper bigProducts"
       >
-        {slides.map((slide, idx) => (
-          <SwiperSlide key={idx}>
-            <div className="d-sm-block d-none position-relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={assetUrl(slide.desktop)} alt="" className="w-100 h-auto img-cover" />
-            </div>
-            <div className="d-sm-none d-block position-relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={assetUrl(slide.mobile)} alt="" className="w-100 h-auto img-cover" />
-            </div>
-            <div className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-sm-end align-items-center justify-content-end">
-              <div className="d-flex flex-column maxw-320 bg-white rounded-3 shadow p-3 me-sm-4 mb-4 mx-auto gap-3">
-                <h4 className="fw-bold fs-6 text-uppercase border-start ps-2 border-3">Bestseller</h4>
-                <a href="/products/1" className="d-flex flex-column gap-1 text-decoration-none fc-dark">
-                  <strong className="fs-5">17,000₮</strong>
-                  <span className="fs-12 doubleTruncate">
-                    12314
-                  </span>
-                </a>
-                <button type="button" className="btn btn-main d-flex align-items-center text-start">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={assetUrl('images/icons/cartWhite.svg')} alt="" className="w-20 h-20" />
-                  <span className="flex-grow-1">Сагслах</span>
-                </button>
+        {slides.map((slide, idx) => {
+          const product = slide.product;
+          const href = `/products/${encodeURIComponent(product.id)}`;
+          return (
+            <SwiperSlide key={`${product.id}-${idx}`}>
+              <div className="d-sm-block d-none position-relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={assetUrl(slide.desktop)} alt="" className="w-100 h-auto img-cover" />
               </div>
-            </div>
-          </SwiperSlide>
-        ))}
+              <div className="d-sm-none d-block position-relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={assetUrl(slide.mobile)} alt="" className="w-100 h-auto img-cover" />
+              </div>
+              <div className="bestseller-card-wrap">
+                <article className="bestseller-card">
+                  <span className="bestseller-card__tag">Bestseller</span>
+                  <Link href={href} className="bestseller-card__copy">
+                    <strong className="bestseller-card__name">{product.name}</strong>
+                    {product.shortDescription ? (
+                      <span className="bestseller-card__desc">{product.shortDescription}</span>
+                    ) : null}
+                    <span className="bestseller-card__price">{product.price}</span>
+                  </Link>
+                  <button
+                    type="button"
+                    className="bestseller-card__btn"
+                    onClick={() => addItem(product, defaultSelection(product))}
+                  >
+                    <CartBagIcon className="bestseller-card__btn-icon" />
+                    Сагслах
+                  </button>
+                </article>
+              </div>
+            </SwiperSlide>
+          );
+        })}
         <div ref={pagRef} className="swiper-pagination bigProducts-pagination" />
       </Swiper>
     </section>

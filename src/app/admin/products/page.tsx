@@ -15,7 +15,7 @@ import {
   Sparkles,
   Layers
 } from 'lucide-react';
-import { DEMO_PRODUCTS } from '@/lib/constants';
+import { DEMO_PRODUCTS, assetUrl } from '@/lib/constants';
 import { formatPrice } from '@/lib/utils';
 
 interface AdminProduct {
@@ -148,7 +148,7 @@ export default function AdminProductsPage() {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-stone-50 border border-stone-200 overflow-hidden flex-shrink-0">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={`https://alphalabs.mn/nextstore-html/estel/${p.image}`} alt={p.name} className="w-full h-full object-cover" />
+                        <img src={assetUrl(p.image)} alt={p.name} className="w-full h-full object-cover" />
                       </div>
                       <span className="font-mono text-[11px] text-slate-900 font-bold">{p.code}</span>
                     </div>

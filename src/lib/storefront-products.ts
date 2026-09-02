@@ -2,7 +2,7 @@ import { FALLBACK_PRODUCT_IMAGE } from '@/lib/constants';
 import { DRESSER_TAXON_CODES } from '@/lib/catalog-audience';
 import { listProducts, type DbProduct } from '@/lib/ad/products-repo';
 import { MENU_BRANDS, productMatchesBrand } from '@/lib/brands';
-import { getSyliusTaxons, toMenuTaxons, type MenuTaxon, type ProductSort } from '@/lib/api/sylius';
+import { getSyliusTaxons, indexTaxons, toMenuTaxons, type MenuTaxon, type ProductSort } from '@/lib/api/sylius';
 import type { CatalogProduct } from '@/lib/products';
 import { applySalonDiscount } from '@/lib/auth/salon-discount';
 
@@ -21,6 +21,7 @@ const TAXON_LABELS: Record<string, string> = {
 
 const CONSUMER_TAXONS: MenuTaxon[] = [
   { code: 'hair_care', name: TAXON_LABELS.hair_care, children: [] },
+  { code: 'hair_coloring', name: TAXON_LABELS.hair_coloring, children: [] },
   { code: 'skin_body', name: TAXON_LABELS.skin_body, children: [] },
   { code: 'Alpha', name: TAXON_LABELS.Alpha, children: [] },
   { code: 'kids_care', name: TAXON_LABELS.kids_care, children: [] },
@@ -28,7 +29,6 @@ const CONSUMER_TAXONS: MenuTaxon[] = [
 ];
 
 const DRESSER_TAXONS: MenuTaxon[] = [
-  { code: 'hair_coloring', name: TAXON_LABELS.hair_coloring, children: [] },
   { code: 'hair_signature', name: TAXON_LABELS.hair_signature, children: [] },
   { code: 'hair_love', name: TAXON_LABELS.hair_love, children: [] },
 ];
@@ -49,16 +49,13 @@ export function storefrontMenuTaxons(audience: 'consumer' | 'dresser'): MenuTaxo
 
 export async function getStorefrontMenuTaxons(audience: 'consumer' | 'dresser'): Promise<MenuTaxon[]> {
   const raw = await getSyliusTaxons();
+  const byCode = indexTaxons(raw);
   if (audience === 'dresser') {
     const dresser = toMenuTaxons(raw, 'dresser');
-    const consumer = toMenuTaxons(raw, 'consumer').filter((item) => item.code !== 'all_products');
-    return [
-      ...(dresser.length ? dresser : DRESSER_TAXONS),
-      ...(consumer.length ? consumer : CONSUMER_TAXONS),
-    ];
+    const consumer = CONSUMER_TAXONS.map((item) => byCode.get(item.code) || item);
+    return [...(dresser.length ? dresser : DRESSER_TAXONS), ...consumer];
   }
-  const fetched = toMenuTaxons(raw, 'consumer');
-  return fetched.length ? fetched : CONSUMER_TAXONS;
+  return CONSUMER_TAXONS.map((item) => byCode.get(item.code) || item);
 }
 
 export function menuHasTaxon(menu: MenuTaxon[], code?: string) {

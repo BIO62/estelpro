@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import { assetUrl } from '@/lib/constants';
+import { HelpMobileNav, HelpSideNav } from '@/components/layout/HelpSideNav';
 
 export default function AboutPage() {
 
@@ -7,12 +7,7 @@ export default function AboutPage() {
     <>
       <div className="d-lg-none border-bottom bg-white">
             <div className="container">
-                      <nav style={{display:"grid",gridTemplateColumns:"1fr 1fr"}}>
-                <Link href="/about" className="btn btn-sm fs-13 fw-semibold fc-main py-2 text-start">Бидний тухай</Link>
-                <Link href="/terms" className="btn btn-sm fs-13 fc-secondary py-2 text-start">Үйлчилгээний нөхцөл</Link>
-                <Link href="/terms/delivery" className="btn btn-sm fs-13 fc-secondary py-2 text-start">Хүргэлтийн нөхцөл</Link>
-                <Link href="/terms/payment" className="btn btn-sm fs-13 fc-secondary py-2 text-start">Төлбөрийн нөхцөл</Link>
-              </nav>
+              <HelpMobileNav />
             </div>
           </div>
       
@@ -23,12 +18,7 @@ export default function AboutPage() {
                 
                 <div className="col-lg-3 d-none d-lg-block">
                   <div className="sticky-top" style={{top:"88px"}}>
-                    <nav className="d-flex flex-column">
-                      <Link href="/about" className="side-nav-item active">Бидний тухай</Link>
-                      <Link href="/terms" className="side-nav-item">Үйлчилгээний нөхцөл</Link>
-                      <Link href="/terms/delivery" className="side-nav-item">Хүргэлтийн нөхцөл</Link>
-                      <Link href="/terms/payment" className="side-nav-item">Төлбөрийн нөхцөл</Link>
-                    </nav>
+                    <HelpSideNav />
                   </div>
                 </div>
       

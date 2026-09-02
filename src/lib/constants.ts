@@ -1,52 +1,21 @@
-export const ASSET_BASE = 'https://alphalabs.mn/nextstore-html/estel';
-export const ASSET_VERSION = '20260821';
-
 export const FALLBACK_PRODUCT_IMAGE = 'images/demo/product6.jpg';
 
 export function assetUrl(path: string): string {
   if (!path) return assetUrl(FALLBACK_PRODUCT_IMAGE);
+  if (path.startsWith('/')) return path;
   if (/^https?:\/\//i.test(path)) return path;
-  const encoded = path
-    .replace(/^\//, '')
-    .split('/')
-    .map(encodeURIComponent)
-    .join('/');
-  return `${ASSET_BASE}/${encoded}?v=${ASSET_VERSION}`;
+  return `/${path.replace(/^\//, '')}`;
 }
 
 export const SITE_NAME = 'ESTEL';
 export const SITE_DESCRIPTION = 'ESTEL Professional Mongolia - Мэргэжлийн үс арчилгааны бүтээгдэхүүн';
 
-export const BRANCHES = [
-  {
-    name: 'Баянзүрх дүүрэг',
-    address: 'Соманг плаза, 3давхарт 308тоот',
-    hours: 'Даваа - Ням: 09:00 - 18:00 цаг',
-    image: 'images/demo/branch1.jpg',
-  },
-  {
-    name: 'Сүхбаатар дүүрэг',
-    address: 'Чингисийн И-март 2-давхарт',
-    hours: 'Даваа - Ням: 09:00 - 20:00 цаг',
-    image: 'images/demo/branch2.jpg',
-  },
-  {
-    name: 'ЭРДЭНЭТ ОРХОН МОЛЛ',
-    address: 'Орхон молл худалдааны төвийн 1 давхарт',
-    hours: 'Даваа - Ням: 10:00 - 20:00 цаг',
-    image: 'images/demo/branch3.jpg',
-  },
-  {
-    name: 'ЭРДЭНЭТ АВТОЦЕНТР',
-    address: '5-р микро Автоцентрийн 2 давхарт',
-    hours: 'Даваа - Бямба: 09:00 - 18:00 цаг',
-    image: 'images/demo/branch4.jpg',
-  },
-];
+export { BRANCHES, listBranches, listUlaanbaatarBranches } from './branches';
 
 export const FOOTER_LINKS = {
   help: [
     { label: 'Бидний тухай', href: '/about' },
+    { label: 'Салбарууд', href: '/branches' },
     { label: 'Үйлчилгээний нөхцөл', href: '/terms' },
     { label: 'Хүргэлтийн нөхцөл', href: '/terms/delivery' },
     { label: 'Төлбөрийн нөхцөл', href: '/terms/payment' },

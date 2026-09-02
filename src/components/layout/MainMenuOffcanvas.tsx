@@ -68,6 +68,7 @@ export default function MainMenuOffcanvas({ taxons = [] }: { taxons?: MenuTaxon[
     ? taxons
     : [
         { code: 'hair_care', name: 'Үс арчилгаа', children: [] },
+        { code: 'hair_coloring', name: 'Үсний будаг', children: [] },
         { code: 'skin_body', name: 'Арьс & Бие арчилгаа', children: [] },
         { code: 'Alpha', name: 'Alpha', children: [] },
         { code: 'kids_care', name: 'Хүүхдийн арчилгаа', children: [] },
@@ -209,9 +210,9 @@ export default function MainMenuOffcanvas({ taxons = [] }: { taxons?: MenuTaxon[
                     <MenuLink href={`/list?brand=${encodeURIComponent(brand.slug)}`} className="singleNav d-flex flex-column gap-2 text-decoration-none fc-dark">
                       <div className="singleNavImage rounded-3 overflow-hidden">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={assetUrl(brand.img)} alt="" className="w-100 h-auto ratio-11" />
+                        <img src={assetUrl(brand.img)} alt="" />
                       </div>
-                      <span className="fs-11 text-uppercase">{brand.name}</span>
+                      <span className="flex-grow-1 fs-12 text-uppercase">{brand.name}</span>
                     </MenuLink>
                   </div>
                 ))}

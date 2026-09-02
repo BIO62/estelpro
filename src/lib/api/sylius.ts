@@ -2,6 +2,7 @@ import { unstable_cache } from 'next/cache';
 import { FALLBACK_PRODUCT_IMAGE } from '@/lib/constants';
 import type { CatalogProduct, ProductSize } from '@/lib/products';
 import { CONSUMER_ROOT_TAXONS, isDresserProduct, isDresserTaxonCode } from '@/lib/catalog-audience';
+import { applySalonDiscount } from '@/lib/auth/salon-discount';
 
 const DATA_REVALIDATE = 300;
 
@@ -103,23 +104,60 @@ function fetchOpts(): RequestInit {
 }
 
 export function syliusAmount(priceInCents: number): number {
-  return priceInCents > 1_000_000 ? Math.round(priceInCents / 100) : priceInCents;
+  const n = Number(priceInCents);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return n > 1_000_000 ? Math.round(n / 100) : n;
 }
 
 export function formatSyliusPrice(priceInCents: number): string {
-  return new Intl.NumberFormat('mn-MN').format(syliusAmount(priceInCents)) + '₮';
+  const amount = syliusAmount(priceInCents);
+  if (!amount) return '0₮';
+  return new Intl.NumberFormat('mn-MN').format(amount) + '₮';
 }
 
 export function syliusImageUrl(image?: SyliusImage): string {
   return image?.medium || image?.originalImagePath || image?.thumbnail || '';
 }
 
+function flattenTaxons(taxons: SyliusTaxon[]): SyliusTaxon[] {
+  const roots: SyliusTaxon[] = [];
+  for (const taxon of taxons) {
+    if (taxon.enabled === false) continue;
+    if (taxon.code === 'category' || taxon.code === 'all_products') {
+      for (const child of taxon.enabledChildren || []) {
+        if (child.enabled !== false) roots.push(child);
+      }
+      continue;
+    }
+    roots.push(taxon);
+  }
+  return roots;
+}
+
+export function indexTaxons(taxons: SyliusTaxon[]): Map<string, MenuTaxon> {
+  const byCode = new Map<string, MenuTaxon>();
+  const visit = (nodes: SyliusTaxon[]) => {
+    for (const taxon of nodes) {
+      if (!taxon?.code) continue;
+      byCode.set(taxon.code, {
+        code: taxon.code,
+        name: taxon.name,
+        children: (taxon.enabledChildren || [])
+          .filter((child) => child.enabled !== false)
+          .map((child) => ({ code: child.code, name: child.name })),
+      });
+      visit(taxon.enabledChildren || []);
+    }
+  };
+  visit(taxons);
+  return byCode;
+}
+
 export function toMenuTaxons(
   taxons: SyliusTaxon[],
   audience: 'consumer' | 'dresser' = 'consumer'
 ): MenuTaxon[] {
-  return taxons
-    .filter((taxon) => taxon.enabled !== false && taxon.code !== 'category')
+  return flattenTaxons(taxons)
     .filter((taxon) => (audience === 'dresser' ? isDresserTaxonCode(taxon.code) : !isDresserTaxonCode(taxon.code)))
     .map((taxon) => ({
       code: taxon.code,
@@ -193,22 +231,54 @@ function seededShuffle<T>(items: T[], seed: string): T[] {
   return copy;
 }
 
-export function toCatalogProduct(product: SyliusProduct, opts?: { forceNew?: boolean }): CatalogProduct {
+function richTextToHtml(value?: string) {
+  const raw = (value || '').trim();
+  if (!raw) return '';
+  if (raw.startsWith('[')) {
+    try {
+      const blocks = JSON.parse(raw) as Array<{ data?: { content?: string } }>;
+      return blocks.map((block) => block?.data?.content || '').join(' ');
+    } catch {
+      return raw;
+    }
+  }
+  return raw;
+}
+
+function stripHtml(value?: string) {
+  return richTextToHtml(value)
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function toCatalogProduct(
+  product: SyliusProduct,
+  opts?: { forceNew?: boolean; contractPercent?: number },
+): CatalogProduct {
   const variants = (product.variants || []).filter(Boolean);
   const first = variants[0];
-  const price = first ? formatSyliusPrice(first.price) : '0₮';
-  const original =
-    first && first.originalPrice && first.originalPrice > first.price
-      ? formatSyliusPrice(first.originalPrice)
-      : undefined;
+  const percent = opts?.contractPercent || 0;
+  const saleAmount = (amount: number) => (percent ? applySalonDiscount(amount, percent) : amount);
+  const price = first ? formatSyliusPrice(saleAmount(first.price)) : '0₮';
+  const original = first
+    ? percent
+      ? formatSyliusPrice(first.price)
+      : first.originalPrice && first.originalPrice > first.price
+        ? formatSyliusPrice(first.originalPrice)
+        : undefined
+    : undefined;
   const pct = first?.promotionPercentage || 0;
   const images = (product.images || []).map(syliusImageUrl).filter(Boolean);
   const sizes: ProductSize[] = variants
     .map((variant) => ({
       label: variantLabel(variant),
-      price: formatSyliusPrice(variant.price ?? 0),
-      originalPrice:
-        variant.originalPrice && variant.originalPrice > variant.price
+      price: formatSyliusPrice(saleAmount(variant.price ?? 0)),
+      originalPrice: percent
+        ? formatSyliusPrice(variant.price ?? 0)
+        : variant.originalPrice && variant.originalPrice > variant.price
           ? formatSyliusPrice(variant.originalPrice)
           : undefined,
     }))
@@ -221,12 +291,13 @@ export function toCatalogProduct(product: SyliusProduct, opts?: { forceNew?: boo
     brand: product.brand?.name || 'ESTEL',
     price,
     originalPrice: original,
-    discount: pct > 0 ? `-${Math.round(pct)}%` : undefined,
+    discount: percent ? `-${percent}%` : pct > 0 ? `-${Math.round(pct)}%` : undefined,
     hit: Boolean(product.featured),
     isNew: Boolean(opts?.forceNew) || isRecentlyCreated(product.createdAt),
     image: images[0] || FALLBACK_PRODUCT_IMAGE,
     gallery: images.length ? images : [FALLBACK_PRODUCT_IMAGE],
     sizes: sizes.length ? sizes : undefined,
+    shortDescription: stripHtml(product.shortDescription || product.description),
   };
 }
 
@@ -449,11 +520,36 @@ export async function getHomeCategoryPicks(): Promise<{
   return { newProducts, saleProducts };
 }
 
-export function toHomePicksPayload(picks: { newProducts: SyliusProduct[]; saleProducts: SyliusProduct[] }) {
+const BESTSELLER_CODES = ['18plus_spray', '18plus_shampoo'];
+const BESTSELLER_COPY: Record<string, string> = {
+  '18plus_spray': '18 төрлийн арчилгаа + дулааны хамгаалалт + UV хамгаалалт',
+  '18plus_shampoo': '18 төрлийн арчилгаа + дулааны хамгаалалт + UV хамгаалалт',
+};
+
+export async function getBestsellerProducts(options?: { contractPercent?: number }): Promise<CatalogProduct[]> {
+  const found = await Promise.all(BESTSELLER_CODES.map((code) => getSyliusProductByCode(code)));
+  return found
+    .filter((item): item is SyliusProduct => Boolean(item))
+    .map((item) => {
+      const product = toCatalogProduct(item, { contractPercent: options?.contractPercent || 0 });
+      const fallbackPrice = BESTSELLER_COPY[item.code] ? '17,000₮' : product.price;
+      return {
+        ...product,
+        shortDescription: product.shortDescription || BESTSELLER_COPY[item.code] || product.shortDescription,
+        price: !product.price || product.price === '0₮' ? fallbackPrice : product.price,
+      };
+    });
+}
+
+export function toHomePicksPayload(
+  picks: { newProducts: SyliusProduct[]; saleProducts: SyliusProduct[] },
+  options?: { contractPercent?: number },
+) {
+  const contractPercent = options?.contractPercent || 0;
   return {
-    newProducts: picks.newProducts.map((item) => toCatalogProduct(item, { forceNew: true })),
+    newProducts: picks.newProducts.map((item) => toCatalogProduct(item, { forceNew: true, contractPercent })),
     saleProducts: picks.saleProducts
-      .map((item) => toCatalogProduct(item))
+      .map((item) => toCatalogProduct(item, { contractPercent }))
       .filter((item, index, list) => list.findIndex((entry) => entry.id === item.id) === index),
   };
 }

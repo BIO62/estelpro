@@ -1,7 +1,7 @@
 import { type AdOrder, type AdOrderItem } from '@/lib/ad/orders';
 import { listOrders, getOrder } from '@/lib/ad/orders-repo';
 import { listProducts, type DbProduct } from '@/lib/ad/products-repo';
-import { BRANCHES, FOOTER_LINKS } from '@/lib/constants';
+import { FOOTER_LINKS } from '@/lib/constants';
 import { SALON_DISCOUNT_TIERS } from '@/lib/auth/salon-discount';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8853756606:AAHgf0_kiA373mqyvi5mAxR49IDPPJb4Www';

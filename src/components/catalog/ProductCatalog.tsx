@@ -13,7 +13,7 @@ import {
 } from '@/lib/storefront-products';
 import { isDresserTaxonCode } from '@/lib/catalog-audience';
 import { getMenuBrand, MENU_BRANDS } from '@/lib/brands';
-import { getSessionUser } from '@/lib/auth/session';
+import { getSessionUser, salonContractPercent } from '@/lib/auth/session';
 
 const PAGE_SIZE = 24;
 
@@ -64,7 +64,7 @@ export default async function ProductCatalog({
   let taxon = firstParam(sp.taxon);
   const session = await getSessionUser();
   const isSalon = session?.role === 'salon';
-  const contractPercent = isSalon ? session?.discountPercent || 0 : 0;
+  const contractPercent = salonContractPercent(session);
   const menuTaxons = await getStorefrontMenuTaxons(audience);
   if (audience === 'consumer' && isDresserTaxonCode(taxon)) taxon = undefined;
   if (audience === 'dresser' && taxon && !menuHasTaxon(menuTaxons, taxon)) {

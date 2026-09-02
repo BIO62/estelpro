@@ -1,15 +1,18 @@
 'use client';
 
+import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
-import { assetUrl, BRANCHES } from '@/lib/constants';
+import { assetUrl } from '@/lib/constants';
+import { listUlaanbaatarBranches } from '@/lib/branches';
 import { useSwiperControls } from '@/lib/useSwiperControls';
 
 export default function BranchesSlider() {
   const { prevRef, nextRef, pagRef, ready } = useSwiperControls();
+  const branches = listUlaanbaatarBranches();
 
   return (
-    <section className="position-relative py-5">
+    <section className="position-relative">
       <div className="container">
         <h4 className="fw-bold fs-6 text-uppercase border-start ps-2 border-3 mb-3">Салбарууд</h4>
         <div className="position-relative">
@@ -20,6 +23,8 @@ export default function BranchesSlider() {
             slidesPerGroup={1}
             centeredSlides
             watchSlidesProgress
+            preventClicks={false}
+            preventClicksPropagation={false}
             breakpoints={{
               768: { slidesPerView: 3, spaceBetween: 8, slidesPerGroup: 2, centeredSlides: false },
               1200: { slidesPerView: 4, spaceBetween: 8, slidesPerGroup: 2, centeredSlides: false },
@@ -28,9 +33,12 @@ export default function BranchesSlider() {
             navigation={ready ? { prevEl: prevRef.current, nextEl: nextRef.current } : false}
             className="swiper branchesSlider zindex-1 pb-4"
           >
-            {BRANCHES.map((branch) => (
-              <SwiperSlide key={branch.name} className="h-auto position-relative">
-                <div className="d-flex flex-column border border-dark10 h-100 rounded-3 overflow-hidden">
+            {branches.map((branch) => (
+              <SwiperSlide key={branch.id} className="h-auto position-relative">
+                <Link
+                  href={`/branches?branch=${encodeURIComponent(branch.id)}`}
+                  className="d-flex flex-column border border-dark10 h-100 rounded-3 overflow-hidden text-decoration-none text-reset"
+                >
                   <div className="position-relative">
                     <div className="d-block">
                       <div className="hoverEffect">
@@ -44,7 +52,7 @@ export default function BranchesSlider() {
                     <span className="flex-grow-1 d-block lh-sm">{branch.address}</span>
                     <span className="d-block fs-12 fc-gray mt-1">{branch.hours}</span>
                   </div>
-                </div>
+                </Link>
               </SwiperSlide>
             ))}
             <div ref={pagRef} className="swiper-pagination featuredSlide-pagination" />

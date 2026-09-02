@@ -104,6 +104,14 @@ export async function getSessionUser(): Promise<PublicUser | null> {
   };
 }
 
+export function salonContractPercent(session: PublicUser | null | undefined) {
+  return session?.role === 'salon' ? session.discountPercent || 0 : 0;
+}
+
+export async function getSalonContractPercent() {
+  return salonContractPercent(await getSessionUser());
+}
+
 export function homeForRole(role: UserRole) {
   if (role === 'salon') return '/dresser';
   if (role === 'owner' || role === 'director') return '/ad';

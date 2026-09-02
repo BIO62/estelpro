@@ -11,9 +11,11 @@ const ROTATE_MS = 2 * 60 * 1000;
 export default function HomePicks({
   newProducts,
   saleProducts,
+  bestsellers = [],
 }: {
   newProducts: CatalogProduct[];
   saleProducts: CatalogProduct[];
+  bestsellers?: CatalogProduct[];
 }) {
   const [news, setNews] = useState(newProducts);
   const [sale, setSale] = useState(saleProducts);
@@ -38,7 +40,7 @@ export default function HomePicks({
   return (
     <>
       <NewProducts key={news.map((item) => item.id).join('-')} products={news} />
-      <BestsellerSlider />
+      <BestsellerSlider products={bestsellers.length ? bestsellers : (sale.length ? sale : news).slice(0, 3)} />
       <SaleProducts key={sale.map((item) => item.id).join('-')} products={sale} />
     </>
   );

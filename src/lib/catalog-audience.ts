@@ -1,7 +1,6 @@
 export const DRESSER_COOKIE = 'estel_dresser';
 
 export const DRESSER_TAXON_CODES = [
-  'hair_coloring',
   'hair_signature',
   'hair_love',
 ] as const;
@@ -31,7 +30,7 @@ export function isDresserProduct(product: {
   return productTaxonCodes(product).some(isDresserTaxonCode);
 }
 
-export const CONSUMER_ROOT_TAXONS = ['hair_care', 'skin_body', 'Alpha', 'kids_care', 'styling'] as const;
+export const CONSUMER_ROOT_TAXONS = ['hair_care', 'hair_coloring', 'skin_body', 'Alpha', 'kids_care', 'styling'] as const;
 
 export function productRootCategory(product: {
   mainTaxon?: { code?: string | null } | null;

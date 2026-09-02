@@ -16,7 +16,7 @@ import {
   Sparkles,
   ShoppingBag
 } from 'lucide-react';
-import { DEMO_PRODUCTS } from '@/lib/constants';
+import { DEMO_PRODUCTS, assetUrl } from '@/lib/constants';
 import { formatPrice } from '@/lib/utils';
 
 export default function CreateOrderPOSPage() {
@@ -151,7 +151,7 @@ export default function CreateOrderPOSPage() {
                   <div>
                     <div className="aspect-square bg-white rounded-xl overflow-hidden mb-2 relative border border-stone-100">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`https://alphalabs.mn/nextstore-html/estel/${product.image}`} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                        <img src={assetUrl(product.image)} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                     </div>
                     <p className="text-xs font-bold text-slate-900 line-clamp-2 leading-snug">{product.name}</p>
                   </div>
